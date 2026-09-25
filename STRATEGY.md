@@ -4,6 +4,97 @@
 
 ---
 
+## ▶ ROADMAP: read this first (living section, updated as work lands)
+
+When anyone asks "what next?", the answer comes from this section. Update the status table and the experiment log after every run.
+
+### R0. Rules of engagement
+1. **Smoke test before every full-scale run:** `bash scripts/smoke.sh`. It runs the whole pipeline on ~1% of the data in about 3 minutes, in an isolated folder. No full run on the VM starts until it prints `SMOKE PASSED`.
+2. **The decision metric is holdout macro F0.5 after decoding** (fold 5; see §3). Change one thing at a time. Keep a change only if the holdout improves by at least **+0.3 points** and train-on-US / test-on-India (and the reverse) doesn't get worse.
+3. **No hand-written country knowledge in new code.**
+   - Allowed: structural rules (Unicode, digits, joining initials) and documented closed lists (legal forms).
+   - Everything country-specific is learned: from train labels, or from unlabeled test data *inside the pipeline at run time*.
+   - Nothing computed on this particular test file may be hard-coded.
+4. **Submit to the LB** whenever the holdout improves and `validate_submission.py --check-ids` prints PASS. Log every submission below.
+5. Commits carry **no Claude attribution**. Stop the VM when nobody is using it.
+
+### R1. Status
+
+| Stage | Script | State |
+|---|---|---|
+| EDA + report | `eda/` | ✅ Done |
+| VM (32 vCPU / 251 GB) + data as Parquet | `scripts/setup_vm.sh`, `scripts/tsv_to_parquet.py` | ✅ Done |
+| Scorer, B0 exact-key baseline | `src/metric.py`, `src/b0_exact.py` | ✅ Train 0.587, validator PASS. Upload `output/matching_results.tsv` if not done yet |
+| Smoke test | `scripts/smoke.sh` | ✅ Passes end to end |
+| Normalize v1 (contains hand-written maps; replaced in R3) | `src/normalize.py` | ✅ |
+| Blocking v1: word + skeleton TF-IDF, both directions | `src/block.py` | ✅ Train pair recall **0.941**. After pruning (rank_q≤10 or rank_s≤15): **0.937** at 58.7M pairs |
+| Equivalence miner v1 (used as features) | `src/mine_equiv.py` | ✅ 266 rules from train, 194 from test (it learned France's region ↔ department pairs without labels) |
+| Features, train/test | `src/features.py` | ⏳ Running |
+| LightGBM + calibration + decoding → **B1 submission** | `src/train.py`, `src/decode.py` | ⏳ Queued. Expected holdout **~0.85–0.90** [EST] |
+
+### R2. Next steps, in order (owner = suggested; est = wall-clock)
+
+**P0: decoding. Cheap, directly scored; needs only cached predictions (`decode.py`).**
+
+| ID | Work | Est | Keep if |
+|---|---|---|---|
+| D1 | **Exact expected-F0.5 DP.** Poisson-binomial over prefix and suffix plus a Poisson term λ for blocking misses (research §4). Replaces the ratio approximation | 1–2 h | ≥ +0.3 on holdout, bootstrap CI > 0 |
+| D2 | **Soft exclusivity** p′ = o/(1+Σo) vs the current hard argmax | 0.5 h | Better of the two |
+| D3 | **Label-shift diagnosis:** mean Σp per S1 on test vs train, per country. Set λ from it | 0.5 h | Diagnostic |
+
+**P1: recall. The ceiling is 0.937; target ≥ 0.97.**
+
+| ID | Work | Est | Keep if |
+|---|---|---|---|
+| B1 | **Char 3-gram TF-IDF retriever** (name+address, and address alone with spaces removed) added to the union (Sparkly) | 2 h | Pair recall +1.5 points or more |
+| B2 | **Wide union → cheap LightGBM reranker → top 40 per S1.** `candidate_pairs.tsv` = the top 40 | 3 h | Recall@40 ≥ 0.965 |
+
+**P2: generalization / remove the hand-written maps (the France fix).**
+
+| ID | Work | Est | Keep if |
+|---|---|---|---|
+| G1 | **normalize v2 = structural rules only.** Delete the US/India state and street maps. Use uroman (MIT, needs attribution) for non-ASCII tokens, falling back to anyascii | 2 h | Holdout within −0.1 of v1 (a neutral result is a win: the code becomes generic) |
+| G2 | **Miner v2:** align differing tokens (DP on character similarity), score with G² + NPMI, keep one-to-one two-way links, plausibility-based support thresholds, drop rules that fire on hard negatives. Train labels + test anchors, recomputed at run time | 3 h | Explained-difference features gain importance; holdout +0.2 or more |
+| G3 | **Per-country frequency-based word-difference features** (a token's own-country IDF/frequency role) replace the word-identity log-odds | 2 h | The train-on-one-country gap shrinks, holdout not worse |
+| G4 | **House-number roles** from how many different S1 names share the number in a locality; match levels (exact / suffix / typo / missing / different) | 2 h | Fewer false positives in the ≥92 similarity band |
+
+**P3: France.**
+
+| ID | Work | Est | Keep if |
+|---|---|---|---|
+| F1 | **Synthetic French hard negatives** built like the organizers' generator: confident French anchor pairs with the number changed or a business/direction word added. Use them for calibration and stress tests | 2 h | France's predicted singleton rate and matches per S1 move toward US/India levels |
+| F2 | Pseudo-labels on French pairs (p > 0.98, mutual best, same number), disclosed | 1 h | LB improves |
+
+**P4: stretch goals, only after P0–P2 have been submitted.**
+
+| ID | Work | Est |
+|---|---|---|
+| S1 | Cross-encoder (Multilingual-MiniLM, MIT): train on the laptop GPU on S1 disjoint from the LightGBM sample, export ONNX int8, score the top 3–5 per S1 on the VM, use as a feature | 4–6 h |
+| S2 | S2↔S3 twins as weight-2 units in the decoder | 2–3 h |
+| S3 | Train on 60% instead of 30% of S1 | 1 h (run) |
+
+**Final phase (last ~12 h): no new features.**
+1. Freeze.
+2. Regenerate from raw data with one command and check the output matches the submitted file.
+3. Run the validator (`--check-ids`).
+4. Zip: `output/`, `code/business_entity_resolution/{src,README.md,requirements.txt}`, methodology doc.
+5. Final upload at least 3 h before the deadline.
+
+### R3. Suggested allocation
+- **P1 (validation + decoding):** D1–D3, bootstrap CIs, experiment log, submission sign-off.
+- **P2 (pipeline + VM):** B1–B2, full runs, submissions, final reproduction and zip.
+- **P3 (features):** G3, G4, then S3.
+- **P4 (normalization + France):** G1, G2, F1, F2, methodology doc. S1 on the laptop GPU if time allows.
+
+### R4. Experiment and submission log
+
+| ID | Change | Holdout macro F0.5 | Pair recall | LB | Notes |
+|---|---|---|---|---|---|
+| B0 | Exact key (country + name tokens + first number) | 0.587 (all train) | 0.371 | – | Precision 0.982 |
+| B1 | Blocking v1 + 60 features + LightGBM + iso + hard exclusivity + expected-F (approximate) vs threshold | ⏳ | 0.937 | – | |
+
+---
+
 ## 0. Key facts (all confirmed)
 
 - **Format [RULES]:**
@@ -91,10 +182,16 @@ The competition is decided by blocking recall, rejecting the constructed "neighb
 
 ## 3. Validation (P1 owns)
 
-For 72 hours we use a **single holdout, not 5-fold.**
+For 72 hours we use a **single holdout, not 5-fold.** **As implemented,** train S1 entities are split by `int(id[3:]) % 10` (IDs are random, so this is effectively a stratified random split):
+
+| Folds | Share | Use |
+|---|---|---|
+| 0–1 | 20% | **Stats:** word log-odds and mined equivalences. Never used to train or evaluate the model |
+| 2–4 | 30% | **LightGBM training** |
+| 5 | 10% (~220k S1) | **Holdout:** early stopping, decoder tuning, **the score we trust** |
+| 6–9 | 40% | **Calibration** (isotonic) and competitors for exclusive assignment |
+
 - **Blocking runs on the full training universe** (all S1 + all S2/S3), so density is realistic.
-- **Holdout:** 10% of S1 entities (about 220k), stratified by country × match count.
-- **Training:** a 30–40% sample of the remaining S1, with all of their candidates. Add more data only if the learning curve says it helps.
 - **The score we trust:** macro F0.5 on the holdout **after** exclusive assignment + decoding. Pair-level AUC and F1 are only diagnostics.
 
 **Always report:**
@@ -196,6 +293,8 @@ Target: **ceiling ≥ 0.97.**
 
 ## 7. Experiments (in priority order; keep a change only if the holdout macro F0.5 improves after decoding)
 
+> E1–E8 and E10 are done or built into B1. **The live priority list is ROADMAP R2 at the top.** This table is kept for reference.
+
 | ID | Question | Keep if / act on |
 |---|---|---|
 | E1 | Scorer sanity: all-empty should score 0.056, perfect ground truth 1.0 | Exact match with those values |
@@ -224,6 +323,8 @@ Target: **ceiling ≥ 0.97.**
 ---
 
 ## 9. The 72 hours (T0 = when we start; check the exact deadline on the portal)
+
+> Original plan. **Actual progress and the current order of work live in ROADMAP R1–R2.** Keep the milestones below: a strong submission before T48, freeze in the last ~12 h.
 
 | Window | Goal | Exit criteria |
 |---|---|---|
