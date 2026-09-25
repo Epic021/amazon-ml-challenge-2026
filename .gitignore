@@ -1,0 +1,19 @@
+# Challenge data and organizer material (do not commit)
+student_resource/
+*.tsv
+*.parquet
+*.zip
+output/
+
+# EDA / run outputs
+*.out
+*.log
+
+# Python / env
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+.DS_Store
+.claude/
