@@ -115,7 +115,8 @@ def main():
         te["p"] = iso.predict(te.p.values).astype(np.float32)
         s1t = pd.read_parquet(f"{PQ}/test_s1.parquet", columns=["entity_id", "country"])
         pred = rule(exclusive(te))
-        cand = pd.read_parquet(f"{CAND}/test.parquet", columns=["s1_id", "cand_id"])
+        # candidate_pairs.tsv = exactly the pairs the model scored (post-pruning), per README
+        cand = te[["s1_id", "cand_id"]]
         os.makedirs(OUT, exist_ok=True)
         write(pred, s1t.entity_id, f"{OUT}/matching_results.tsv", "matched_entity_ids")
         write(cand, s1t.entity_id, f"{OUT}/candidate_pairs.tsv", "candidate_entity_ids")

@@ -247,6 +247,8 @@ def main():
     ap.add_argument("--chunk", type=int, default=6_000_000)
     ap.add_argument("--sample", type=float, default=1.0, help="fraction of S1 ids (smoke tests)")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--max_rank_q", type=int, default=10)
+    ap.add_argument("--max_rank_s", type=int, default=15)
     a = ap.parse_args()
     procs = os.cpu_count() or 4
     os.makedirs(FEAT, exist_ok=True)
@@ -257,7 +259,8 @@ def main():
     cand = pd.read_parquet(f"{CAND}/{a.split}.parquet")
     if a.sample < 1.0:
         cand = cand[(cand.s1_id.str[3:].astype(np.int64) % 1000) < a.sample * 1000]
-    cand = context_feats(cand)
+    cand = context_feats(cand)                       # context over the full candidate list
+    cand = cand[(cand.rank_q <= a.max_rank_q) | (cand.rank_s <= a.max_rank_s)].reset_index(drop=True)
     rec = pd.concat([pd.read_parquet(f"{NORM}/{a.split}_s{k}.parquet") for k in (1, 2, 3)], ignore_index=True)
     rec["skel"] = [skel_str(s) for s in rec.name_core.values]
     print(f"[{a.split}] {len(cand):,} pairs; context done {time.time() - t0:.0f}s", flush=True)
