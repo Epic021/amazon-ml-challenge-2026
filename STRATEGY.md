@@ -44,7 +44,7 @@ Design reasoning and decision options: [bottle_necks.md](bottle_necks.md). Resea
 | Equivalence miner v1 (used as features) | `src/mine_equiv.py` | ✅ 266 rules from train, 194 from test (it learned France's region ↔ department pairs without labels) |
 | Features, train/test | `src/features.py` | ✅ 58.7M train / 50.3M test pairs, 60 features (31 min / 25 min) |
 | LightGBM + calibration + decoding → **B1 submission** | `src/train.py`, `src/decode.py` | ✅ **Holdout 0.9662** (ceiling 0.9768). Validator PASS. File ready to upload |
-| **B1: namechar + addr retrievers, union** | `src/block.py --retriever`, `src/union.py` | ⏳ namechar now runs one direction only (India 386 s vs 5,052 s with both). Train namechar done: 31M pairs, 0.585 recall on its own. addr → union → test running |
+| **B1: namechar + addr retrievers, union** | `src/block.py --retriever`, `src/union.py` | ✅ train. **Pair recall 0.941 → 0.968 (pruned 0.937 → 0.966). Ceiling 0.9768 → 0.9867** (India 0.9749, US 0.9946). Found only by: word 3.1%, namechar 0.8%, addr 1.1%. Pruned pairs 59M → 110M. Test retrievers running |
 | **G3: per-country label-free word roles** | `src/features.py` (`build_role_tables`) | ✅ Smoke passed. The label-free decoy words match the labeled ones for US/India (holdings, group / exports, overseas) |
 | **B2 = union candidates + G3 → retrain → decode** | chained on the VM | ⏳ Queued automatically (features → train → decode). ETA ~3 h |
 | **D1/D2: exact expected-F DP + soft exclusivity** | `src/efdp.py`, `src/decode.py` | ✅ Written and **smoke-tested**. DP = brute force in 300/300 cases; ~2 min for all of test. Re-decodes B1 as soon as its predictions exist |
@@ -79,6 +79,9 @@ Char 3-gram retrievers (name with spaces removed, name only, address only) targe
 |---|---|---|---|
 | G3 | **Per-country word roles** replace word-identity log-odds for added/dropped words. For each token, compute from its own country's records: how often it appears in S1 names, its IDF, and how often it's the "extra" token among same-address pairs. Language-independent | 2 h | Holdout not worse; train-on-US/test-on-India gap shrinks; France predicted "added generic word + number differs" matches drop |
 | F1 | **Synthetic French decoys** for validation: from confident French pairs, change the number by ±1–2 and/or add a frequent French S1 word. Measure the rejection rate before and after G3 | 1.5 h | Rejection rate ≥ the train decoy rejection rate |
+
+> **Sep 26, ~03:00 IST:** the union ceiling is 0.9867. At B1's efficiency (98.9%), that means a holdout of ~0.976. India (0.975) is now the recall bottleneck.
+> The next recall step is model2vec for Indian-script names, or the wide-union reranker.
 
 **P0b: decoding. Cheap, directly scored; needs only cached predictions (`decode.py`).**
 
