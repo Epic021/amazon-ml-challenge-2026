@@ -7,6 +7,7 @@
 ## ▶ ROADMAP: read this first (living section, updated as work lands)
 
 When anyone asks "what next?", the answer comes from this section. Update the status table and the experiment log after every run.
+Design reasoning and decision options: [bottle_necks.md](bottle_necks.md). Research backing each item, with sources: [research_sota.md](research_sota.md).
 
 ### R0. Rules of engagement
 1. **Smoke test before every full-scale run:** `bash scripts/smoke.sh`. It runs the whole pipeline on ~1% of the data in about 3 minutes, in an isolated folder. No full run on the VM starts until it prints `SMOKE PASSED`.
@@ -17,6 +18,12 @@ When anyone asks "what next?", the answer comes from this section. Update the st
    - Nothing computed on this particular test file may be hard-coded.
 4. **Submit to the LB** whenever the holdout improves and `validate_submission.py --check-ids` prints PASS. Log every submission below.
 5. Commits carry **no Claude attribution**. Stop the VM when nobody is using it.
+6. **Every VM launch uses `PYTHONUNBUFFERED=1`** and logs progress (LightGBM every 50 rounds), so we can always report exact progress.
+7. **Licences:** only MIT or Apache-2.0 models may touch the pipeline. That includes retrieval, features, pseudo-labels and distillation. Examples:
+   - **not allowed:** jina-embeddings-v3 (CC BY-NC);
+   - **allowed:** multilingual-e5, BGE-M3, model2vec, Multilingual-MiniLM, mdeberta, xlm-roberta.
+   
+   Full list in research_sota.md §3.
 
 ### R1. Status
 
@@ -38,7 +45,7 @@ When anyone asks "what next?", the answer comes from this section. Update the st
 | Features, train/test | `src/features.py` | ✅ 58.7M train / 50.3M test pairs, 60 features (31 min / 25 min) |
 | LightGBM + calibration + decoding → **B1 submission** | `src/train.py`, `src/decode.py` | ⏳ Training |
 | **B1: namechar + addr retrievers, union** | `src/block.py --retriever`, `src/union.py` | ⏳ Running on train, then test. Smoke passed. No hard-coded knowledge (addr uses words; a char version is a follow-up) |
-| **D1/D2: exact expected-F DP + soft exclusivity** | `src/efdp.py`, `src/decode.py` | ✅ Written. DP = brute force in 300/300 cases; ~2 min for all of test. Smoke test running. Applied to B1 predictions once they exist |
+| **D1/D2: exact expected-F DP + soft exclusivity** | `src/efdp.py`, `src/decode.py` | ✅ Written and **smoke-tested**. DP = brute force in 300/300 cases; ~2 min for all of test. Re-decodes B1 as soon as its predictions exist |
 
 ### R2. Next steps, in order (owner = suggested; est = wall-clock)
 
