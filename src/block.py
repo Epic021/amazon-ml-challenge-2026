@@ -19,9 +19,10 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sparse_dot_topn import sp_matmul_topn
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-NORM = os.path.join(ROOT, "data", "norm")
-CAND = os.path.join(ROOT, "data", "cand")
-PQ = os.path.join(ROOT, "data", "parquet")
+DATA = os.environ.get("BER_DATA", os.path.join(ROOT, "data"))   # override for smoke runs
+NORM = os.path.join(DATA, "norm")
+CAND = os.path.join(DATA, "cand")
+PQ = os.path.join(DATA, "parquet")
 
 _VOW = re.compile(r"(?<=.)[aeiouyh]")
 _REP = re.compile(r"(.)\1+")

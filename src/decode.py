@@ -22,10 +22,11 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from metric import per_entity_f05  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PRED = os.path.join(ROOT, "data", "pred")
-PQ = os.path.join(ROOT, "data", "parquet")
-CAND = os.path.join(ROOT, "data", "cand")
-OUT = os.path.join(ROOT, "output")
+DATA = os.environ.get("BER_DATA", os.path.join(ROOT, "data"))   # override for smoke runs
+PRED = os.path.join(DATA, "pred")
+PQ = os.path.join(DATA, "parquet")
+CAND = os.path.join(DATA, "cand")
+OUT = os.environ.get("BER_OUT", os.path.join(ROOT, "output"))
 HOLD_FOLD = 5
 CALIB_FOLDS = (6, 7, 8, 9)       # out-of-sample for the model, disjoint from holdout
 

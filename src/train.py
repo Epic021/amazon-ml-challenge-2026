@@ -11,9 +11,10 @@ import numpy as np
 import pandas as pd
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FEAT = os.path.join(ROOT, "data", "feat")
-PRED = os.path.join(ROOT, "data", "pred")
-MODELS = os.path.join(ROOT, "models")
+DATA = os.environ.get("BER_DATA", os.path.join(ROOT, "data"))   # override for smoke runs
+FEAT = os.path.join(DATA, "feat")
+PRED = os.path.join(DATA, "pred")
+MODELS = os.path.join(DATA, "models")
 
 NON_FEATURES = {"s1_id", "cand_id", "y", "fold"}
 TRAIN_FOLDS, HOLD_FOLD = (2, 3, 4), 5

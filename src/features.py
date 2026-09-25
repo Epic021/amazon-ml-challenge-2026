@@ -22,10 +22,11 @@ from rapidfuzz import fuzz, process
 from rapidfuzz.distance import JaroWinkler, Levenshtein
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-NORM = os.path.join(ROOT, "data", "norm")
-CAND = os.path.join(ROOT, "data", "cand")
-FEAT = os.path.join(ROOT, "data", "feat")
-PQ = os.path.join(ROOT, "data", "parquet")
+DATA = os.environ.get("BER_DATA", os.path.join(ROOT, "data"))   # override for smoke runs
+NORM = os.path.join(DATA, "norm")
+CAND = os.path.join(DATA, "cand")
+FEAT = os.path.join(DATA, "feat")
+PQ = os.path.join(DATA, "parquet")
 
 LEGAL = set("""private limited llc llp incorporated corporation company lp pllc pc plc gmbh sarl sas sasu eurl
 sci sa ei selarl scp snc""".split())
@@ -232,7 +233,7 @@ def run_loop(c: pd.DataFrame, procs: int) -> pd.DataFrame:
 
 
 def load_equiv(split: str):
-    tabs = [f"{ROOT}/data/equiv/train.parquet"] + ([f"{ROOT}/data/equiv/test.parquet"] if split == "test" else [])
+    tabs = [f"{DATA}/equiv/train.parquet"] + ([f"{DATA}/equiv/test.parquet"] if split == "test" else [])
     eq = pd.concat([pd.read_parquet(t) for t in tabs if os.path.isfile(t)], ignore_index=True)
     out = {"addr_norm": {}, "name_norm": {}}
     for f, v, c in eq[["field", "variant", "canonical"]].itertuples(index=False):

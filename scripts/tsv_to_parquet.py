@@ -12,8 +12,8 @@ import sys
 import pandas as pd
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA = os.environ.get("DATA_DIR", os.path.join(ROOT, "student_resource", "dataset"))
-OUT = os.path.join(ROOT, "data", "parquet")
+SRC = os.environ.get("DATA_DIR", os.path.join(ROOT, "student_resource", "dataset"))   # raw TSVs
+OUT = os.path.join(os.environ.get("BER_DATA", os.path.join(ROOT, "data")), "parquet")
 
 
 def read_tsv(path):
@@ -26,7 +26,7 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     for split in ("train", "test"):
         for k in (1, 2, 3):
-            src = os.path.join(DATA, split, f"{split}_source{k}.tsv")
+            src = os.path.join(SRC, split, f"{split}_source{k}.tsv")
             if not os.path.isfile(src):
                 sys.exit(f"missing {src}")
             df = read_tsv(src)
@@ -35,7 +35,7 @@ def main():
             df.to_parquet(dst, index=False)
             print(f"{dst}: {len(df):,} rows, countries={df.country.value_counts().to_dict()}")
 
-    gt = read_tsv(os.path.join(DATA, "train", "train_ground_truth.tsv"))
+    gt = read_tsv(os.path.join(SRC, "train", "train_ground_truth.tsv"))
     lists = gt.matched_entity_ids.str.split(",")
     gt.assign(n_match=lists.map(lambda l: 0 if l == [""] else len(l))) \
       .rename(columns={"source1_entity_id": "s1_id"})[["s1_id", "n_match"]] \

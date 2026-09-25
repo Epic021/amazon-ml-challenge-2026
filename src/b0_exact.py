@@ -20,8 +20,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from metric import per_entity_f05  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PQ = os.path.join(ROOT, "data", "parquet")
-OUT = os.path.join(ROOT, "output")
+DATA = os.environ.get("BER_DATA", os.path.join(ROOT, "data"))   # override for smoke runs
+PQ = os.path.join(DATA, "parquet")
+OUT = os.environ.get("BER_OUT", os.path.join(ROOT, "output"))
 
 STOP = set("""private limited pvt ltd llc llp inc incorporated corp corporation co company lp pllc pc plc
 gmbh sarl sas sasu eurl sci sa ei the and m s smt sri shri mr mrs ms dr""".split())

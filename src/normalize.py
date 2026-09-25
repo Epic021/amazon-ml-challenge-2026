@@ -20,8 +20,9 @@ import pandas as pd
 from anyascii import anyascii
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PQ = os.path.join(ROOT, "data", "parquet")
-NORM = os.path.join(ROOT, "data", "norm")
+DATA = os.environ.get("BER_DATA", os.path.join(ROOT, "data"))   # override for smoke runs
+PQ = os.path.join(DATA, "parquet")
+NORM = os.path.join(DATA, "norm")
 
 NAME_ABBR = {
     "pvt": "private", "prvt": "private", "pte": "private", "ltd": "limited", "ltda": "limited", "co": "company",

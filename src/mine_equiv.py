@@ -24,10 +24,11 @@ import numpy as np
 import pandas as pd
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-NORM = os.path.join(ROOT, "data", "norm")
-CAND = os.path.join(ROOT, "data", "cand")
-PQ = os.path.join(ROOT, "data", "parquet")
-EQ = os.path.join(ROOT, "data", "equiv")
+DATA = os.environ.get("BER_DATA", os.path.join(ROOT, "data"))   # override for smoke runs
+NORM = os.path.join(DATA, "norm")
+CAND = os.path.join(DATA, "cand")
+PQ = os.path.join(DATA, "parquet")
+EQ = os.path.join(DATA, "equiv")
 
 
 def count_subs(args):
