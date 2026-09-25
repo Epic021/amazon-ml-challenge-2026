@@ -1,0 +1,10 @@
+numpy==1.26.4
+pandas==2.2.3
+pyarrow==20.0.0
+scikit-learn==1.6.1
+lightgbm==4.6.0
+rapidfuzz==3.14.3
+ftfy==6.3.1
+anyascii==0.3.2
+sparse_dot_topn>=1.1
+jupyterlab
