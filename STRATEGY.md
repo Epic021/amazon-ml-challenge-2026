@@ -44,7 +44,9 @@ Design reasoning and decision options: [bottle_necks.md](bottle_necks.md). Resea
 | Equivalence miner v1 (used as features) | `src/mine_equiv.py` | ✅ 266 rules from train, 194 from test (it learned France's region ↔ department pairs without labels) |
 | Features, train/test | `src/features.py` | ✅ 58.7M train / 50.3M test pairs, 60 features (31 min / 25 min) |
 | LightGBM + calibration + decoding → **B1 submission** | `src/train.py`, `src/decode.py` | ✅ **Holdout 0.9662** (ceiling 0.9768). Validator PASS. File ready to upload |
-| **B1: namechar + addr retrievers, union** | `src/block.py --retriever`, `src/union.py` | ⏳ Running on train, then test. Smoke passed. No hard-coded knowledge (addr uses words; a char version is a follow-up) |
+| **B1: namechar + addr retrievers, union** | `src/block.py --retriever`, `src/union.py` | ⏳ namechar now runs one direction only (India 386 s vs 5,052 s with both). Train namechar done: 31M pairs, 0.585 recall on its own. addr → union → test running |
+| **G3: per-country label-free word roles** | `src/features.py` (`build_role_tables`) | ✅ Smoke passed. The label-free decoy words match the labeled ones for US/India (holdings, group / exports, overseas) |
+| **B2 = union candidates + G3 → retrain → decode** | chained on the VM | ⏳ Queued automatically (features → train → decode). ETA ~3 h |
 | **D1/D2: exact expected-F DP + soft exclusivity** | `src/efdp.py`, `src/decode.py` | ✅ Written and **smoke-tested**. DP = brute force in 300/300 cases; ~2 min for all of test. Re-decodes B1 as soon as its predictions exist |
 
 ### R2. Next steps, in order (owner = suggested; est = wall-clock)
