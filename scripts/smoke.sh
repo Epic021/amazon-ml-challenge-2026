@@ -11,8 +11,12 @@ step() { echo; echo "=== $* ($(( $(date +%s) - T ))s)"; }
 
 step make_smoke_data;      python scripts/make_smoke_data.py
 step normalize;            python src/normalize.py
-step "block train";        python src/block.py --split train
-step "block test";         python src/block.py --split test
+for SPLIT in train test; do
+  for R in word namechar addr; do
+    step "block $SPLIT $R";  python src/block.py --split $SPLIT --retriever $R
+  done
+  step "union $SPLIT";       python src/union.py --split $SPLIT
+done
 step "mine train";         python src/mine_equiv.py --split train --min_n 5
 step "mine test";          python src/mine_equiv.py --split test --min_n 5
 step "features train";     python src/features.py --split train
