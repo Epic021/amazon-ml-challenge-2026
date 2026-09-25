@@ -288,9 +288,8 @@ def main():
         t1 = time.time()
         c = attach_records(cand.iloc[i:i + a.chunk].copy(), rec)
         c = pd.concat([c, string_feats(c), run_loop(c, procs)], axis=1)
-        c = c.drop(columns=[x for x in c.columns if x.startswith(("s1_name", "c_name", "s1_core", "c_core",
-                                                                   "s1_addr", "c_addr", "s1_nums", "c_nums",
-                                                                   "s1_skel", "c_skel"))])
+        c = c.drop(columns=[f"{side}_{k}" for side in ("s1", "c")
+                            for k in ("name", "core", "addr", "nums", "skel")])
         parts.append(c)
         print(f"  chunk {i // a.chunk}: {len(c):,} pairs in {time.time() - t1:.0f}s", flush=True)
     out = pd.concat(parts, ignore_index=True)
