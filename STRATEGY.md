@@ -45,7 +45,14 @@ Design reasoning and decision options: [bottle_necks.md](bottle_necks.md). Resea
 | Features, train/test | `src/features.py` | ✅ 58.7M train / 50.3M test pairs, 60 features (31 min / 25 min) |
 | LightGBM + calibration + decoding → **B1 submission** | `src/train.py`, `src/decode.py` | ✅ **Holdout 0.9662** (ceiling 0.9768). Validator PASS. File ready to upload |
 | **B1: namechar + addr retrievers, union** | `src/block.py --retriever`, `src/union.py` | ✅ train. **Pair recall 0.941 → 0.968 (pruned 0.937 → 0.966). Ceiling 0.9768 → 0.9867** (India 0.9749, US 0.9946). Found only by: word 3.1%, namechar 0.8%, addr 1.1%. Pruned pairs 59M → 110M. Test retrievers running |
-| **G3: per-country label-free word roles** | `src/features.py` (`build_role_tables`) | ✅ Smoke passed. The label-free decoy words match the labeled ones for US/India (holdings, group / exports, overseas) |
+| **G3: per-country label-free word roles** | `src/features.py` (`build_role_tables`) | ✅ Full run. What each country's table learned: |
+
+**G3, what the label-free word tables learned (full run):**
+- **US:** exactly the decoy vocabulary (southside, eastgate, midtown, riverside, holdings, uptown).
+- **India:** mostly transliterated Indian-script words (jvelrs, medikls), a confound.
+- **France:** the French decoy words score as decoy-like (participations −1.99, holding −1.99, international −2.01, développement −1.35, groupe −1.31, france −1.13).
+- **Risk:** France's scale is shifted (median −0.69), which could make the model over-reject French matches.
+- **Watch:** France predicted matches per S1 vs B1's 3.18. If it drops, standardize the scores within each country (G3b).
 | **B2 = union candidates + G3 → retrain → decode** | chained on the VM | ⏳ Queued automatically (features → train → decode). ETA ~3 h |
 | **D1/D2: exact expected-F DP + soft exclusivity** | `src/efdp.py`, `src/decode.py` | ✅ Written and **smoke-tested**. DP = brute force in 300/300 cases; ~2 min for all of test. Re-decodes B1 as soon as its predictions exist |
 
