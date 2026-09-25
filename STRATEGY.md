@@ -68,6 +68,16 @@ Char 3-gram retrievers (name with spaces removed, name only, address only) targe
 | B1 | **Char 3-gram TF-IDF retrievers**, per country, each direction, added to the union: (a) name+address, (b) name only (for empty addresses), (c) address only (for renamed businesses). Drop n-grams with very high document frequency so the matrix product stays affordable | 2–3 h | Ceiling ≥ 0.985 on train |
 | B2 | Wide union → cheap LightGBM reranker → top 40 per S1 | 3 h | Recall@40 ≥ 0.965 |
 
+**P0c: France. Moved up on Sep 26 after the B1 leaderboard score.**
+- **The LB/holdout gap implies France ≈ 0.88.** Test is 46.8% India, 38.3% US, 15% France, and 0.468·0.9546 + 0.383·0.9739 + 0.15·F = 0.952.
+- **Label-free check:** France's false matches are the organizers' decoys with French words: "Mangeurs Union **Développement** SARL, **3** R. Albert Einstein" vs "Mangeurs Union SARL, **1** Rue Albert Einstein", and likewise "**Participations**", "**France**". The added-word log-odds only know English words ("holdings", "group"), so these are scored as neutral.
+- **Worth about +1.2 LB points** if France reaches the US/India level.
+
+| ID | Work | Est | Keep if |
+|---|---|---|---|
+| G3 | **Per-country word roles** replace word-identity log-odds for added/dropped words. For each token, compute from its own country's records: how often it appears in S1 names, its IDF, and how often it's the "extra" token among same-address pairs. Language-independent | 2 h | Holdout not worse; train-on-US/test-on-India gap shrinks; France predicted "added generic word + number differs" matches drop |
+| F1 | **Synthetic French decoys** for validation: from confident French pairs, change the number by ±1–2 and/or add a frequent French S1 word. Measure the rejection rate before and after G3 | 1.5 h | Rejection rate ≥ the train decoy rejection rate |
+
 **P0b: decoding. Cheap, directly scored; needs only cached predictions (`decode.py`).**
 
 | ID | Work | Est | Keep if |
@@ -118,7 +128,7 @@ Char 3-gram retrievers (name with spaces removed, name only, address only) targe
 | ID | Change | Holdout macro F0.5 | Pair recall | LB | Notes |
 |---|---|---|---|---|---|
 | B0 | Exact key (country + name tokens + first number) | 0.587 (all train) | 0.371 | – | Precision 0.982 |
-| B1 | Blocking v1 (word) + 60 features + LightGBM (1,642 rounds) + isotonic + **soft exclusivity + threshold 0.55** | **0.9662** (India 0.9546, US 0.9739; singletons 0.9818, non-singletons 0.9652) | 0.937 | ⏳ upload | Ceiling 0.9768, so the model reaches 98.9% of it. Details below |
+| B1 | Blocking v1 (word) + 60 features + LightGBM (1,642 rounds) + isotonic + **soft exclusivity + threshold 0.55** | **0.9662** (India 0.9546, US 0.9739; singletons 0.9818, non-singletons 0.9652) | 0.937 | **0.952** | Ceiling 0.9768, so the model reaches 98.9% of it. Details below |
 
 B1 details:
 - **Soft vs hard exclusivity:** soft beats hard by +0.0008.
