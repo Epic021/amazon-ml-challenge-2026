@@ -82,7 +82,7 @@ _NUMTOK = re.compile(r"\d+")
 def to_ascii(s: str) -> str:
     if not s.isascii():
         s = unicodedata.normalize("NFKC", ftfy.fix_text(s))
-        s = re.sub(r"(?i)n\s*[°º]", " no ", s).replace("°", " ").replace("º", " ")
+        s = re.sub(r"(?i)\bn\s*[°º]", " no ", s).replace("°", " ").replace("º", " ")
         s = anyascii(s)
     return s.lower()
 
