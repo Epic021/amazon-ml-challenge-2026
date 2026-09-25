@@ -30,13 +30,15 @@ def main():
     ap.add_argument("--rounds", type=int, default=3000)
     ap.add_argument("--lr", type=float, default=0.05)
     ap.add_argument("--leaves", type=int, default=255)
+    ap.add_argument("--drop", default="", help="comma-separated feature-name prefixes to exclude")
     a = ap.parse_args()
     os.makedirs(PRED, exist_ok=True)
     os.makedirs(MODELS, exist_ok=True)
     t0 = time.time()
 
     tr = pd.read_parquet(f"{FEAT}/train.parquet")
-    cols = feature_cols(tr)
+    drop = tuple(x for x in a.drop.split(",") if x)
+    cols = [c for c in feature_cols(tr) if not (drop and c.startswith(drop))]
     m_tr, m_ho = tr.fold.isin(TRAIN_FOLDS).values, (tr.fold == HOLD_FOLD).values
     print(f"{len(cols)} features; train pairs {m_tr.sum():,} (pos {tr.y[m_tr].mean():.3f}), "
           f"holdout pairs {m_ho.sum():,}", flush=True)
@@ -47,7 +49,7 @@ def main():
     dtr = lgb.Dataset(tr.loc[m_tr, cols], tr.y[m_tr], free_raw_data=True)
     dho = lgb.Dataset(tr.loc[m_ho, cols], tr.y[m_ho], reference=dtr)
     model = lgb.train(params, dtr, a.rounds, valid_sets=[dho], valid_names=["hold"],
-                      callbacks=[lgb.early_stopping(100), lgb.log_evaluation(100)])
+                      callbacks=[lgb.early_stopping(100), lgb.log_evaluation(50)])
     model.save_model(f"{MODELS}/lgb_{a.tag}.txt")
     imp = pd.Series(model.feature_importance("gain"), index=cols).sort_values(ascending=False)
     print("top features by gain:\n", (imp / imp.sum()).head(25).round(4).to_string(), flush=True)
