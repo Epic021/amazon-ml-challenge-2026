@@ -43,7 +43,7 @@ Design reasoning and decision options: [bottle_necks.md](bottle_necks.md). Resea
 | Blocking v1: word + skeleton TF-IDF, both directions | `src/block.py` | ✅ Train pair recall **0.941**. After pruning (rank_q≤10 or rank_s≤15): **0.937** at 58.7M pairs |
 | Equivalence miner v1 (used as features) | `src/mine_equiv.py` | ✅ 266 rules from train, 194 from test (it learned France's region ↔ department pairs without labels) |
 | Features, train/test | `src/features.py` | ✅ 58.7M train / 50.3M test pairs, 60 features (31 min / 25 min) |
-| LightGBM + calibration + decoding → **B1 submission** | `src/train.py`, `src/decode.py` | ⏳ Training |
+| LightGBM + calibration + decoding → **B1 submission** | `src/train.py`, `src/decode.py` | ✅ **Holdout 0.9662** (ceiling 0.9768). Validator PASS. File ready to upload |
 | **B1: namechar + addr retrievers, union** | `src/block.py --retriever`, `src/union.py` | ⏳ Running on train, then test. Smoke passed. No hard-coded knowledge (addr uses words; a char version is a follow-up) |
 | **D1/D2: exact expected-F DP + soft exclusivity** | `src/efdp.py`, `src/decode.py` | ✅ Written and **smoke-tested**. DP = brute force in 300/300 cases; ~2 min for all of test. Re-decodes B1 as soon as its predictions exist |
 
@@ -118,7 +118,14 @@ Char 3-gram retrievers (name with spaces removed, name only, address only) targe
 | ID | Change | Holdout macro F0.5 | Pair recall | LB | Notes |
 |---|---|---|---|---|---|
 | B0 | Exact key (country + name tokens + first number) | 0.587 (all train) | 0.371 | – | Precision 0.982 |
-| B1 | Blocking v1 + 60 features + LightGBM + iso + hard exclusivity + expected-F (approximate) vs threshold | ⏳ | 0.937 | – | |
+| B1 | Blocking v1 (word) + 60 features + LightGBM (1,642 rounds) + isotonic + **soft exclusivity + threshold 0.55** | **0.9662** (India 0.9546, US 0.9739; singletons 0.9818, non-singletons 0.9652) | 0.937 | ⏳ upload | Ceiling 0.9768, so the model reaches 98.9% of it. Details below |
+
+B1 details:
+- **Soft vs hard exclusivity:** soft beats hard by +0.0008.
+- **Exact DP vs plain threshold:** the DP (0.9657) did **not** beat the threshold (0.9662). The likely cause is dependence between candidates, since the DP assumes independent probabilities.
+- **Label-shift check:** the mean Σp per S1 is similar on test (France 3.34, India 3.14, US 3.42) and on the holdout (3.25). So **no strong shift**; the earlier estimate of ~4.1 matches per S1 is not supported.
+- **France:** predicted 3.18 matches per S1 and 5.6% empty, in line with US and India. France looks healthy.
+- **Top features by gain:** gap_c, rank_q, is_c_best, add_lo_sum, add_lo_min, num_rel.
 
 ---
 
