@@ -20,6 +20,12 @@ When anyone asks "what next?", the answer comes from this section. Update the st
 
 ### R1. Status
 
+**Leaderboard context (Sep 26, ~00:00 IST):**
+- #1 is at 0.987 and **#50 at 0.979**.
+- The timer showed about 2 days 3 h left, so the **deadline is around early Sep 28 IST** (verify on the portal).
+- **Our blocking v1 caps us at 0.977**: that is the macro F0.5 a perfect matcher would get on our pruned candidates (India 0.965, US 0.985).
+- **So recall is the bottleneck for reaching the top 50.** Precision work alone can't get us there.
+
 | Stage | Script | State |
 |---|---|---|
 | EDA + report | `eda/` | ✅ Done |
@@ -34,20 +40,32 @@ When anyone asks "what next?", the answer comes from this section. Update the st
 
 ### R2. Next steps, in order (owner = suggested; est = wall-clock)
 
-**P0: decoding. Cheap, directly scored; needs only cached predictions (`decode.py`).**
+**P0a: recall. Moved up on Sep 26; the ceiling of 0.977 is below rank 50.**
+
+Why blocking misses true pairs (449k missed = 5.9% of true pairs):
+
+| Cause | Share |
+|---|---|
+| Name in an Indian script | 25% |
+| Domain names, handles, typos in numbers | 24% |
+| Both similar, but ranked out | 21% |
+| Candidate address empty | 18% |
+| Business renamed | 12% |
+
+Char 3-gram retrievers (name with spaces removed, name only, address only) target about 75–80% of these.
+
+| ID | Work | Est | Keep if |
+|---|---|---|---|
+| B1 | **Char 3-gram TF-IDF retrievers**, per country, each direction, added to the union: (a) name+address, (b) name only (for empty addresses), (c) address only (for renamed businesses). Drop n-grams with very high document frequency so the matrix product stays affordable | 2–3 h | Ceiling ≥ 0.985 on train |
+| B2 | Wide union → cheap LightGBM reranker → top 40 per S1 | 3 h | Recall@40 ≥ 0.965 |
+
+**P0b: decoding. Cheap, directly scored; needs only cached predictions (`decode.py`).**
 
 | ID | Work | Est | Keep if |
 |---|---|---|---|
 | D1 | **Exact expected-F0.5 DP.** Poisson-binomial over prefix and suffix plus a Poisson term λ for blocking misses (research §4). Replaces the ratio approximation | 1–2 h | ≥ +0.3 on holdout, bootstrap CI > 0 |
 | D2 | **Soft exclusivity** p′ = o/(1+Σo) vs the current hard argmax | 0.5 h | Better of the two |
 | D3 | **Label-shift diagnosis:** mean Σp per S1 on test vs train, per country. Set λ from it | 0.5 h | Diagnostic |
-
-**P1: recall. The ceiling is 0.937; target ≥ 0.97.**
-
-| ID | Work | Est | Keep if |
-|---|---|---|---|
-| B1 | **Char 3-gram TF-IDF retriever** (name+address, and address alone with spaces removed) added to the union (Sparkly) | 2 h | Pair recall +1.5 points or more |
-| B2 | **Wide union → cheap LightGBM reranker → top 40 per S1.** `candidate_pairs.tsv` = the top 40 | 3 h | Recall@40 ≥ 0.965 |
 
 **P2: generalization / remove the hand-written maps (the France fix).**
 
