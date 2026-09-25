@@ -34,6 +34,7 @@ _VOW = re.compile(r"(?<=.)[aeiouyh]")
 _REP = re.compile(r"(.)\1+")
 LO_ADD, LO_DROP = {}, {}
 EQ_ADDR, EQ_NAME = {}, {}          # variant -> set of canonical forms (mined, see mine_equiv.py)
+PLO_ADD, PLO_DROP, S1DF = {}, {}, {}  # per-country, label-free word roles (see build_role_tables)
 
 
 def fold_of(ids: pd.Series) -> np.ndarray:
@@ -99,8 +100,8 @@ def _lo_stats(vals):
 
 
 def loop_feats(args):
-    s1n, cn, s1c, cc, s1num, cnum, s1a, ca = args
-    out = np.zeros((len(s1n), 29), dtype=np.float32)
+    s1n, cn, s1c, cc, s1num, cnum, s1a, ca, ctry = args
+    out = np.zeros((len(s1n), 36), dtype=np.float32)
     for i in range(len(s1n)):
         added, dropped, ta, tb = _name_diff(s1n[i], cn[i])
         la, lb = ta & LEGAL, tb & LEGAL
@@ -126,6 +127,13 @@ def loop_feats(args):
         out[i, 26] = len(aa - ab)
         out[i, 27] = _explained(ab - aa, aa, EQ_ADDR)
         out[i, 28] = _explained(added, ta, EQ_NAME)
+        # per-country, label-free roles of the added / dropped words
+        pa_t, pd_t, dfm = PLO_ADD.get(ctry[i], {}), PLO_DROP.get(ctry[i], {}), S1DF.get(ctry[i], {})
+        out[i, 29:32] = _lo_stats([pa_t[t] for t in added if t in pa_t])
+        out[i, 32:34] = _lo_stats([pd_t[t] for t in dropped if t in pd_t])[:2]
+        gen = [dfm.get(t, -20.0) for t in added]
+        out[i, 34] = max(gen) if gen else -30.0                   # most generic added word (log S1-name share)
+        out[i, 35] = sum(t not in dfm for t in added)             # added words never seen in this country's S1 names
     return out
 
 
@@ -134,7 +142,8 @@ LOOP_COLS = ["num_rel", "num_first_eq", "num_s1first_in", "num_common", "num_s1_
              "add_lo_sum", "add_lo_max", "add_lo_min", "drop_lo_sum", "drop_lo_max", "drop_lo_min",
              "n_added", "n_dropped", "n_added_unknown", "n_dropped_unknown", "legal_conflict", "legal_added",
              "core_eq", "core_s1_in_c", "core_c_in_s1", "addr_tok_jacc", "addr_c_only", "addr_s1_only",
-             "addr_diff_explained", "name_diff_explained"]
+             "addr_diff_explained", "name_diff_explained",
+             "padd_sum", "padd_max", "padd_min", "pdrop_sum", "pdrop_max", "add_gen_max", "add_novel"]
 
 
 def diff_tokens(args):
@@ -147,6 +156,59 @@ def diff_tokens(args):
     return ca_p, ca_n, cd_p, cd_n
 
 
+def _lo_table(pos: Counter, neg: Counter, npos: int, nneg: int, min_count: int) -> dict:
+    return {t: float(np.log((pos[t] + 1) / npos) - np.log((neg[t] + 1) / nneg))
+            for t in set(pos) | set(neg) if pos[t] + neg[t] >= min_count}
+
+
+def _numrel_chunk(args):
+    a, b = args
+    return np.array([_num_feats(x, y)[0] for x, y in zip(a, b)], dtype=np.int8)
+
+
+def build_role_tables(cand: pd.DataFrame, rec: pd.DataFrame, procs: int, per_country: int = 3_000_000):
+    """Label-free, per-country word roles, recomputed on whatever split is being processed.
+
+    Among best-ranked candidate pairs with near-identical addresses (token-set >= 90), a DIFFERENT
+    house number is almost always a decoy (train: 88% of such negatives) and an EQUAL one mostly a
+    match. Log-odds of each word being ADDED/DROPPED in equal-number vs different-number pairs
+    therefore learns the decoy vocabulary of any language (holdings / developpement / participations)
+    without labels. Also: how common each word is in the country's S1 names.
+    """
+    r = rec.set_index("id")
+    pairs = cand.loc[cand.rank_q == 1, ["s1_id", "cand_id"]]
+    s1r, cr = r.reindex(pairs.s1_id.values), r.reindex(pairs.cand_id.values)
+    df = pd.DataFrame({"country": s1r.country.values, "s1n": s1r.name_norm.values, "cn": cr.name_norm.values,
+                       "s1a": s1r.addr_norm.values, "ca": cr.addr_norm.values,
+                       "s1u": s1r.nums.values, "cu": cr.nums.values})
+    df = pd.concat([g.sample(min(len(g), per_country), random_state=0) for _, g in df.groupby("country")])
+    df["at"] = process.cpdist(df.s1a.tolist(), df.ca.tolist(), scorer=fuzz.token_set_ratio, workers=-1)
+    n = 200_000
+    with Pool(procs) as p:
+        df["rel"] = np.concatenate(p.map(_numrel_chunk, [(df.s1u.values[i:i + n], df.cu.values[i:i + n])
+                                                          for i in range(0, len(df), n)]))
+    lab = df[(df["at"] >= 90) & df.rel.isin([1, 5])].assign(y=lambda d: (d.rel == 1).astype(np.int8))
+    plo_add, plo_drop = {}, {}
+    for ctry, g in lab.groupby("country"):
+        chunks = [(g.s1n.values[i:i + n], g.cn.values[i:i + n], g.y.values[i:i + n]) for i in range(0, len(g), n)]
+        tot = [Counter() for _ in range(4)]
+        with Pool(procs) as p:
+            for parts in p.imap_unordered(diff_tokens, chunks):
+                for t, c in zip(tot, parts):
+                    t.update(c)
+        npos, nneg = max(1, int(g.y.sum())), max(1, int((1 - g.y).sum()))
+        plo_add[ctry] = _lo_table(tot[0], tot[1], npos, nneg, 20)
+        plo_drop[ctry] = _lo_table(tot[2], tot[3], npos, nneg, 20)
+        top = sorted(plo_add[ctry].items(), key=lambda kv: kv[1])
+        print(f"  roles[{ctry}]: {npos:,} equal-number vs {nneg:,} different-number near-address pairs; "
+              f"decoy-like added words: {[t for t, _ in top[:12]]}", flush=True)
+    s1df = {}
+    for ctry, g in rec[rec.src == "S1"].groupby("country"):
+        cnt = Counter(t for s_ in g.name_norm.values for t in set(s_.split()))
+        s1df[ctry] = {t: float(np.log(c / len(g))) for t, c in cnt.items() if c >= 3}
+    return plo_add, plo_drop, s1df
+
+
 def build_logodds(df: pd.DataFrame, procs: int, min_count: int = 30):
     chunks = [(df.s1_name.values[i:i + 500_000], df.c_name.values[i:i + 500_000], df.y.values[i:i + 500_000])
               for i in range(0, len(df), 500_000)]
@@ -156,14 +218,7 @@ def build_logodds(df: pd.DataFrame, procs: int, min_count: int = 30):
             for t, c in zip(tot, parts):
                 t.update(c)
     npos, nneg = max(1, int(df.y.sum())), max(1, int((1 - df.y).sum()))
-
-    def table(pos, neg):
-        out = {}
-        for t in set(pos) | set(neg):
-            if pos[t] + neg[t] >= min_count:
-                out[t] = float(np.log((pos[t] + 1) / npos) - np.log((neg[t] + 1) / nneg))
-        return out
-    return table(tot[0], tot[1]), table(tot[2], tot[3])
+    return _lo_table(tot[0], tot[1], npos, nneg, min_count), _lo_table(tot[2], tot[3], npos, nneg, min_count)
 
 
 # ---------------------------------------------------------------- main
@@ -194,6 +249,8 @@ def attach_records(c: pd.DataFrame, rec: pd.DataFrame) -> pd.DataFrame:
         c[f"{side}_addr"] = sub.addr_norm.values
         c[f"{side}_nums"] = sub.nums.values
         c[f"{side}_skel"] = sub.skel.values
+        if side == "s1":
+            c["country"] = sub.country.values
         if side == "c":
             c["c_src_s3"] = (sub.src.values == "S3").astype(np.int8)
             c["c_nonlatin"] = sub.nonlatin.values.astype(np.int8)
@@ -225,7 +282,7 @@ def string_feats(c: pd.DataFrame) -> pd.DataFrame:
 
 def run_loop(c: pd.DataFrame, procs: int) -> pd.DataFrame:
     n = 200_000
-    cols = ["s1_name", "c_name", "s1_core", "c_core", "s1_nums", "c_nums", "s1_addr", "c_addr"]
+    cols = ["s1_name", "c_name", "s1_core", "c_core", "s1_nums", "c_nums", "s1_addr", "c_addr", "country"]
     chunks = [tuple(c[k].values[i:i + n] for k in cols) for i in range(0, len(c), n)]
     with Pool(procs) as p:
         arr = np.vstack(p.map(loop_feats, chunks))
@@ -242,7 +299,7 @@ def load_equiv(split: str):
 
 
 def main():
-    global LO_ADD, LO_DROP, EQ_ADDR, EQ_NAME
+    global LO_ADD, LO_DROP, EQ_ADDR, EQ_NAME, PLO_ADD, PLO_DROP, S1DF
     ap = argparse.ArgumentParser()
     ap.add_argument("--split", required=True, choices=["train", "test"])
     ap.add_argument("--chunk", type=int, default=6_000_000)
@@ -250,6 +307,8 @@ def main():
     ap.add_argument("--out", default=None)
     ap.add_argument("--max_rank_q", type=int, default=10)
     ap.add_argument("--max_rank_s", type=int, default=15)
+    ap.add_argument("--no_label_lo", action="store_true",
+                    help="drop the label-based word log-odds (keep only language-independent roles)")
     a = ap.parse_args()
     procs = os.cpu_count() or 4
     os.makedirs(FEAT, exist_ok=True)
@@ -284,13 +343,17 @@ def main():
         LO_ADD = dict(pd.read_parquet(f"{FEAT}/lo_add.parquet").itertuples(index=False))
         LO_DROP = dict(pd.read_parquet(f"{FEAT}/lo_drop.parquet").itertuples(index=False))
 
+    if a.no_label_lo:
+        LO_ADD, LO_DROP = {}, {}
+    PLO_ADD, PLO_DROP, S1DF = build_role_tables(cand, rec, procs)
+
     parts = []
     for i in range(0, len(cand), a.chunk):
         t1 = time.time()
         c = attach_records(cand.iloc[i:i + a.chunk].copy(), rec)
         c = pd.concat([c, string_feats(c), run_loop(c, procs)], axis=1)
         c = c.drop(columns=[f"{side}_{k}" for side in ("s1", "c")
-                            for k in ("name", "core", "addr", "nums", "skel")])
+                            for k in ("name", "core", "addr", "nums", "skel")] + ["country"])
         parts.append(c)
         print(f"  chunk {i // a.chunk}: {len(c):,} pairs in {time.time() - t1:.0f}s", flush=True)
     out = pd.concat(parts, ignore_index=True)
