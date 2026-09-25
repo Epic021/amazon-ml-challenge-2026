@@ -86,6 +86,7 @@ def main():
                      for k in (1, 2, 3)], ignore_index=True).set_index("id")
     if a.split == "train":
         pairs = pd.read_parquet(f"{PQ}/train_pairs.parquet")
+        pairs = pairs[(pairs.s1_id.str[3:].astype(np.int64) % 10) <= 1]     # STATS folds only (no leakage)
     else:
         c = pd.read_parquet(f"{CAND}/test.parquet")
         c = c[(c.rank_q == 1) & (c.rank_s == 1) & (c.score >= 0.5)]

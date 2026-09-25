@@ -32,6 +32,7 @@ sci sa ei selarl scp snc""".split())
 _VOW = re.compile(r"(?<=.)[aeiouyh]")
 _REP = re.compile(r"(.)\1+")
 LO_ADD, LO_DROP = {}, {}
+EQ_ADDR, EQ_NAME = {}, {}          # variant -> set of canonical forms (mined, see mine_equiv.py)
 
 
 def fold_of(ids: pd.Series) -> np.ndarray:
@@ -79,6 +80,17 @@ def _name_diff(a: str, b: str):
     return tb - ta, ta - tb, ta, tb
 
 
+def _explained(extra, other_side: set, table: dict) -> int:
+    """How many of the tokens only on one side are a mined variant of something on the other side."""
+    n = 0
+    for y in extra:
+        for x in table.get(y, ()):
+            if x in other_side or (" " in x and set(x.split()) <= other_side):
+                n += 1
+                break
+    return n
+
+
 def _lo_stats(vals):
     if not vals:
         return 0.0, 0.0, 0.0
@@ -87,7 +99,7 @@ def _lo_stats(vals):
 
 def loop_feats(args):
     s1n, cn, s1c, cc, s1num, cnum, s1a, ca = args
-    out = np.zeros((len(s1n), 27), dtype=np.float32)
+    out = np.zeros((len(s1n), 29), dtype=np.float32)
     for i in range(len(s1n)):
         added, dropped, ta, tb = _name_diff(s1n[i], cn[i])
         la, lb = ta & LEGAL, tb & LEGAL
@@ -111,6 +123,8 @@ def loop_feats(args):
         out[i, 24] = len(aa & ab) / max(1, len(aa | ab))
         out[i, 25] = len(ab - aa)
         out[i, 26] = len(aa - ab)
+        out[i, 27] = _explained(ab - aa, aa, EQ_ADDR)
+        out[i, 28] = _explained(added, ta, EQ_NAME)
     return out
 
 
@@ -118,7 +132,8 @@ LOOP_COLS = ["num_rel", "num_first_eq", "num_s1first_in", "num_common", "num_s1_
              "num_min_lev", "num_prefix", "num_first_logdiff",
              "add_lo_sum", "add_lo_max", "add_lo_min", "drop_lo_sum", "drop_lo_max", "drop_lo_min",
              "n_added", "n_dropped", "n_added_unknown", "n_dropped_unknown", "legal_conflict", "legal_added",
-             "core_eq", "core_s1_in_c", "core_c_in_s1", "addr_tok_jacc", "addr_c_only", "addr_s1_only"]
+             "core_eq", "core_s1_in_c", "core_c_in_s1", "addr_tok_jacc", "addr_c_only", "addr_s1_only",
+             "addr_diff_explained", "name_diff_explained"]
 
 
 def diff_tokens(args):
@@ -216,8 +231,17 @@ def run_loop(c: pd.DataFrame, procs: int) -> pd.DataFrame:
     return pd.DataFrame(arr, columns=LOOP_COLS, index=c.index)
 
 
+def load_equiv(split: str):
+    tabs = [f"{ROOT}/data/equiv/train.parquet"] + ([f"{ROOT}/data/equiv/test.parquet"] if split == "test" else [])
+    eq = pd.concat([pd.read_parquet(t) for t in tabs if os.path.isfile(t)], ignore_index=True)
+    out = {"addr_norm": {}, "name_norm": {}}
+    for f, v, c in eq[["field", "variant", "canonical"]].itertuples(index=False):
+        out[f].setdefault(v, set()).add(c)
+    return out["addr_norm"], out["name_norm"]
+
+
 def main():
-    global LO_ADD, LO_DROP
+    global LO_ADD, LO_DROP, EQ_ADDR, EQ_NAME
     ap = argparse.ArgumentParser()
     ap.add_argument("--split", required=True, choices=["train", "test"])
     ap.add_argument("--chunk", type=int, default=6_000_000)
@@ -227,6 +251,8 @@ def main():
     procs = os.cpu_count() or 4
     os.makedirs(FEAT, exist_ok=True)
     t0 = time.time()
+    EQ_ADDR, EQ_NAME = load_equiv(a.split)
+    print(f"equivalence rules: addr={len(EQ_ADDR)} name={len(EQ_NAME)}", flush=True)
 
     cand = pd.read_parquet(f"{CAND}/{a.split}.parquet")
     if a.sample < 1.0:
