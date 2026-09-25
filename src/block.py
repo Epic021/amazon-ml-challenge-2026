@@ -35,7 +35,7 @@ _REP = re.compile(r"(.)\1+")
 
 DEFAULTS = {            # topq, tops, max_df (absolute document frequency cap)
     "word": (10, 40, 30000),
-    "namechar": (5, 15, 50000),
+    "namechar": (5, 0, 50000),      # tops=0: S2/S3 -> S1 only (S1 -> S2/S3 took 66 min on India)
     "addr": (5, 15, 30000),
 }
 
@@ -93,8 +93,12 @@ def block_country(s1: pd.DataFrame, q: pd.DataFrame, retriever: str, topq: int, 
     Cq = sp_matmul_topn(A, B, top_n=topq, threshold=0.02, sort=True, n_threads=threads)
     dq = to_long(Cq, q_ids, s1_ids, "rank_q").rename(columns={"r": "cand_id", "c": "s1_id"})
     t1 = time.time()
-    Cs = sp_matmul_topn(B, A, top_n=tops, threshold=0.02, sort=True, n_threads=threads)
-    ds = to_long(Cs, s1_ids, q_ids, "rank_s").rename(columns={"r": "s1_id", "c": "cand_id"})
+    if tops > 0:
+        Cs = sp_matmul_topn(B, A, top_n=tops, threshold=0.02, sort=True, n_threads=threads)
+        ds = to_long(Cs, s1_ids, q_ids, "rank_s").rename(columns={"r": "s1_id", "c": "cand_id"})
+    else:                                             # skip the S1 -> S2/S3 direction
+        ds = pd.DataFrame({"s1_id": pd.Series(dtype=object), "cand_id": pd.Series(dtype=object),
+                           "score": pd.Series(dtype=np.float32), "rank_s": pd.Series(dtype=np.int16)})
     t2 = time.time()
     print(f"    vocab={len(vec.vocabulary_):,} q->s1 {t1 - t:.0f}s  s1->q {t2 - t1:.0f}s", flush=True)
 
