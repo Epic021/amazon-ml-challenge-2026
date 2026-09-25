@@ -32,7 +32,7 @@ EQ = os.path.join(ROOT, "data", "equiv")
 
 def count_subs(args):
     s1_strs, c_strs = args
-    pair, var = Counter(), Counter()
+    pair, var, xc = Counter(), Counter(), Counter()
     for a, b in zip(s1_strs, c_strs):
         A = [t for t in a.split() if not t.isdigit()]
         B = [t for t in b.split() if not t.isdigit()]
@@ -43,23 +43,28 @@ def count_subs(args):
         var.update(set(ub))
         xs = set(ua)
         xs |= {f"{A[i]} {A[i + 1]}" for i in range(len(A) - 1) if A[i] in ua and A[i + 1] in ua}
+        xc.update(xs)
         for y in set(ub):
             for x in xs:
                 pair[(x, y)] += 1
-    return pair, var
+    return pair, var, xc
 
 
 def mine(s1_strs, c_strs, procs, min_n, min_share):
     n = 200_000
     chunks = [(s1_strs[i:i + n], c_strs[i:i + n]) for i in range(0, len(s1_strs), n)]
-    pair, var = Counter(), Counter()
+    pair, var, xc = Counter(), Counter(), Counter()
     with Pool(procs) as p:
-        for pc, vc in p.imap_unordered(count_subs, chunks):
+        for pc, vc, xcc in p.imap_unordered(count_subs, chunks):
             pair.update(pc)
             var.update(vc)
+            xc.update(xcc)
     best = {}
     for (x, y), k in pair.items():
-        if k >= min_n and k / var[y] >= min_share and (y not in best or k > best[y][1]):
+        # both directions must agree: y is usually explained by x AND x is often replaced by y
+        # (drops aliases such as city -> county, which are not token equivalences)
+        if (k >= min_n and k / var[y] >= min_share and k / xc[x] >= min_share / 2
+                and (y not in best or k > best[y][1])):
             best[y] = (x, k)
     rows = [(y, x, k, k / var[y]) for y, (x, k) in best.items()]
     return pd.DataFrame(rows, columns=["variant", "canonical", "n", "share"]).sort_values("n", ascending=False)
