@@ -35,8 +35,10 @@ When anyone asks "what next?", the answer comes from this section. Update the st
 | Normalize v1 (contains hand-written maps; replaced in R3) | `src/normalize.py` | ✅ |
 | Blocking v1: word + skeleton TF-IDF, both directions | `src/block.py` | ✅ Train pair recall **0.941**. After pruning (rank_q≤10 or rank_s≤15): **0.937** at 58.7M pairs |
 | Equivalence miner v1 (used as features) | `src/mine_equiv.py` | ✅ 266 rules from train, 194 from test (it learned France's region ↔ department pairs without labels) |
-| Features, train/test | `src/features.py` | ⏳ Running |
-| LightGBM + calibration + decoding → **B1 submission** | `src/train.py`, `src/decode.py` | ⏳ Queued. Expected holdout **~0.85–0.90** [EST] |
+| Features, train/test | `src/features.py` | ✅ 58.7M train / 50.3M test pairs, 60 features (31 min / 25 min) |
+| LightGBM + calibration + decoding → **B1 submission** | `src/train.py`, `src/decode.py` | ⏳ Training |
+| **B1: namechar + addr retrievers, union** | `src/block.py --retriever`, `src/union.py` | ⏳ Running on train, then test. Smoke passed. No hard-coded knowledge (addr uses words; a char version is a follow-up) |
+| **D1/D2: exact expected-F DP + soft exclusivity** | `src/efdp.py`, `src/decode.py` | ✅ Written. DP = brute force in 300/300 cases; ~2 min for all of test. Smoke test running. Applied to B1 predictions once they exist |
 
 ### R2. Next steps, in order (owner = suggested; est = wall-clock)
 
