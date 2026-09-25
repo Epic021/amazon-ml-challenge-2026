@@ -10,6 +10,8 @@ student_resource/dataset/{train,test}/*.tsv
 ```
 
 ## EDA
+Open **[eda/report.html](eda/report.html)** in a browser for the visual EDA report: structure, scripts, noise, match structure, hard negatives, test shift and France.
+
 Scripts in `eda/` read from `student_resource/dataset`, or from `$DATA_DIR` if set:
 - `eda1.py`: label structure, match counts, basic column stats
 - `eda2.py`: source styles, scripts, leakage checks, matched-pair similarity
