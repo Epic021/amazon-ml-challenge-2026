@@ -92,7 +92,16 @@ Blocking always runs on the full universe.
 
 **Reading the LB:** test is 46.8% India, 38.3% US, 15% France. So `LB ≈ 0.468·India + 0.383·US + 0.15·France`, with India and US taken from the holdout, which gives the implied France score.
 
-**Keep a change** only if the holdout macro F0.5 improves by **≥ +0.001** and the France proxy does not get worse. Submit whenever that holds and the validator passes.
+**Keep a change** only if the holdout macro F0.5 improves by **≥ +0.001** and the France proxy does not get worse.
+
+**Evidence gates: no full-scale run without a cheap measurement first.** Added Sep 26, after runs were launched on assumptions.
+
+| Change | Cheap evidence first | Gate before the full run |
+|---|---|---|
+| New retriever | Realistic sample (real queries vs the full index), then the train union → ceiling (~20 min, no training) | Ceiling ≥ +0.003 |
+| New features | Pilot: features on 10% of S1 → quick LightGBM with vs without → pilot holdout | ≥ +0.001 |
+| More training data | Learning curve on 1 / 2 / 3 folds with a small model | Still rising from 2 → 3 folds |
+| Full retrain (B-run) | Only after the gates above pass | – | Submit whenever that holds and the validator passes.
 
 ## 5. Results
 
@@ -123,7 +132,8 @@ Blocking always runs on the full universe.
 | # | Item | Targets | Est | Keep if |
 |---|---|---|---|---|
 | 1 | ~~**G5 name uniqueness**~~ **done (B3): +0.0005, CI > 0, kept** | Empty-address rejections | – | – |
-| 2 | **RET-EMB** (running): model2vec retriever for non-Latin names; the correct English name ranks first in 5/5 real misses | India blocking (6.1% of India's true pairs) | running | India ceiling ≥ +0.003 |
+| 2 | ~~RET-EMB~~ **dropped.** Full run: 14% recall on its target pairs, only 0.16% of true pairs found only by it, India ceiling +0.0021 (< +0.003), and the test run would cost ~3 h. The 5-example test was misleading | – | – | – |
+| 2b | **RET-BLOCK** (`block_numaddr.py`): number\|token address blocks → name re-rank. Sample: recovers **54.5% of India's / 49.7% of US union misses** at ~5 pairs/query. Train+test candidates done; **train-union ceiling being measured** | India + US blocking | done | Ceiling ≥ +0.003 |
 | 3 | **B4 = union with EMB → features (G5 built in) → retrain** | Both of the above | ~4 h | Holdout > B3 |
 | 4 | **G4 house-number roles** (locality cardinality; match levels) | France's dense streets, remaining decoys | 2 h | France proxy ↓, holdout ≥ +0.001 |
 | 5 | **F1 synthetic French decoys** (number ±1–2, added frequent word) | Measure France rejection directly | 1.5 h | Diagnostic |
