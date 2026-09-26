@@ -43,7 +43,8 @@ def score(df, thr, truth, ids, excluded=False):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", required=True)
-    ap.add_argument("--write", action="store_true", help="write output_blend/ for test")
+    ap.add_argument("--write", action="store_true", help="write the test TSVs")
+    ap.add_argument("--out", default="output_blend", help="output dir (relative to repo root)")
     a = ap.parse_args()
     truth = pd.read_parquet(f"{DATA}/parquet/train_pairs.parquet")
     s1 = pd.read_parquet(f"{DATA}/parquet/train_s1.parquet", columns=["entity_id", "country"])
@@ -103,7 +104,7 @@ def main():
         ex = soft_excl(te[["s1_id", "cand_id", "p"]])
         pred = ex[ex.p >= best[1]]
         s1t = pd.read_parquet(f"{DATA}/parquet/test_s1.parquet", columns=["entity_id", "country"])
-        out = os.path.join(ROOT, "output_blend")
+        out = os.path.join(ROOT, a.out)
         os.makedirs(out, exist_ok=True)
         write(pred, s1t.entity_id, f"{out}/matching_results.tsv", "matched_entity_ids")
         write(te[["s1_id", "cand_id"]], s1t.entity_id, f"{out}/candidate_pairs.tsv", "candidate_entity_ids")
