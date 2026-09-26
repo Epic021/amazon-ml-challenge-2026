@@ -159,7 +159,15 @@ Char 3-gram retrievers (name with spaces removed, name only, address only) targe
 1. **Upload B2** (`output_b2/matching_results.tsv`). *Status Sep 26 10:15 IST: B2-noLO lost, so B2 is the submission; B3 (G5) is training.*
 2. **G5, name-uniqueness features:** count of S1 in the country with the same name core, and the same for the candidate's name. Targets the empty-address rejections. Features + retrain.
 3. **India recall:** better transliteration (uroman, MIT) for Indian-script names and/or a model2vec retriever. Wider address candidates in crowded blocks (addr topq 5 → 10).
-4. B2-noLO vs B2: pick by holdout + France check.
+4. B2-noLO vs B2: pick by holdout + France check. **Done: B2 wins.**
+
+**India recall, Sep 26 morning:**
+- **uroman: skipped.** On company names it is no better than anyascii ("silvar investtamemtt praaivett"), and its licence file is not clearly MIT.
+- **model2vec potion-multilingual-128M (MIT): adopted.**
+  - For native-script vs English names, the correct pair ranks first in 5/5 real missed cases (cosine 0.57–0.70).
+  - It only adds packages to the main env (numpy/pandas unchanged) and is pinned in requirements.
+  - The new retriever is `src/block_emb.py` (`emb`): raw non-Latin S2/S3 names → top-10 S1 by cosine within the same country. It feeds `union.py`.
+  - Smoke passed. Full train+test run in progress; the ceiling comes next.
 
 | B2-noLO | B2 without the label-based (English) word log-odds | 0.9762 (India 0.9648, US 0.9838) | 0.966 | – | **Dropped: −0.1 point.** France decoy share 0.10% vs B2's 0.16%, a negligible difference. Keep the log-odds |
 | B3 | B2 + G5 name-uniqueness features (count of S1 sharing the name core; `scripts/add_name_counts.py`) | ⏳ | 0.966 | – | Targets the empty-address rejections (74% of model rejections) |
