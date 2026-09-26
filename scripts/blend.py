@@ -35,8 +35,8 @@ def iso(p_fit, y_fit):
     return IsotonicRegression(out_of_bounds="clip", y_min=0, y_max=1).fit(p_fit, y_fit)
 
 
-def score(df, thr, truth, ids):
-    ex = soft_excl(df[["s1_id", "cand_id", "p"]])
+def score(df, thr, truth, ids, excluded=False):
+    ex = df if excluded else soft_excl(df[["s1_id", "cand_id", "p"]])
     return per_entity_f05(ex[ex.p >= thr], truth, ids)
 
 
@@ -70,10 +70,12 @@ def main():
     hold_ids = s1.entity_id[s1.fold == HOLD]
     tu, ho = df[df.fold.isin(TUNE)], df[df.fold == HOLD]
     res = {}
-    for w in WS:
-        pt = tu.assign(p=w * tu.c_o + (1 - w) * tu.c_t)
+    for w in WS:                                         # soft exclusivity once per w, thresholds reuse it
+        ex = soft_excl(tu.assign(p=w * tu.c_o + (1 - w) * tu.c_t)[["s1_id", "cand_id", "p"]])
+        ex = ex[ex.p >= THRS.min()]
         for t in THRS:
-            res[(w, t)] = score(pt, t, truth, tune_ids).mean()
+            res[(w, t)] = score(ex, t, truth, tune_ids, excluded=True).mean()
+        print(f"  w={w}: best {max(res[(w, t)] for t in THRS):.5f}", flush=True)
     res = pd.Series(res)
     best = res.idxmax()
     best_o = res.loc[1.0].idxmax()
