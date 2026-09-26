@@ -61,7 +61,7 @@ def main():
     tr["p"] = model.predict(tr[cols], num_threads=os.cpu_count()).astype(np.float32)
     tr[["s1_id", "cand_id", "fold", "y", "p"]].to_parquet(f"{PRED}/train_{a.tag}.parquet", index=False)
     del tr
-    if os.path.isfile(f"{a.feat_dir}/test.parquet"):
+    if os.path.exists(f"{a.feat_dir}/test.parquet"):      # file or directory of part files
         te = pd.read_parquet(f"{a.feat_dir}/test.parquet")
         te["p"] = model.predict(te[cols], num_threads=os.cpu_count()).astype(np.float32)
         te[["s1_id", "cand_id", "p"]].to_parquet(f"{PRED}/test_{a.tag}.parquet", index=False)

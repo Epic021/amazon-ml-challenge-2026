@@ -15,7 +15,6 @@ for SPLIT in train test; do
   for R in word namechar addr; do
     step "block $SPLIT $R";  python src/block.py --split $SPLIT --retriever $R
   done
-  step "block $SPLIT emb";  python src/block_emb.py --split $SPLIT
   step "block $SPLIT numaddr"; python src/block_numaddr.py --split $SPLIT
   step "union $SPLIT";       python src/union.py --split $SPLIT
 done
