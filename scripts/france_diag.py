@@ -16,8 +16,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.environ.get("BER_DATA", os.path.join(ROOT, "data"))
 
 
-def main(path):
-    f = pd.read_parquet(f"{DATA}/feat/test.parquet",
+def main(path, feat_dir):
+    f = pd.read_parquet(f"{feat_dir}/test.parquet",
                         columns=["s1_id", "cand_id", "num_rel", "addr_tset", "n_added"])
     m = pd.read_csv(path, sep="\t", dtype=str, keep_default_na=False, quoting=csv.QUOTE_NONE)
     m = m.assign(cand_id=m.matched_entity_ids.str.split(",")).explode("cand_id")
@@ -38,4 +38,4 @@ def main(path):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else f"{DATA}/feat")
