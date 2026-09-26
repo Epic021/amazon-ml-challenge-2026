@@ -37,7 +37,7 @@ Design reasoning and decision options: [bottle_necks.md](bottle_necks.md). Resea
 |---|---|---|---|
 | B0 | 0.587 (all train) | – | `output/` (overwritten by B1) |
 | B1 | 0.9662 | **0.952** | (VM `output/`) |
-| **B2 (current best)** | **0.9772** | ⏳ upload | `output_b2/matching_results.tsv` (laptop + VM) |
+| **B2 (current best)** | **0.9772** | **0.970** | `output_b2/matching_results.tsv` (laptop + VM) |
 
 **Running now on the VM:**
 - **B3 = B2 + G5 name-uniqueness features:** columns added → LightGBM → decode → `output_b3/`. Summary in `logs/b3_summary.txt`.
@@ -118,7 +118,7 @@ Design reasoning and decision options: [bottle_necks.md](bottle_necks.md). Resea
 |---|---|---|---|---|---|
 | B0 | Exact key (country + name tokens + first number) | 0.587 (all train) | 0.371 | – | Precision 0.982 |
 | B1 | Word retriever + 60 features + LightGBM (1,642 rounds) + isotonic + soft exclusivity + threshold 0.55 | 0.9662 (0.9546 / 0.9739) | 0.937 (0.9768) | **0.952** | The model reaches 98.9% of the ceiling. The LB gap implies France ≈ 0.88 |
-| B2 | + namechar & addr retrievers (union) + G3 word roles | **0.9772** (0.966 / 0.9847) | 0.966 (0.9867) | ⏳ | **Current best.** The model reaches 99.0% of the ceiling. France decoy share 0.16% |
+| B2 | + namechar & addr retrievers (union) + G3 word roles | **0.9772** (0.966 / 0.9847) | 0.966 (0.9867) | **0.970** | **Current best.** The model reaches 99.0% of the ceiling. France decoy share 0.16%. The LB implies **France ≈ 0.94** (B1 ≈ 0.88); the holdout→LB gap halved (0.014 → 0.007). **+0.009 needed for the top 50 (0.979)** |
 | B2-noLO | B2 minus the English word log-odds | 0.9762 (0.9648 / 0.9838) | 0.966 | – | Dropped (−0.1) |
 | B3 | B2 + G5 name-uniqueness features | ⏳ | 0.966 | – | Running |
 
