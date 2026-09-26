@@ -1,7 +1,7 @@
 # Amazon ML Challenge 2026: Business Entity Resolution. Strategy
 
 **Status (Sep 26, ~18:10 IST):**
-- **LB 0.970** (B2/B3). B4 file (holdout 0.98265) and **BLEND file (holdout 0.98487)** ready; blend is the one to submit.
+- **LB 0.979 (BLEND-B4)**. Implied France ≈ **0.94, unchanged since B2**: all LB gains so far came from India/US.
 - **Target:** top 50 (≥ 0.979), top 10 ~0.985. Holdout→LB gap ≈ 0.007 (France), so the LB needs holdout ≈ 0.986+ **or** a smaller France gap.
 - **Running:** B5 training (iter 550, hold logloss 0.00322 < B4's best 0.00326), ETA ~19:30 IST incl. decode.
 - **Repo is private:** code reaches the VM only via `git archive HEAD src scripts requirements.txt | ssh vm tar -x` (the team decided on no deploy key).
@@ -111,7 +111,7 @@ Blocking always runs on the full universe.
 | **B2** | + namechar & addr retrievers + G3 label-free word roles | **0.9772** (0.966 / 0.9847) | 0.9867 | **0.970** | Implied France ≈ 0.94; France decoy share 2.08% → 0.16% |
 | B2-noLO | B2 without the English word log-odds | 0.9762 | 0.9867 | – | Dropped |
 | **B4** | + RET-BLOCK (number\|token address blocks) candidates; fast polars pipeline | **0.98265** (0.9772 / 0.9863) | 0.9917 | ⏳ | Best single model. Model efficiency 99.1%. France: 3.34 predictions/S1, decoy share 0.23%. Pipeline wall time 2 h 21 min |
-| **BLEND-B4** | B4 + teammate's OOF probs (isotonic each, w=0.5, soft excl, thr 0.45; tuned on folds 6–9) | **0.98487** (0.9833 / 0.9859) | – | ⏳ | **Submit.** +0.00293 vs B4 [CI +0.00266, +0.00319], +0.00248 vs teammate alone [+0.00224, +0.00273]. Test: France 3.45 pred/S1, empty 5.3% |
+| **BLEND-B4** | B4 + teammate's OOF probs (isotonic each, w=0.5, soft excl, thr 0.45; tuned on folds 6–9) | **0.98487** (0.9833 / 0.9859) | – | **0.979** | Implied France 0.94 (same as B2). +0.00293 vs B4 [CI +0.00266, +0.00319], +0.00248 vs teammate alone [+0.00224, +0.00273]. Test: France 3.45 pred/S1, empty 5.3% |
 | **B3** | B2 + G5 name uniqueness | **0.9777** (0.9664 / 0.9853) | 0.9867 | **0.970** | **No visible LB gain** (the LB shows 3 decimals, and +0.0005 is below that). Holdout +0.00051, CI [+0.00038, +0.00062]: real but below the +0.001 bar; it should not have been submitted as a separate run |
 
 **What we learned:**
@@ -141,7 +141,7 @@ Blocking always runs on the full universe.
 | 3c | **B5 = B4 + sound key + address-word log-odds + twins** | – | **training**, ETA ~19:30 IST | Holdout ≥ B4 + 0.001 |
 | 3d | **Blend B5 + teammate** (`scripts/blend.py --tag b5 --write`, ~15 min) | Model diversity | after 3c | ≥ BLEND-B4 + 0.001 → submit |
 | 3e | **Stage 2 stacking** on best stage-1 (`src/stage2.py`; smoke passed) → then blend | Record/S1 competition | ~40 min | ≥ +0.001 over its input |
-| 3f | **France gap analysis**: ours vs teammate disagreements on France test; decoy share / pred-per-S1 vs India/US | The ~0.007 holdout→LB gap | 1 h | Drives 4/5 |
+| 3f | **France gap analysis: DONE** (`scripts/france_gap.py`). Model believes France ≈ 0.967 (belief is within 0.002 of actual for India/US), LB says 0.94 → **confident errors**. France has 3× the borderline pairs; the hard class is **same address + same house number + one name word swapped** (train: 43–48% true; France 4.3 such pairs/S1 vs US 0.95). Ours vs teammate disagree 2× more in France | The ~0.007 holdout→LB gap | done | → 3e first (relational), then 4 |
 | 4 | **G4 house-number roles** (locality cardinality; match levels) | France's dense streets, remaining decoys | 2 h | France proxy ↓, holdout ≥ +0.001 |
 | 5 | **F1 synthetic French decoys** (number ±1–2, added frequent word) | Measure France rejection directly | 1.5 h | Diagnostic |
 | 6 | **RET-B reranker**: wide union → top 40 | Recall at a fixed candidate budget | 3 h | Recall@40 ≥ union recall − 0.001 |
