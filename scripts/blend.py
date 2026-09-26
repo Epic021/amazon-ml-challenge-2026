@@ -45,6 +45,7 @@ def main():
     ap.add_argument("--tag", required=True)
     ap.add_argument("--write", action="store_true", help="write the test TSVs")
     ap.add_argument("--out", default="output_blend", help="output dir (relative to repo root)")
+    ap.add_argument("--friend_dir", default="friend", help="teammate probabilities under data/")
     a = ap.parse_args()
     truth = pd.read_parquet(f"{DATA}/parquet/train_pairs.parquet")
     s1 = pd.read_parquet(f"{DATA}/parquet/train_s1.parquet", columns=["entity_id", "country"])
@@ -52,7 +53,7 @@ def main():
 
     ours = pd.read_parquet(f"{DATA}/pred/train_{a.tag}.parquet")
     ours = ours[ours.fold.isin(TUNE + (HOLD,))][["s1_id", "cand_id", "p"]].rename(columns={"p": "p_o"})
-    theirs = pd.read_parquet(f"{DATA}/friend/train_oof_probs.parquet", columns=["s1_id", "cand_id", "p"])
+    theirs = pd.read_parquet(f"{DATA}/{a.friend_dir}/train_oof_probs.parquet", columns=["s1_id", "cand_id", "p"])
     theirs = theirs[np.isin(s1_fold(theirs.s1_id), TUNE + (HOLD,))].rename(columns={"p": "p_t"})
     df = ours.merge(theirs, on=["s1_id", "cand_id"], how="outer")
     df["p_o"], df["p_t"] = df.p_o.fillna(0.0), df.p_t.fillna(0.0)
@@ -97,7 +98,7 @@ def main():
 
     if a.write:
         te_o = pd.read_parquet(f"{DATA}/pred/test_{a.tag}.parquet").rename(columns={"p": "p_o"})
-        te_t = pd.read_parquet(f"{DATA}/friend/test_probs.parquet").rename(columns={"p": "p_t"})
+        te_t = pd.read_parquet(f"{DATA}/{a.friend_dir}/test_probs.parquet").rename(columns={"p": "p_t"})
         te = te_o.merge(te_t, on=["s1_id", "cand_id"], how="outer")
         te["p_o"], te["p_t"] = te.p_o.fillna(0.0), te.p_t.fillna(0.0)
         te["p"] = best[0] * iso_o.predict(te.p_o) + (1 - best[0]) * iso_t.predict(te.p_t)
