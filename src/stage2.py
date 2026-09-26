@@ -19,6 +19,7 @@ with the same relational features computed on it, so stage 2 learns when to trus
 pair set is the union of both candidate sets (missing p -> 0). Writes {tag}sb instead of {tag}s2.
 """
 import argparse
+import glob
 import os
 import time
 
@@ -31,7 +32,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.environ.get("BER_DATA", os.path.join(ROOT, "data"))
 PRED = os.path.join(DATA, "pred")
 NORM = os.path.join(DATA, "norm")
-S2_TRAIN, HOLD = (6, 7), 5
+HOLD = 5
 KEY = ["s1_id", "cand_id"]
 # stage-1 features carried into stage 2 (strongest per gain; keeps stage 2 fast)
 BASE = ["score", "rank_q", "rank_s", "gap_c", "gap_s1", "c_margin", "is_c_best", "mutual_best", "n_c_s1",
@@ -86,14 +87,20 @@ def relational(df: pl.DataFrame, split: str, p: str = "p", pre: str = "") -> pl.
     return df.rename({c: pre + c for c in REL}) if pre else df
 
 
-def load(split: str, tag: str, feat_dir: str, friend: bool = False) -> pl.DataFrame:
+def load(split: str, tag: str, feat_dir: str, friend: bool = False, friend_dir: str = "friend",
+         all_feats: bool = False) -> pl.DataFrame:
     p = pl.read_parquet(f"{PRED}/{split}_{tag}.parquet", columns=KEY + ["p"])
     fold = (pl.col("s1_id").str.slice(3).cast(pl.Int64) % 10).cast(pl.Int8)
     if split == "train":
         p = p.filter(fold >= HOLD)                        # stage 2 uses folds 5-9 only
-    cols = KEY + BASE + (PAIR if friend else [])
+    if all_feats:                                         # every stage-1 feature (minus the dropped numx_)
+        first = sorted(glob.glob(f"{feat_dir}/{split}.parquet/*.parquet"))[0]
+        cols = KEY + [c for c in pl.read_parquet_schema(first)
+                      if c not in KEY + ["y", "fold"] and not c.startswith("numx_")]
+    else:
+        cols = KEY + BASE + (PAIR if friend else [])
     if friend:
-        t = pl.read_parquet(f"{DATA}/friend/{'train_oof_probs' if split == 'train' else 'test_probs'}.parquet",
+        t = pl.read_parquet(f"{DATA}/{friend_dir}/{'train_oof_probs' if split == 'train' else 'test_probs'}.parquet",
                             columns=KEY + ["p"]).rename({"p": "p_t"})
         if split == "train":
             t = t.filter(fold >= HOLD)
@@ -118,13 +125,19 @@ def main():
     ap.add_argument("--feat_dir", required=True)
     ap.add_argument("--rounds", type=int, default=2000)
     ap.add_argument("--friend", action="store_true", help="stacked blend with the teammate's probabilities")
+    ap.add_argument("--friend_dir", default="friend", help="teammate probabilities under data/")
+    ap.add_argument("--train_folds", default="6,7", help="stage-2 training folds (5 = holdout; calibrate on the rest)")
+    ap.add_argument("--all_feats", action="store_true", help="carry every stage-1 feature, not just BASE/PAIR")
+    ap.add_argument("--out_tag", default=None, help="output tag (default {tag}sb / {tag}s2)")
     a = ap.parse_args()
     t0 = time.time()
-    out_tag = a.tag + ("sb" if a.friend else "s2")
-    tr = load("train", a.tag, a.feat_dir, a.friend).to_pandas()
+    out_tag = a.out_tag or a.tag + ("sb" if a.friend else "s2")
+    train_folds = tuple(int(x) for x in a.train_folds.split(","))
+    kw = dict(friend=a.friend, friend_dir=a.friend_dir, all_feats=a.all_feats)
+    tr = load("train", a.tag, a.feat_dir, **kw).to_pandas()
     feats = [c for c in tr.columns if c not in ("s1_id", "cand_id", "fold", "y")]
     print(f"stage 2: {len(feats)} features, {len(tr):,} train pairs ({time.time() - t0:.0f}s)", flush=True)
-    m_tr, m_ho = tr.fold.isin(S2_TRAIN).values, (tr.fold == HOLD).values
+    m_tr, m_ho = tr.fold.isin(train_folds).values, (tr.fold == HOLD).values
     params = dict(objective="binary", learning_rate=0.05, num_leaves=127, min_data_in_leaf=200,
                   feature_fraction=0.9, bagging_fraction=0.8, bagging_freq=1, lambda_l2=1.0,
                   num_threads=os.cpu_count(), verbose=-1, seed=7)
@@ -137,9 +150,12 @@ def main():
     out["p"] = model.predict(tr[feats], num_threads=os.cpu_count()).astype(np.float32)
     out.to_parquet(f"{PRED}/train_{out_tag}.parquet", index=False)
     del tr
-    te = load("test", a.tag, a.feat_dir, a.friend).to_pandas()
-    te_out = te[["s1_id", "cand_id"]].copy()
-    te_out["p"] = model.predict(te[feats], num_threads=os.cpu_count()).astype(np.float32)
+    te = load("test", a.tag, a.feat_dir, **kw)
+    step = 10_000_000                                     # predict in slices to bound pandas memory
+    ps = [model.predict(te.slice(i, step).select(feats).to_pandas(), num_threads=os.cpu_count())
+          for i in range(0, te.height, step)]
+    te_out = te.select(["s1_id", "cand_id"]).to_pandas()
+    te_out["p"] = np.concatenate(ps).astype(np.float32)
     te_out.to_parquet(f"{PRED}/test_{out_tag}.parquet", index=False)
     print(f"done in {time.time() - t0:.0f}s", flush=True)
 
