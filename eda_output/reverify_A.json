@@ -1,0 +1,258 @@
+{
+  "A_script_mix_train": {
+    "S1": {
+      "pure_ascii_pct": 100.0,
+      "nonlatin_indic_pct": 0.0,
+      "  devanagari_pct": 0.0,
+      "  other_indic_pct": 0.0,
+      "accented_latin_only_pct": 0.0,
+      "any_nonascii_pct": 0.0
+    },
+    "S2": {
+      "pure_ascii_pct": 84.77,
+      "nonlatin_indic_pct": 9.42,
+      "  devanagari_pct": 5.39,
+      "  other_indic_pct": 4.03,
+      "accented_latin_only_pct": 5.81,
+      "any_nonascii_pct": 15.23
+    },
+    "S3": {
+      "pure_ascii_pct": 88.5,
+      "nonlatin_indic_pct": 5.25,
+      "  devanagari_pct": 2.98,
+      "  other_indic_pct": 2.27,
+      "accented_latin_only_pct": 6.25,
+      "any_nonascii_pct": 11.5
+    }
+  },
+  "B_true_pairs": {
+    "n_pairs": 183064,
+    "cross_country_pct": 0.0,
+    "name_core_tokens_IDENTICAL_pct": 53.1,
+    "name_AND_addr_token_set_ratio>=80_pct": 69.5,
+    "renamed_name_sim<50_pct": 5.0,
+    "candidate_addr_empty_pct": 4.4,
+    "house_number": {
+      "equal_pct": 72.4,
+      "differs_pct": 14.8,
+      "candidate_dropped_pct": 9.4,
+      "candidate_added_pct": 0.6,
+      "neither_has_number_pct": 2.8,
+      "equal_pct_of_both_present": 83.1
+    }
+  },
+  "B_top_added_tokens_in_TRUE_pairs": [
+    [
+      "com",
+      9501
+    ],
+    [
+      "praivet",
+      6877
+    ],
+    [
+      "center",
+      5474
+    ],
+    [
+      "services",
+      4118
+    ],
+    [
+      "l",
+      2087
+    ],
+    [
+      "service",
+      1992
+    ],
+    [
+      "c",
+      1697
+    ],
+    [
+      "partners",
+      1507
+    ],
+    [
+      "a",
+      1407
+    ],
+    [
+      "lp",
+      1100
+    ],
+    [
+      "li",
+      1022
+    ],
+    [
+      "pra",
+      1018
+    ],
+    [
+      "s",
+      1006
+    ],
+    [
+      "m",
+      976
+    ],
+    [
+      "praibhet",
+      841
+    ],
+    [
+      "limitet",
+      799
+    ],
+    [
+      "formerly",
+      740
+    ],
+    [
+      "dba",
+      729
+    ],
+    [
+      "piraivet",
+      712
+    ],
+    [
+      "as",
+      679
+    ],
+    [
+      "k",
+      633
+    ],
+    [
+      "www",
+      619
+    ],
+    [
+      "id",
+      612
+    ],
+    [
+      "elelpi",
+      548
+    ],
+    [
+      "p",
+      547
+    ]
+  ],
+  "B_top_dropped_tokens_in_TRUE_pairs": [
+    [
+      "c",
+      1711
+    ],
+    [
+      "care",
+      1252
+    ],
+    [
+      "group",
+      1069
+    ],
+    [
+      "p",
+      939
+    ],
+    [
+      "india",
+      917
+    ],
+    [
+      "associates",
+      911
+    ],
+    [
+      "l",
+      815
+    ],
+    [
+      "pc",
+      811
+    ],
+    [
+      "services",
+      785
+    ],
+    [
+      "solutions",
+      776
+    ],
+    [
+      "center",
+      752
+    ],
+    [
+      "partners",
+      750
+    ],
+    [
+      "international",
+      742
+    ],
+    [
+      "global",
+      729
+    ],
+    [
+      "pllc",
+      699
+    ],
+    [
+      "clinic",
+      634
+    ],
+    [
+      "trading",
+      615
+    ],
+    [
+      "lp",
+      612
+    ],
+    [
+      "technologies",
+      602
+    ],
+    [
+      "enterprises",
+      581
+    ],
+    [
+      "tech",
+      577
+    ],
+    [
+      "industries",
+      567
+    ],
+    [
+      "consultants",
+      546
+    ],
+    [
+      "ventures",
+      531
+    ],
+    [
+      "technology",
+      527
+    ]
+  ],
+  "D_shift": {
+    "train_S2S3_per_S1": 4.677,
+    "test_S2S3_per_S1": 5.754,
+    "train_matched_ids": 7638365,
+    "train_S2S3_total": 10320219,
+    "train_unmatched_S2S3_pct": 26.0,
+    "train_mean_matches_per_S1": 3.461,
+    "test_implied_matches_per_S1_at_71pct_matchrate": 4.09,
+    "test_implied_matches_per_S1_at_74pct_matchrate": 4.26
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "name identical": {
+    "same number": {
+      "P(true) %": 100.0,
+      "pairs": 851872
+    },
+    "number missing on one side": {
+      "P(true) %": 99.9,
+      "pairs": 125960
+    },
+    "cut short": {
+      "P(true) %": 99.9,
+      "pairs": 55422
+    },
+    "one digit changed": {
+      "P(true) %": 93.9,
+      "pairs": 20561
+    },
+    "nearby number": {
+      "P(true) %": 84.8,
+      "pairs": 10741
+    },
+    "far-off number": {
+      "P(true) %": 99.5,
+      "pairs": 39680
+    },
+    "ALL numbers": {
+      "P(true) %": 99.7,
+      "pairs": 1104236
+    }
+  },
+  "only LLC added": {
+    "same number": {
+      "P(true) %": 99.1,
+      "pairs": 24312
+    },
+    "number missing on one side": {
+      "P(true) %": 81.6,
+      "pairs": 4452
+    },
+    "cut short": {
+      "P(true) %": 77.0,
+      "pairs": 2082
+    },
+    "one digit changed": {
+      "P(true) %": 4.0,
+      "pairs": 12819
+    },
+    "nearby number": {
+      "P(true) %": 1.6,
+      "pairs": 16924
+    },
+    "far-off number": {
+      "P(true) %": 36.7,
+      "pairs": 3140
+    },
+    "ALL numbers": {
+      "P(true) %": 49.1,
+      "pairs": 63729
+    }
+  },
+  "only legal form changed (other)": {
+    "same number": {
+      "P(true) %": 99.7,
+      "pairs": 385727
+    },
+    "number missing on one side": {
+      "P(true) %": 92.6,
+      "pairs": 61993
+    },
+    "cut short": {
+      "P(true) %": 90.2,
+      "pairs": 27402
+    },
+    "one digit changed": {
+      "P(true) %": 11.0,
+      "pairs": 78798
+    },
+    "nearby number": {
+      "P(true) %": 4.1,
+      "pairs": 99493
+    },
+    "far-off number": {
+      "P(true) %": 60.4,
+      "pairs": 29232
+    },
+    "ALL numbers": {
+      "P(true) %": 72.8,
+      "pairs": 682645
+    }
+  },
+  "other name change": {
+    "same number": {
+      "P(true) %": 97.4,
+      "pairs": 1104093
+    },
+    "number missing on one side": {
+      "P(true) %": 87.2,
+      "pairs": 159056
+    },
+    "cut short": {
+      "P(true) %": 84.9,
+      "pairs": 71289
+    },
+    "one digit changed": {
+      "P(true) %": 8.4,
+      "pairs": 251953
+    },
+    "nearby number": {
+      "P(true) %": 3.1,
+      "pairs": 327628
+    },
+    "far-off number": {
+      "P(true) %": 31.5,
+      "pairs": 144233
+    },
+    "ALL numbers": {
+      "P(true) %": 65.6,
+      "pairs": 2058252
+    }
+  }
+}

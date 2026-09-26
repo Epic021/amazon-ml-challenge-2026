@@ -1,0 +1,77 @@
+{
+  "holdout_s1_businesses": 441326,
+  "holdout_pairs": 1917135,
+  "confident_learning_issues_in_training": 4996,
+  "results": [
+    {
+      "variant": "A  keep everything",
+      "training_pairs": 6870136,
+      "removed_from_training": 0,
+      "holdout_auc": 0.99922,
+      "holdout_log_loss": 0.02546,
+      "macro_f05_at_0.5": 0.99276,
+      "macro_f05_best_threshold": 0.993,
+      "best_threshold": 0.65,
+      "uncertain_band_predicted_vs_actual_match_rate": [
+        0.5335,
+        0.54
+      ]
+    },
+    {
+      "variant": "B  drop pairs against their pattern's majority",
+      "training_pairs": 6630591,
+      "removed_from_training": 239545,
+      "holdout_auc": 0.99056,
+      "holdout_log_loss": 0.29029,
+      "macro_f05_at_0.5": 0.97683,
+      "macro_f05_best_threshold": 0.97688,
+      "best_threshold": 0.85,
+      "uncertain_band_predicted_vs_actual_match_rate": [
+        0.4858,
+        0.4597
+      ]
+    },
+    {
+      "variant": "C  drop every pattern with >5% minority label",
+      "training_pairs": 5569047,
+      "removed_from_training": 1301089,
+      "holdout_auc": 0.99837,
+      "holdout_log_loss": 0.03932,
+      "macro_f05_at_0.5": 0.98815,
+      "macro_f05_best_threshold": 0.98881,
+      "best_threshold": 0.7,
+      "uncertain_band_predicted_vs_actual_match_rate": [
+        0.5263,
+        0.5104
+      ]
+    },
+    {
+      "variant": "D  drop pairs the model contradicts",
+      "training_pairs": 6865140,
+      "removed_from_training": 4996,
+      "holdout_auc": 0.99908,
+      "holdout_log_loss": 0.02603,
+      "macro_f05_at_0.5": 0.99269,
+      "macro_f05_best_threshold": 0.99298,
+      "best_threshold": 0.65,
+      "uncertain_band_predicted_vs_actual_match_rate": [
+        0.5357,
+        0.5428
+      ]
+    },
+    {
+      "variant": "E  hard pairs + 10% of easy pairs, weighted x10",
+      "training_pairs": 2040614,
+      "removed_from_training": 4829522,
+      "holdout_auc": 0.99922,
+      "holdout_log_loss": 0.02576,
+      "macro_f05_at_0.5": 0.9923,
+      "macro_f05_best_threshold": 0.9926,
+      "best_threshold": 0.65,
+      "uncertain_band_predicted_vs_actual_match_rate": [
+        0.5345,
+        0.5311
+      ]
+    }
+  ]
+}

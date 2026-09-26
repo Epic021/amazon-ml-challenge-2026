@@ -1,0 +1,81 @@
+{
+  "S2_script_breakdown_pct": {
+    "devanagari": 5.299,
+    "tamil": 0.658,
+    "telugu": 0.797,
+    "kannada": 0.732,
+    "gujarati": 0.587,
+    "bengali": 0.615,
+    "malayalam": 0.372,
+    "gurmukhi": 0.132,
+    "oriya": 0.15,
+    "latin_accented": 5.8,
+    "cjk": 0.0,
+    "arabic": 0.0
+  },
+  "numeric_only_examples": [
+    "सेवन होटल इंफ्रा लिमिटेड",
+    "पायोनियर डेवलपर्स प्राइवेट लिमिटेड",
+    "जैन गुड कंस्ट्रक्शन लिमिटेड",
+    "लक्ष्मी प्रोडक्ट्स लिमिटेड",
+    "ഗ്രേറ്റ് സർവീസസ് പ്രൈവറ്റ് ലിമിറ്റഡ്",
+    "ஓம் விஷன் இம்பெக்ஸ் பிரைவேட் லிமிடெட்",
+    "ಅರಿಹಂತ್ ಐಟಿ ಪ್ರೈವೇಟ್ ಲಿಮಿಟೆಡ್",
+    "పర్‌ఫెక్ట్ లాజిస్టిక్స్ మెడికల్స్ ప్రైవేట్ లిమిటెడ్",
+    "न्यू टेक प्राइवेट लिमिटेड",
+    "તિરુપતિ સોફ્ટવેર એલએલપી",
+    "नॉर्थ इम्पेक्स फूड्स प्राइवेट लिमिटेड",
+    "फॉर्च्यून मीडिया प्राइवेट लिमिटेड",
+    "लक्ष्मी हॉस्पिटैलिटी एजेंसीज प्राइवेट लिमिटेड",
+    "ड्रीम एनर्जी एलएलपी",
+    "ब्लैक प्रोड्यूसर प्राइवेट लिमिटेड"
+  ],
+  "numeric_only_count_S2": 455954,
+  "pure_digit_names_S2": 0,
+  "france_test_S1_samples": [
+    {
+      "business_name": "Bordeaux Parents SAS",
+      "business_address": "107 Rue du Tondu, Bordeaux, Nouvelle-Aquitaine"
+    },
+    {
+      "business_name": "Lous (France) Amis SAS",
+      "business_address": "22 Avenue des Troënes, Saint-Herblain, Pays de la Loire"
+    },
+    {
+      "business_name": "Lille Ecole",
+      "business_address": "20 Rue François Villon, Lille, Hauts-de-France"
+    },
+    {
+      "business_name": "Sapeurs Parents (France) SARL",
+      "business_address": "3 Rue Linne, Tourcoing, Hauts-de-France"
+    },
+    {
+      "business_name": "Locataires & Cie SARL",
+      "business_address": "27 Rue de l'Avenir, Pessac, Nouvelle-Aquitaine"
+    },
+    {
+      "business_name": "Solidaire Section (France) SARL",
+      "business_address": "Dunkerque, 6 RUE de l Adroit, Hauts-de-France, Appartement 4"
+    },
+    {
+      "business_name": "Bazar Zulu Club SA",
+      "business_address": "Pessac, Nouvelle-Aquitaine, 51 Rue Descartes"
+    },
+    {
+      "business_name": "Clinique Saint Organisme",
+      "business_address": "6 TERR2 du Front du Medoc, Bal 52 Residence le Centre, Bordeaux, Nouvelle-Aquitaine"
+    }
+  ],
+  "france_name_accented_pct": 15.72,
+  "france_name_nonascii_pct": 15.72,
+  "matched_id_prefixes_sampled": {
+    "S3-": 357416,
+    "S2-": 335124
+  },
+  "gt_rows": 2206821,
+  "gt_unique_s1": 2206821,
+  "s1_records": 2206821,
+  "s1_in_gt_all_match": true,
+  "exact_normname_S2_in_S1_pct": 19.67,
+  "exact_normname_S3_in_S1_pct": 20.77
+}

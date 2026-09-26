@@ -1,0 +1,2488 @@
+{
+  "seed": 21,
+  "insights": {
+    "identical": {
+      "raw_duplicate_group": {
+        "records": [
+          {
+            "rec_id": "S3-402327770",
+            "name": "Kenet",
+            "addr": "307 Green Hill Way, Mount Sterling, Kentucky"
+          },
+          {
+            "rec_id": "S3-520946478",
+            "name": "Kenet",
+            "addr": "307 Green Hill Way, Mount Sterling, Kentucky"
+          }
+        ],
+        "assigned": [
+          {
+            "s1_id": "S1-320710183",
+            "name": "Kenet",
+            "addr": "307 Green Hill Way, Mount Sterling, KY",
+            "true_size": 3
+          },
+          {
+            "s1_id": "S1-320710183",
+            "name": "Kenet",
+            "addr": "307 Green Hill Way, Mount Sterling, KY",
+            "true_size": 3
+          }
+        ]
+      },
+      "groups": [
+        {
+          "caption": "Name and address identical after normalisation: match",
+          "rows": [
+            {
+              "s1_id": "S1-90842903",
+              "rec_id": "S2-441131183",
+              "s1_name": "Infra Rajalakshmi Gallery Corporation",
+              "rec_name": "Infra Rájalakshmi Corporation Gallery",
+              "s1_addr": "19/52B, Delta Arcade, Kozhikode, Kerala",
+              "rec_addr": "019/52B, DELTA ARCADE, KOZHIKODE, Kerala",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: identical | address: identical | numbers: same numbers",
+              "country": "India",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 105299,
+              "pattern_match_rate": 100.0,
+              "pattern_majority": "match",
+              "model_p": 1.0,
+              "flag_pattern": false,
+              "flag_model": false
+            },
+            {
+              "s1_id": "S1-665313229",
+              "rec_id": "S3-486304153",
+              "s1_name": "Silver Pilates",
+              "rec_name": "Silver  Pilates",
+              "s1_addr": "10717 Highway 764, Whitesville, KY",
+              "rec_addr": "10717 Highway 764, Whitesville, Kentucky",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: identical | address: identical | numbers: same numbers",
+              "country": "US",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 400385,
+              "pattern_match_rate": 100.0,
+              "pattern_majority": "match",
+              "model_p": 1.0,
+              "flag_pattern": false,
+              "flag_model": false
+            },
+            {
+              "s1_id": "S1-931199533",
+              "rec_id": "S3-348791065",
+              "s1_name": "Lloyd & Hann Associates",
+              "rec_name": "Lloyd & Associates Hann",
+              "s1_addr": "946 Cherry, Mesa, AZ",
+              "rec_addr": "946 Cherry, Mesa, Arizona",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: identical | address: identical | numbers: same numbers",
+              "country": "US",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 400385,
+              "pattern_match_rate": 100.0,
+              "pattern_majority": "match",
+              "model_p": 1.0,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "The only identical pair that is not a match",
+          "rows": [
+            {
+              "s1_id": "S1-362421543",
+              "rec_id": "S3-79931700",
+              "s1_name": "Family Blue Clinic Inc.",
+              "rec_name": "Inc Family Blue Clinic",
+              "s1_addr": "OR, North Bend, 1465 Sherman Avenue",
+              "rec_addr": "1465 Sherman Ave, North Bend, Oregon",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: identical | address: identical | numbers: same numbers",
+              "country": "US",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 400385,
+              "pattern_match_rate": 100.0,
+              "pattern_majority": "match",
+              "model_p": 1.0,
+              "flag_pattern": true,
+              "flag_model": true
+            }
+          ]
+        }
+      ]
+    },
+    "numbers_only": {
+      "groups": [
+        {
+          "caption": "Name identical, only numbers differ: match",
+          "rows": [
+            {
+              "s1_id": "S1-233283621",
+              "rec_id": "S2-164132020",
+              "s1_name": "Visasoft Freight, Inc",
+              "rec_name": "(Inc) Visasoft Freight,",
+              "s1_addr": "3840 Woodland Hills Drive, Tuscaloosa, AL",
+              "rec_addr": "AL, Woodland Hills Dr, TUSCALOOSA",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: identical | address: only numbers differ | numbers: number dropped",
+              "country": "US",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 105595,
+              "pattern_match_rate": 100.0,
+              "pattern_majority": "match",
+              "model_p": 0.9999,
+              "flag_pattern": false,
+              "flag_model": false
+            },
+            {
+              "s1_id": "S1-917390746",
+              "rec_id": "S2-224997357",
+              "s1_name": "Total Energy P.C.",
+              "rec_name": "Total Energy P.C.",
+              "s1_addr": "1780 Patterson Grove Road, Ramseur, NC",
+              "rec_addr": "1780-1784 PATTERSON GROVE RD, RAMSEUR, NC",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: identical | address: only numbers differ | numbers: number added",
+              "country": "US",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 34433,
+              "pattern_match_rate": 100.0,
+              "pattern_majority": "match",
+              "model_p": 0.9999,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Name identical, only numbers differ: no match",
+          "rows": [
+            {
+              "s1_id": "S1-518952093",
+              "rec_id": "S3-756437788",
+              "s1_name": "SC Allied Enbridge Inc.",
+              "rec_name": "SC Allied Enbridge Inc",
+              "s1_addr": "37148 Stoney Run, Selbyville, DE",
+              "rec_addr": "37150 Stoney Run, Selbyville, Delaware",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: identical | address: only numbers differ | numbers: number nearby (<=50 apart)",
+              "country": "US",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 4649,
+              "pattern_match_rate": 87.03,
+              "pattern_majority": "match",
+              "model_p": 0.517,
+              "flag_pattern": true,
+              "flag_model": false
+            },
+            {
+              "s1_id": "S1-218870966",
+              "rec_id": "S3-298921070",
+              "s1_name": "Ellis, Robbins and Dagostino, Inc.",
+              "rec_name": ">> Ellis, Robbins and Dagostino, [Inc]",
+              "s1_addr": "25642 Gambit Trail, Wittmann, AZ",
+              "rec_addr": "45646 Gambit Trl, Wittmann, Arizona",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: identical | address: only numbers differ | numbers: number far-off",
+              "country": "US",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 10036,
+              "pattern_match_rate": 99.45,
+              "pattern_majority": "match",
+              "model_p": 0.909,
+              "flag_pattern": true,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "One word added to the name, only numbers differ: no match",
+          "rows": [
+            {
+              "s1_id": "S1-295223005",
+              "rec_id": "S2-407850045",
+              "s1_name": "Kiser Homes",
+              "rec_name": "Kiser Hmoes Holdings",
+              "s1_addr": "702 Tailwind Drive, Sacramento, CA",
+              "rec_addr": "705 TAILWIND DRIVE, PO BOX 8268, SACRAMENTO, CA",
+              "name_added": "holdings",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: one word added | address: only numbers differ | numbers: number: one character changed",
+              "country": "US",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 78331,
+              "pattern_match_rate": 1.28,
+              "pattern_majority": "non-match",
+              "model_p": 0.0,
+              "flag_pattern": false,
+              "flag_model": false
+            },
+            {
+              "s1_id": "S1-110171445",
+              "rec_id": "S3-252155016",
+              "s1_name": "I A & K Ngl Inc.",
+              "rec_name": "I Á & K Ngl Summit Inc. Inc.",
+              "s1_addr": "1971 Black Jack-grimesland Road, Greenville, NC",
+              "rec_addr": "1980 Black Jack-Grimesland Rd, Greenville, North Carolina",
+              "name_added": "summit",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: one word added | address: only numbers differ | numbers: number nearby (<=50 apart)",
+              "country": "US",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 110730,
+              "pattern_match_rate": 0.38,
+              "pattern_majority": "non-match",
+              "model_p": 0.0001,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "One word added to the name, only numbers differ: match",
+          "rows": [
+            {
+              "s1_id": "S1-849422771",
+              "rec_id": "S2-852334653",
+              "s1_name": "Federal Iron Works LLC",
+              "rec_name": "Federal Iron Works  LLC #71864",
+              "s1_addr": "600 Island Drive, Unit 4, Lincoln County, OR",
+              "rec_addr": "LINCOLN COUNTY, 600 ISLAND DR, OR",
+              "name_added": "71864",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: one word added | address: only numbers differ | numbers: number dropped",
+              "country": "US",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 11492,
+              "pattern_match_rate": 99.58,
+              "pattern_majority": "match",
+              "model_p": 0.9997,
+              "flag_pattern": false,
+              "flag_model": false
+            },
+            {
+              "s1_id": "S1-882609038",
+              "rec_id": "S3-479420598",
+              "s1_name": "Pediatric Dental Care Associates Inc",
+              "rec_name": "Pediatric Dental Care Associates Incorporated #81859",
+              "s1_addr": "2702 Yorkshire Drive, Unit 1026, Phoenix, AZ",
+              "rec_addr": "2704 Yorkshire Drive, # 1026, Phoenix, Arizona",
+              "name_added": "81859",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: one word added | address: only numbers differ | numbers: number: one character changed",
+              "country": "US",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 79846,
+              "pattern_match_rate": 1.21,
+              "pattern_majority": "non-match",
+              "model_p": 0.1822,
+              "flag_pattern": true,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Only a legal form changed, only numbers differ: match",
+          "rows": [
+            {
+              "s1_id": "S1-960380760",
+              "rec_id": "S3-283885955",
+              "s1_name": "Weekend Investment Limited",
+              "rec_name": "Weekend Investment Ltd",
+              "s1_addr": "C/O Onkar Nath Dwivedi, Dubai Paraspur, Colonelganj, Gonda, Uttar Pradesh",
+              "rec_addr": "Plot 05 C/o Onkar Nath Dwivedi, Dubai Paraspur, Gonda, Colonelganj, UP",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: legal form / filler only | address: only numbers differ | numbers: number added",
+              "country": "India",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 25939,
+              "pattern_match_rate": 89.06,
+              "pattern_majority": "match",
+              "model_p": 0.9438,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Only a legal form changed, only numbers differ: no match",
+          "rows": [
+            {
+              "s1_id": "S1-231960052",
+              "rec_id": "S3-924882957",
+              "s1_name": "Taia Management PLLC",
+              "rec_name": "Taia Management Corp.",
+              "s1_addr": "105 Mobile Street, Fairhope, AL",
+              "rec_addr": "118 Mobile St, Fairhope, Alabama",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: legal form / filler only | address: only numbers differ | numbers: number nearby (<=50 apart)",
+              "country": "US",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 71487,
+              "pattern_match_rate": 3.26,
+              "pattern_majority": "non-match",
+              "model_p": 0.002,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        }
+      ]
+    },
+    "number_change": {
+      "groups": [
+        {
+          "caption": "Name identical, number added: match",
+          "rows": [
+            {
+              "s1_id": "S1-11806882",
+              "rec_id": "S3-758849373",
+              "s1_name": "Ascon Foundation",
+              "rec_name": "Ascon Foundation",
+              "s1_addr": "H.No:1-98/90/70/14/P, P.S Residency, Flat 401, 4 Flr, Jaihind Enclave Madhapur, Hyderabad, Telangana",
+              "rec_addr": "No. 990 H.no:1-98/90/70/14/p, P.s Residency, Flat 401, 4 Flr, Jaihind Enclave Madhapur, Hyderabad, TG",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: identical | address: only numbers differ | numbers: number added",
+              "country": "India",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 22466,
+              "pattern_match_rate": 99.99,
+              "pattern_majority": "match",
+              "model_p": 1.0,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Name identical, number added: no match",
+          "rows": [
+            {
+              "s1_id": "S1-249714913",
+              "rec_id": "S2-820885817",
+              "s1_name": "Abs Group of Companies",
+              "rec_name": "Abs Group of Companies",
+              "s1_addr": "Bhive, Mahalakshmi Chambers, 7Th Floor, 29, Next To Trinity Metro Station, Opp. Kotak Bank, Yallappa Garden, Yellappa Chetty Layout, Sivachetti Gardens, Bangalore North, Bangalore, Karnataka",
+              "rec_addr": "H.NO A-94 BHIVE, MAHALAKSHMI CHAMBERS, 7TH FLOOR, 29, NEXT TO TRINITY METRO STATION, OPP. KOTAK BANK, YALLAPPA GARDEN, YELLAPPA CHETTY LAYOUT, SIVACHETTI GARDENS, BANGALORE NORTH, Karnataka",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: identical | address: only numbers differ | numbers: number added",
+              "country": "India",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 17241,
+              "pattern_match_rate": 99.98,
+              "pattern_majority": "match",
+              "model_p": 0.9999,
+              "flag_pattern": true,
+              "flag_model": true
+            }
+          ]
+        },
+        {
+          "caption": "Name identical, number dropped: match",
+          "rows": [
+            {
+              "s1_id": "S1-175476223",
+              "rec_id": "S3-339837444",
+              "s1_name": "Thompson Liquor",
+              "rec_name": "Thompson  Liquor",
+              "s1_addr": "2002 Bedford Street, Rome, NY",
+              "rec_addr": "Bedford Street, Rome, New York",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: identical | address: only numbers differ | numbers: number dropped",
+              "country": "US",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 69420,
+              "pattern_match_rate": 100.0,
+              "pattern_majority": "match",
+              "model_p": 1.0,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Name identical, number cut short: match",
+          "rows": [
+            {
+              "s1_id": "S1-16476040",
+              "rec_id": "S3-326193753",
+              "s1_name": "Janenna Boser Capital Great Inc",
+              "rec_name": "janenna boser capital great inc",
+              "s1_addr": "1514 Lawrence Road, Wake Forest, NC",
+              "rec_addr": "1514d Lawrence Road, North Carolina, Wake Forest",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: identical | address: only numbers differ | numbers: number cut short",
+              "country": "US",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 40815,
+              "pattern_match_rate": 99.92,
+              "pattern_majority": "match",
+              "model_p": 0.9999,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Name identical, number cut short: no match",
+          "rows": [
+            {
+              "s1_id": "S1-708289642",
+              "rec_id": "S2-750307000",
+              "s1_name": "Celenet Inc.",
+              "rec_name": "Inc Celenet",
+              "s1_addr": "156 91, Ulm, MT",
+              "rec_addr": "ULM, 15 91, MT",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: identical | address: only numbers differ | numbers: number cut short",
+              "country": "US",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 38200,
+              "pattern_match_rate": 99.86,
+              "pattern_majority": "match",
+              "model_p": 0.9938,
+              "flag_pattern": true,
+              "flag_model": true
+            }
+          ]
+        },
+        {
+          "caption": "Name identical, number: one character changed: match",
+          "rows": [
+            {
+              "s1_id": "S1-19316860",
+              "rec_id": "S3-349710292",
+              "s1_name": "PG Gold Private Limited",
+              "rec_name": "PG Limited Private (Gold)",
+              "s1_addr": "Kerala, Tc No.2/21, Trivandrum, Thiruvananthapuram, Blra-2, Bridge Lane, Ulloor, Thiruvananthapuram",
+              "rec_addr": "Tc No.3/21, Blra-2, Bridge Lane, Ulloor, Thiruvananthapuram, Thiruvananthapuram, Trivandrum, KL",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: identical | address: only numbers differ | numbers: number: one character changed",
+              "country": "India",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 2800,
+              "pattern_match_rate": 99.75,
+              "pattern_majority": "match",
+              "model_p": 0.9967,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Name identical, number: one character changed: no match",
+          "rows": [
+            {
+              "s1_id": "S1-905994548",
+              "rec_id": "S3-543152196",
+              "s1_name": "Nilinva Inc.",
+              "rec_name": "Nilinva Inc",
+              "s1_addr": "4235 377, Unit APT 1006, Brownwood, TX",
+              "rec_addr": "Texas, NULL, 4236- 377, Brownwood",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: identical | address: only numbers differ | numbers: number: one character changed",
+              "country": "US",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 10334,
+              "pattern_match_rate": 95.71,
+              "pattern_majority": "match",
+              "model_p": 0.9615,
+              "flag_pattern": true,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Name identical, number nearby (<=50 apart): match",
+          "rows": [
+            {
+              "s1_id": "S1-777015900",
+              "rec_id": "S2-994494684",
+              "s1_name": "Cure Barbershop",
+              "rec_name": "Cure Barbershop",
+              "s1_addr": "26656 Molidor Road, IL, Ingleside",
+              "rec_addr": "26632 MOLIDOR ROAD, INGLESIDE, IL",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: identical | address: only numbers differ | numbers: number nearby (<=50 apart)",
+              "country": "US",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 4621,
+              "pattern_match_rate": 86.69,
+              "pattern_majority": "match",
+              "model_p": 0.995,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Name identical, number nearby (<=50 apart): no match",
+          "rows": [
+            {
+              "s1_id": "S1-777034793",
+              "rec_id": "S3-442756149",
+              "s1_name": "Flinn, Battle & Silverman Partnership Inc.",
+              "rec_name": "Flinn, Battle & Silverman Partnership [Inc]",
+              "s1_addr": "Unit 105, Phoenix, AZ, 6131 16th Street",
+              "rec_addr": "6152 16th Street, Phoenix, # 105, Arizona",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: identical | address: only numbers differ | numbers: number nearby (<=50 apart)",
+              "country": "US",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 4649,
+              "pattern_match_rate": 87.03,
+              "pattern_majority": "match",
+              "model_p": 0.5957,
+              "flag_pattern": true,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Name identical, number far-off: match",
+          "rows": [
+            {
+              "s1_id": "S1-583267756",
+              "rec_id": "S3-653754748",
+              "s1_name": "Aurari Jewelers Corp",
+              "rec_name": "Aurari Jéwelers Corp",
+              "s1_addr": "427 Church Street, Hagerstown, MD",
+              "rec_addr": "148 Church Street, Hagerstown, Maryland",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: identical | address: only numbers differ | numbers: number far-off",
+              "country": "US",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 10036,
+              "pattern_match_rate": 99.45,
+              "pattern_majority": "match",
+              "model_p": 0.9982,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Name identical, number far-off: no match",
+          "rows": [
+            {
+              "s1_id": "S1-672471413",
+              "rec_id": "S2-928592534",
+              "s1_name": "Armstrong Aurora Inc.",
+              "rec_name": "Inc Armstrong Aurora",
+              "s1_addr": "8368 Pipestone Drive, Fort Worth, TX",
+              "rec_addr": "FORT WORTH, TX, 837 PIPESTONE DR",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: identical | address: only numbers differ | numbers: number far-off",
+              "country": "US",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 10763,
+              "pattern_match_rate": 99.41,
+              "pattern_majority": "match",
+              "model_p": 0.5129,
+              "flag_pattern": true,
+              "flag_model": false
+            }
+          ]
+        }
+      ]
+    },
+    "address_identical": {
+      "groups": [
+        {
+          "caption": "Address identical, name legal form / filler only: match",
+          "rows": [
+            {
+              "s1_id": "S1-354072557",
+              "rec_id": "S2-587428591",
+              "s1_name": "Elder Fin Limited",
+              "rec_name": "ELDER-FIN LTD",
+              "s1_addr": "Srinivasa, 318, 6Th 'A' Cross, Bhuvanagiri Ombr Layout, Banaswadi, Bangalore, Karnataka",
+              "rec_addr": "SRINIVASA, 318, 6TH 'A' CROSS, BHUVANAGIRI OMBR LAYOUT, BANASWADI, BANGALORE, Karnataka",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: legal form / filler only | address: identical | numbers: same numbers",
+              "country": "India",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 124056,
+              "pattern_match_rate": 99.98,
+              "pattern_majority": "match",
+              "model_p": 0.9995,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Address identical, name legal form / filler only: no match",
+          "rows": [
+            {
+              "s1_id": "S1-629384902",
+              "rec_id": "S2-73827510",
+              "s1_name": "Premium Bio Private Limited",
+              "rec_name": "Premium Bio Limited Limited",
+              "s1_addr": "Parshwa, Opp. Rajpath Club S.G. Highway, Bodakdev, Ahmedabad, 301/1, Gujarat",
+              "rec_addr": "301/1, PARSHWA, OPP. RAJPATH CLUB S.G. HIGHWAY, BODAKDEV, AHMEDABAD, Gujarat",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: legal form / filler only | address: identical | numbers: same numbers",
+              "country": "India",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 124056,
+              "pattern_match_rate": 99.98,
+              "pattern_majority": "match",
+              "model_p": 0.9997,
+              "flag_pattern": true,
+              "flag_model": true
+            }
+          ]
+        },
+        {
+          "caption": "Address identical, name typo only: match",
+          "rows": [
+            {
+              "s1_id": "S1-583647511",
+              "rec_id": "S2-725931519",
+              "s1_name": "Superior Secure Earths",
+              "rec_name": "Superi0r Secure Earths",
+              "s1_addr": "356 Tremont Avenue, Kenmore, NY",
+              "rec_addr": "356 TREMONT AVENUE, KENMORE, NY",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: typo only | address: identical | numbers: same numbers",
+              "country": "US",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 59150,
+              "pattern_match_rate": 97.63,
+              "pattern_majority": "match",
+              "model_p": 0.9897,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Address identical, name typo only: no match",
+          "rows": [
+            {
+              "s1_id": "S1-131898887",
+              "rec_id": "S2-332302620",
+              "s1_name": "Montora Jersey LLC",
+              "rec_name": "Montori Jersey  LLC",
+              "s1_addr": "48 Meadow Road, Cortlandt, NY",
+              "rec_addr": "048 MEADOW ROAD, CORTLANDT, NY",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: typo only | address: identical | numbers: same numbers",
+              "country": "US",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 59150,
+              "pattern_match_rate": 97.63,
+              "pattern_majority": "match",
+              "model_p": 0.9503,
+              "flag_pattern": true,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Address identical, name one word added: match",
+          "rows": [
+            {
+              "s1_id": "S1-834909267",
+              "rec_id": "S2-4596474",
+              "s1_name": "Prairie Freight LLC",
+              "rec_name": "Prairie Prairie Freight",
+              "s1_addr": "1185 A Circulo Mercado, Rio Rico, AZ",
+              "rec_addr": "1185 A CIRCULO MERCADO, RIO RICO, AZ",
+              "name_added": "prairie",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: one word added | address: identical | numbers: same numbers",
+              "country": "US",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 35378,
+              "pattern_match_rate": 99.55,
+              "pattern_majority": "match",
+              "model_p": 0.9998,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Address identical, name one word added: no match",
+          "rows": [
+            {
+              "s1_id": "S1-435204568",
+              "rec_id": "S2-749802037",
+              "s1_name": "Pune Restaurants Corporation",
+              "rec_name": "Pune Restaurants C0rporation Infratech",
+              "s1_addr": "Parth Enclave Fln 22 Wing A Sno 20 / 1 A C.T.S.No 293 (P) Karve Nagar Pune, Pune, Maharashtra",
+              "rec_addr": "PARTH ENCLAVE FLN ##22 WING A SNO 20 / 1 A C.T.S.NO 293 (P) KARVE NAGAR PUNE, PUNE, महाराष्ट्र",
+              "name_added": "infratech",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: one word added | address: identical | numbers: same numbers",
+              "country": "India",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 20649,
+              "pattern_match_rate": 99.17,
+              "pattern_majority": "match",
+              "model_p": 0.1239,
+              "flag_pattern": true,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Address identical, name words replaced: match",
+          "rows": [
+            {
+              "s1_id": "S1-145447746",
+              "rec_id": "S3-100876375",
+              "s1_name": "Perfect Global Pvt Ltd",
+              "rec_name": "Perfect Pvt Pvt Ltd Services",
+              "s1_addr": "58 Malharganj, Indore, Madhya Pradesh",
+              "rec_addr": "Door No 58 Malharganj, Indore, MP",
+              "name_added": "services",
+              "name_dropped": "global",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: words replaced | address: identical | numbers: same numbers",
+              "country": "India",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 62915,
+              "pattern_match_rate": 98.78,
+              "pattern_majority": "match",
+              "model_p": 0.9995,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Address identical, name words replaced: no match",
+          "rows": [
+            {
+              "s1_id": "S1-407181351",
+              "rec_id": "S2-594914475",
+              "s1_name": "TC Trg Inc",
+              "rec_name": "MONKS TRG INCORPORATED",
+              "s1_addr": "2715 Anderson Street, Dallas, TX",
+              "rec_addr": "2715 ANDERSON ST, DALLAS, TX",
+              "name_added": "monks",
+              "name_dropped": "tc",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: words replaced | address: identical | numbers: same numbers",
+              "country": "US",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 124021,
+              "pattern_match_rate": 94.54,
+              "pattern_majority": "match",
+              "model_p": 0.0021,
+              "flag_pattern": true,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Address identical, name nothing in common: match",
+          "rows": [
+            {
+              "s1_id": "S1-874731007",
+              "rec_id": "S3-293565740",
+              "s1_name": "Hepworth & Escalante Healthy",
+              "rec_name": "Hepworthescalantehealthy.Com",
+              "s1_addr": "8006 J Street, Omaha, NE",
+              "rec_addr": "Nebraska, 8006 J Street, Omaha",
+              "name_added": "com hepworthescalantehealthy",
+              "name_dropped": "escalante healthy hepworth",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: nothing in common | address: identical | numbers: same numbers",
+              "country": "US",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 91147,
+              "pattern_match_rate": 98.07,
+              "pattern_majority": "match",
+              "model_p": 1.0,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Address identical, name nothing in common: no match",
+          "rows": [
+            {
+              "s1_id": "S1-60450947",
+              "rec_id": "S3-884021298",
+              "s1_name": "Vellayambalam India Private Limited",
+              "rec_name": "Ventures Hexagon Consultants Private Ltd",
+              "s1_addr": "House No 2D Sfs Apartments Capital Near Police Head Quarters, Vellayambalam, Trivandrum, Kerala",
+              "rec_addr": "House No 2D Sfs Apartments Capital Near Police Head Quarters, Vellayambalam, Trivandrum, KL",
+              "name_added": "consultants hexagon ventures",
+              "name_dropped": "india vellayambalam",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: nothing in common | address: identical | numbers: same numbers",
+              "country": "India",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 64497,
+              "pattern_match_rate": 98.79,
+              "pattern_majority": "match",
+              "model_p": 0.0005,
+              "flag_pattern": true,
+              "flag_model": false
+            }
+          ]
+        }
+      ]
+    },
+    "empty_address": {
+      "conflict_groups": [
+        {
+          "conflict": "matched to different S1s",
+          "records": [
+            {
+              "rec_id": "S2-414004617",
+              "name": "Asset Building",
+              "assigned_s1": "S1-17131159",
+              "s1": {
+                "s1_id": "S1-17131159",
+                "name": "Asset Building Initiative Inc",
+                "addr": "5370 Naiman Parkway, Solon, Unit B, OH",
+                "true_size": 2
+              }
+            },
+            {
+              "rec_id": "S3-688768298",
+              "name": "Asset (Building)",
+              "assigned_s1": "S1-690435177",
+              "s1": {
+                "s1_id": "S1-690435177",
+                "name": "Asset Building Alliance Partners",
+                "addr": "16330 Lydia Hill Drive, Unit APT 1109, Chesterfield, MO",
+                "true_size": 5
+              }
+            },
+            {
+              "rec_id": "S2-338317115",
+              "name": "Asset Búilding",
+              "assigned_s1": "S1-824684367",
+              "s1": {
+                "s1_id": "S1-824684367",
+                "name": "Asset Building Project",
+                "addr": "2740 Rd 182, Fredericktown, OH",
+                "true_size": 6
+              }
+            }
+          ]
+        },
+        {
+          "conflict": "matched to different S1s",
+          "records": [
+            {
+              "rec_id": "S2-349752420",
+              "name": "GLOBAL INSTITUTE",
+              "assigned_s1": "S1-300459357",
+              "s1": {
+                "s1_id": "S1-300459357",
+                "name": "Global Institute",
+                "addr": "NY, Rosedale, 253-04 147 Avenue",
+                "true_size": 5
+              }
+            },
+            {
+              "rec_id": "S3-476835935",
+              "name": "Global  Institute",
+              "assigned_s1": "S1-300459357",
+              "s1": {
+                "s1_id": "S1-300459357",
+                "name": "Global Institute",
+                "addr": "NY, Rosedale, 253-04 147 Avenue",
+                "true_size": 5
+              }
+            },
+            {
+              "rec_id": "S3-263633651",
+              "name": "Global Institute,",
+              "assigned_s1": "S1-450948185",
+              "s1": {
+                "s1_id": "S1-450948185",
+                "name": "Global Institute, LLC",
+                "addr": "35 Brown Road, Unit 210, Mesa, AZ",
+                "true_size": 4
+              }
+            },
+            {
+              "rec_id": "S2-640634309",
+              "name": "Global (Institute)",
+              "assigned_s1": "S1-63656908",
+              "s1": {
+                "s1_id": "S1-63656908",
+                "name": "Global Institute LLC",
+                "addr": "8886 Beatty Road, Cook, MN",
+                "true_size": 3
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "finer_level": {
+      "pattern": {
+        "country": "India",
+        "source": "S3",
+        "pattern": "name: words replaced | address: only numbers differ | numbers: number added",
+        "pairs": 19287,
+        "match_rate": 52.95
+      },
+      "groups": [
+        {
+          "caption": "Same pattern, match the model gets right (p > 0.9)",
+          "rows": [
+            {
+              "s1_id": "S1-423833226",
+              "rec_id": "S3-616799956",
+              "s1_name": "Mj & Brothers Pvt. Ltd.",
+              "rec_name": "Mj-and Bitonhtrs Pvt. Ltd.",
+              "s1_addr": "Flat 158Ff, Lumbini App Kaushambi Sec14, Ghaziabad, Uttar Pradesh",
+              "rec_addr": "Ghaziabad, Lumbini App Kaushambi Sec14, UP, No 325 Flat 158Ff",
+              "name_added": "bitonhtrs",
+              "name_dropped": "brothers",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: words replaced | address: only numbers differ | numbers: number added",
+              "country": "India",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 19287,
+              "pattern_match_rate": 52.95,
+              "pattern_majority": "match",
+              "model_p": 0.9203,
+              "flag_pattern": false,
+              "flag_model": false
+            },
+            {
+              "s1_id": "S1-270074515",
+              "rec_id": "S3-492809999",
+              "s1_name": "Hallmark Clinic Ltd",
+              "rec_name": "Hallmark Ltd Center",
+              "s1_addr": "C-2 Blue Haven Opp Meghalay Flats, Naranpura, Ahmedabad, Gujarat",
+              "rec_addr": "C-2/3 Blue Haven Opp Meghalay Flats, Naranpura, Ahmedabad, ગુજરાત",
+              "name_added": "center",
+              "name_dropped": "clinic",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: words replaced | address: only numbers differ | numbers: number added",
+              "country": "India",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 19287,
+              "pattern_match_rate": 52.95,
+              "pattern_majority": "match",
+              "model_p": 0.9992,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Same pattern, no match the model gets right (p < 0.1)",
+          "rows": [
+            {
+              "s1_id": "S1-632748659",
+              "rec_id": "S3-753092926",
+              "s1_name": "Media Dav Consultants Limited",
+              "rec_name": "Media Dav Producer Limited",
+              "s1_addr": "Guma Rabindrabazar, Guma, Parganas North, West Bengal",
+              "rec_addr": "Parganas North, WB, #88 Guma Rabindrabazar, Guma",
+              "name_added": "producer",
+              "name_dropped": "consultants",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: words replaced | address: only numbers differ | numbers: number added",
+              "country": "India",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 19287,
+              "pattern_match_rate": 52.95,
+              "pattern_majority": "match",
+              "model_p": 0.0002,
+              "flag_pattern": true,
+              "flag_model": false
+            },
+            {
+              "s1_id": "S1-851954767",
+              "rec_id": "S3-751368844",
+              "s1_name": "Expressway Medical Centre Limited",
+              "rec_name": "Expressway Nirmaan Ltd",
+              "s1_addr": "Fenhill House, 2Nd Floor, 254 Perin Nariman Street, Fort, Mumbai, Maharashtra",
+              "rec_addr": "H.no 76 Fenhill House, 2Nd Floor, 254 Perin Nariman Street, Fort, Mumbai, MH",
+              "name_added": "nirmaan",
+              "name_dropped": "centre medical",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: words replaced | address: only numbers differ | numbers: number added",
+              "country": "India",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 19287,
+              "pattern_match_rate": 52.95,
+              "pattern_majority": "match",
+              "model_p": 0.0013,
+              "flag_pattern": true,
+              "flag_model": false
+            }
+          ]
+        }
+      ]
+    },
+    "model_flags": {
+      "groups": [
+        {
+          "caption": "Labelled match, model p < 0.02",
+          "rows": [
+            {
+              "s1_id": "S1-106152514",
+              "rec_id": "S3-334852431",
+              "s1_name": "Anthony, Swann and Rivas Cslm LLC",
+              "rec_name": "Anthony, 5wann and Rivas Cslm",
+              "s1_addr": "1108 Locust Street, Centralia, IL",
+              "rec_addr": "1103 Locust St, Centralia, Illinois",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: typo + legal form / filler | address: only numbers differ | numbers: number: one character changed",
+              "country": "US",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 4887,
+              "pattern_match_rate": 3.74,
+              "pattern_majority": "non-match",
+              "model_p": 0.0074,
+              "flag_pattern": true,
+              "flag_model": true
+            },
+            {
+              "s1_id": "S1-587768670",
+              "rec_id": "S3-269260948",
+              "s1_name": "Pandya Keystone Storage LP",
+              "rec_name": "The Pandya Keystone Storage LP",
+              "s1_addr": "21 7th Street, Franklin, OH",
+              "rec_addr": "17 7th Saint, Franklin, Ohio",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "saint",
+              "addr_dropped": "street",
+              "label": "match",
+              "pattern": "name: legal form / filler only | address: words replaced | numbers: number nearby (<=50 apart)",
+              "country": "US",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 8703,
+              "pattern_match_rate": 2.79,
+              "pattern_majority": "non-match",
+              "model_p": 0.0116,
+              "flag_pattern": true,
+              "flag_model": true
+            },
+            {
+              "s1_id": "S1-115266491",
+              "rec_id": "S3-423211284",
+              "s1_name": "Continental Express Ready",
+              "rec_name": "Continental Express Ready LP",
+              "s1_addr": "4497 Unitia Road, Lenoir City, TN",
+              "rec_addr": "##4500 Unitia Road, Lenoir City, Tennessee",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: legal form / filler only | address: only numbers differ | numbers: number nearby (<=50 apart)",
+              "country": "US",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 71487,
+              "pattern_match_rate": 3.26,
+              "pattern_majority": "non-match",
+              "model_p": 0.0165,
+              "flag_pattern": true,
+              "flag_model": true
+            }
+          ]
+        },
+        {
+          "caption": "Labelled no match, model p > 0.98",
+          "rows": [
+            {
+              "s1_id": "S1-5997363",
+              "rec_id": "S2-683965905",
+              "s1_name": "SAV Holdings Company",
+              "rec_name": "ISAV Holdings Company [Services] (ID: 93990)",
+              "s1_addr": "A-121, The Summit, Dlf Phase - 5 Golf Course Road, Gurgaon, Haryana",
+              "rec_addr": "HN 5-89 A-121, THE SUMMIT, DLF PHASE - 5 GOLF COURSE ROAD, GURGAON, Haryana",
+              "name_added": "93990 id services",
+              "name_dropped": "",
+              "addr_added": "hn",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: 2+ words added | address: words added | numbers: number added",
+              "country": "India",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 107,
+              "pattern_match_rate": 79.44,
+              "pattern_majority": "match",
+              "model_p": 0.9909,
+              "flag_pattern": true,
+              "flag_model": true
+            },
+            {
+              "s1_id": "S1-145942212",
+              "rec_id": "S3-156863845",
+              "s1_name": "Pinnacle Cafe LLC",
+              "rec_name": "Pinnacle Cafe",
+              "s1_addr": "NY, 2 Congers Point Way, Bolton",
+              "rec_addr": "",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: legal form / filler only | address: record address empty | numbers: n/a",
+              "country": "US",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 26507,
+              "pattern_match_rate": 98.47,
+              "pattern_majority": "match",
+              "model_p": 0.9889,
+              "flag_pattern": true,
+              "flag_model": true
+            },
+            {
+              "s1_id": "S1-358282227",
+              "rec_id": "S3-938015629",
+              "s1_name": "Healy, Tebo and Potter Studios",
+              "rec_name": "Real, Tebo And Potter Studios Inc",
+              "s1_addr": "44 Remsen Avenue, Valley Stream, NY",
+              "rec_addr": "44 Remsen Avenue, Valley Stream, New York",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: typo + legal form / filler | address: identical | numbers: same numbers",
+              "country": "US",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 8310,
+              "pattern_match_rate": 91.65,
+              "pattern_majority": "match",
+              "model_p": 0.9928,
+              "flag_pattern": true,
+              "flag_model": true
+            }
+          ]
+        }
+      ]
+    },
+    "other_script": {
+      "groups": [
+        {
+          "caption": "Name other script: same words: match",
+          "rows": [
+            {
+              "s1_id": "S1-503846097",
+              "rec_id": "S2-172334389",
+              "s1_name": "Swastik Business Private Limited",
+              "rec_name": "स्वस्तिक बिजनेस प्राइवेट लिमिटेड",
+              "s1_addr": "E-139, Affordable Housing, Kansuwa, Kota, Rajasthan",
+              "rec_addr": "E-139, AFFORDABLE HOUSING, KANSUWA, KOTA, Rajasthan",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: other script: same words | address: identical | numbers: same numbers",
+              "country": "India",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 86280,
+              "pattern_match_rate": 100.0,
+              "pattern_majority": "match",
+              "model_p": 0.9999,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Name other script: same words: no match",
+          "rows": [
+            {
+              "s1_id": "S1-861604332",
+              "rec_id": "S3-328020812",
+              "s1_name": "Hotel Lakshmi Developers Private Limited",
+              "rec_name": "ಲಕ್ಷ್ಮಿ ಡೆವಲಪರ್ಸ್ ಹೋಟೆಲ್ ಪ್ರೈವೇಟ್ ಲಿಮಿಟೆಡ್",
+              "s1_addr": "H.No.12-66, 1St Floor, Pr Pally, Sangareddy, Hyderabad, Telangana",
+              "rec_addr": "#6A, Bangalore, 9Th Main Rmv Extn., ಕರ್ನಾಟಕ",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "9th bangalore extn main rmv",
+              "addr_dropped": "1st hyderabad pally pr sangareddy",
+              "label": "no match",
+              "pattern": "name: other script: same words | address: nothing in common | numbers: number: one character changed",
+              "country": "India",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 29,
+              "pattern_match_rate": 24.14,
+              "pattern_majority": "non-match",
+              "model_p": 0.0005,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Name other script: legal form / filler only: match",
+          "rows": [
+            {
+              "s1_id": "S1-279771671",
+              "rec_id": "S2-555338229",
+              "s1_name": "Ace Properties",
+              "rec_name": "ఏస్ ప్రాపర్టీస్",
+              "s1_addr": "Flat No.15, D.No.22-3/A, Albert Apartments Radha Krishna Nagar, Malkajgiri, Secunderabad, Hyderabad, Telangana",
+              "rec_addr": "తెలంగాణ, HYDERABAD, FLAT NO.15, SECUNDERABAD",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "albert d krishna malkajgiri nagar radha",
+              "label": "match",
+              "pattern": "name: other script: legal form / filler only | address: words dropped | numbers: number dropped",
+              "country": "India",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 464,
+              "pattern_match_rate": 100.0,
+              "pattern_majority": "match",
+              "model_p": 0.9993,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Name other script: legal form / filler only: no match",
+          "rows": [
+            {
+              "s1_id": "S1-265929325",
+              "rec_id": "S2-672189126",
+              "s1_name": "Shiv Global Private Limited",
+              "rec_name": "શિવ ગ્લોબલ લિમિટેડ",
+              "s1_addr": "Post Shravan Mines Post Ranuka Tal Chikhli, Chikhli, Valsad, Gujarat",
+              "rec_addr": "H.NO 035 POST SHRAVAN MINES POST RANUKA TAL CHIKHLI, CHIKHLI, VALSAD, ગુજરાત",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: other script: legal form / filler only | address: only numbers differ | numbers: number added",
+              "country": "India",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 1228,
+              "pattern_match_rate": 39.9,
+              "pattern_majority": "non-match",
+              "model_p": 0.0218,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Name other script: words added: match",
+          "rows": [
+            {
+              "s1_id": "S1-396800482",
+              "rec_id": "S2-984851927",
+              "s1_name": "Best Finance Pvt Ltd",
+              "rec_name": "বেস্ট ফাইন্যান্স প্রাইভেট লিমিটেড",
+              "s1_addr": "P 3 New C I T Road Bowbazar, South 24 Parganas, Kolkata, West Bengal",
+              "rec_addr": "SOUTH 24 PARGANAS, P 3 NEW C I T ROAD BOWBAZAR, West Bengal, KOLKATA",
+              "name_added": "praibhet",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: other script: words added | address: identical | numbers: same numbers",
+              "country": "India",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 25835,
+              "pattern_match_rate": 99.83,
+              "pattern_majority": "match",
+              "model_p": 0.9999,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Name other script: words added: no match",
+          "rows": [
+            {
+              "s1_id": "S1-109802400",
+              "rec_id": "S3-109006956",
+              "s1_name": "Red Jay Infrastructure Private Limited",
+              "rec_name": "रेड जय इंफ्रास्ट्रक्चर गारमेंट्स प्राइवेट लिमिटेड",
+              "s1_addr": "83/85, Office No.205, Diamond Plaza, Dhanji Street, Zaveri Bazar, Mumbai, Maharashtra",
+              "rec_addr": "H.no 858 83/90, Office No.205, Diamond Plaza, Dhanji Street, Zaveri Bazar, Mumbai, महाराष्ट्र",
+              "name_added": "garmemts",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: other script: words added | address: only numbers differ | numbers: number cut short",
+              "country": "India",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 1241,
+              "pattern_match_rate": 46.33,
+              "pattern_majority": "non-match",
+              "model_p": 0.0001,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Name other script: words dropped: match",
+          "rows": [
+            {
+              "s1_id": "S1-402037994",
+              "rec_id": "S2-569161091",
+              "s1_name": "Golden Estate",
+              "rec_name": "ഗോൾഡൻ എസ്റ്റേറ്റ്",
+              "s1_addr": "No. 85, Thavarazhikath, Kalannjoor, Pathanamthitta, Kerala",
+              "rec_addr": "Kerala, PATHANAMTHITTA, THAVARAZHIKATH, KALANNJOOR, NO. 85, PATHANAMTHITTA",
+              "name_added": "",
+              "name_dropped": "estate",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: other script: words dropped | address: identical | numbers: same numbers",
+              "country": "India",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 60,
+              "pattern_match_rate": 96.67,
+              "pattern_majority": "match",
+              "model_p": 0.9959,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Name other script: words dropped: no match",
+          "rows": [
+            {
+              "s1_id": "S1-56165214",
+              "rec_id": "S2-705169319",
+              "s1_name": "North Energy Private Limited",
+              "rec_name": "નોર્થ આઈટી પ્રાઇવેટ લિમિટેડ",
+              "s1_addr": "B/104 Dev Sangam Appt, Near Bhat Motera Road, Koteswar, Koteswar Village, Chandkheda, Ahmedabad, Gujarat",
+              "rec_addr": "AHMEDABAD, B/117- DEV SANGAM APPT, NEAR BHAT MOTERA ROAD, KOTESWAR, KOTESWAR VILLAGE, ગુજરાત, CHANDKHEDA",
+              "name_added": "",
+              "name_dropped": "energy",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: other script: words dropped | address: only numbers differ | numbers: number nearby (<=50 apart)",
+              "country": "India",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 97,
+              "pattern_match_rate": 0.0,
+              "pattern_majority": "non-match",
+              "model_p": 0.0007,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Name other script: words replaced: match",
+          "rows": [
+            {
+              "s1_id": "S1-911224655",
+              "rec_id": "S3-782968491",
+              "s1_name": "First Infrastructure Private Limited",
+              "rec_name": "ஃபர்ஸ்ட் இன்ஃப்ராஸ்ட்ரக்சர் பிரைவேட் லிமிடெட்",
+              "s1_addr": "No. 6-4, Variyar Nagar Ganapathy, Coimbatore, Tamil Nadu",
+              "rec_addr": "H.no 7-6-4, Variyar Nagar Ganapathy, Coimbatore, TN",
+              "name_added": "inkprastrkcr limitet",
+              "name_dropped": "infrastructure",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: other script: words replaced | address: only numbers differ | numbers: number added",
+              "country": "India",
+              "source": "S3",
+              "comparable": true,
+              "pattern_pairs": 2495,
+              "pattern_match_rate": 45.37,
+              "pattern_majority": "non-match",
+              "model_p": 0.9949,
+              "flag_pattern": true,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Name other script: words replaced: no match",
+          "rows": [
+            {
+              "s1_id": "S1-369299438",
+              "rec_id": "S2-176755689",
+              "s1_name": "Shyam Construction Private Limited",
+              "rec_name": "શ્યામ કન્સલ્ટિંગ પ્રાઇવેટ લિમિટેડ",
+              "s1_addr": "9-A, Dev Vrund Bh. Uma Bhavan, Anand, Gujarat",
+              "rec_addr": "3-18-A, DEV VRUND BH. UMA BHAVAN, ANAND, ગુજરાત",
+              "name_added": "knsltimg",
+              "name_dropped": "construction",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: other script: words replaced | address: only numbers differ | numbers: number: one character changed",
+              "country": "India",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 5518,
+              "pattern_match_rate": 4.66,
+              "pattern_majority": "non-match",
+              "model_p": 0.0,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Name other script: nothing in common: match",
+          "rows": [
+            {
+              "s1_id": "S1-834243708",
+              "rec_id": "S2-626636648",
+              "s1_name": "Sai It Private Limited",
+              "rec_name": "साईं आईटी प्राइवेट लिमिटेड",
+              "s1_addr": "B-1211A, 12Th Floor, Ithum Tower-B, Plot No. A-40, Sector-62, Noida, Dadri, Gautam Buddha Nagar, Uttar Pradesh",
+              "rec_addr": "DADRI, #557 B-1211A, GAUTAM BUDDHA NAGAR, Uttar Pradesh, 12TH FLOOR, ITHUM TOWER-B, PLOT NO. A-40, SECTOR-62, NOIDA",
+              "name_added": "saim",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: other script: nothing in common | address: only numbers differ | numbers: number added",
+              "country": "India",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 1200,
+              "pattern_match_rate": 12.92,
+              "pattern_majority": "non-match",
+              "model_p": 0.9967,
+              "flag_pattern": true,
+              "flag_model": false
+            }
+          ]
+        },
+        {
+          "caption": "Name other script: nothing in common: no match",
+          "rows": [
+            {
+              "s1_id": "S1-287634481",
+              "rec_id": "S2-993447460",
+              "s1_name": "One Dynamic Engineering Pvt Ltd",
+              "rec_name": "మోడర్న్ ఫైనాన్స్ మోటార్స్ ప్రైవేట్ లిమిటెడ్",
+              "s1_addr": "Hyderabad, P No. 42/1, Hyderabad, Telangana, 42/2 & 43 Shaikpet",
+              "rec_addr": "P. NO 16, SHAIKPET, HYDERABAD, Telangana",
+              "name_added": "modrn motars phainans",
+              "name_dropped": "dynamic engineering one",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "no match",
+              "pattern": "name: other script: nothing in common | address: only numbers differ | numbers: number cut short",
+              "country": "India",
+              "source": "S2",
+              "comparable": true,
+              "pattern_pairs": 1569,
+              "pattern_match_rate": 2.55,
+              "pattern_majority": "non-match",
+              "model_p": 0.0,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        }
+      ]
+    },
+    "coverage": {
+      "groups": [
+        {
+          "caption": "Match that shares no blocking key with its S1",
+          "rows": [
+            {
+              "s1_id": "S1-840673779",
+              "rec_id": "S3-266038318",
+              "s1_name": "Colleen Oconnor Fashion",
+              "rec_name": "*** Co1leen Oconnor Fashion (LLC)",
+              "s1_addr": "3504 Wynnfield Drive, High Point, NC",
+              "rec_addr": "High Point, North Carolina, 3504 Wynnfield Drdve",
+              "name_added": "",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "",
+              "label": "match",
+              "pattern": "name: typo + legal form / filler | address: typo in words | numbers: same numbers",
+              "country": "US",
+              "source": "S3",
+              "comparable": false,
+              "pattern_pairs": null,
+              "pattern_match_rate": null,
+              "pattern_majority": null,
+              "model_p": 0.9279,
+              "flag_pattern": false,
+              "flag_model": false
+            },
+            {
+              "s1_id": "S1-992616435",
+              "rec_id": "S3-940288982",
+              "s1_name": "IY Midwest Hamilton",
+              "rec_name": "IY Midwest Hbalomlton",
+              "s1_addr": "15 Williams Street, Dannemora, NY",
+              "rec_addr": "15 Williams St, Lyon Mountain, New York",
+              "name_added": "hbalomlton",
+              "name_dropped": "hamilton",
+              "addr_added": "lyon mountain",
+              "addr_dropped": "dannemora",
+              "label": "match",
+              "pattern": "name: words replaced | address: words replaced | numbers: same numbers",
+              "country": "US",
+              "source": "S3",
+              "comparable": false,
+              "pattern_pairs": null,
+              "pattern_match_rate": null,
+              "pattern_majority": null,
+              "model_p": 0.9983,
+              "flag_pattern": false,
+              "flag_model": false
+            },
+            {
+              "s1_id": "S1-91162914",
+              "rec_id": "S2-20156774",
+              "s1_name": "New Delhi Cloud Pvt. Ltd.",
+              "rec_name": "NEW DELHI CLOUD PVT (LTD) #21703",
+              "s1_addr": "New Delhi, Central Delhi, Delhi, Reghar Pura Karol Bagh, 3455/3 F/F",
+              "rec_addr": "3455/3 F/F, REGHAR PURA KAROL BAGH, NEW DELHI, Delhi",
+              "name_added": "21703",
+              "name_dropped": "",
+              "addr_added": "",
+              "addr_dropped": "central",
+              "label": "match",
+              "pattern": "name: one word added | address: words dropped | numbers: same numbers",
+              "country": "India",
+              "source": "S2",
+              "comparable": false,
+              "pattern_pairs": null,
+              "pattern_match_rate": null,
+              "pattern_majority": null,
+              "model_p": 0.9992,
+              "flag_pattern": false,
+              "flag_model": false
+            }
+          ]
+        }
+      ],
+      "unpaired_unmatched": [
+        {
+          "rec_id": "S2-924074418",
+          "name": "Total Robotics (Inc.)",
+          "addr": "CHARLOTTE CITY, NC, 332 BEARDSLEY DR"
+        },
+        {
+          "rec_id": "S3-870959635",
+          "name": "बेस्ट ऑल कंसल्टेंट्स प्रोविजन प्राइवेट लिमिटेड",
+          "addr": "Mumbai City, Bombay, महाराष्ट्र, Flat No-h/110"
+        },
+        {
+          "rec_id": "S3-739330080",
+          "name": "Shri Sanjana Education Ventures",
+          "addr": "Door No C, Laxmipuri, Kolhapur, MH"
+        }
+      ]
+    }
+  },
+  "hand_cases": [
+    {
+      "s1": {
+        "s1_id": "S1-302869473",
+        "name": "International Automation Consultants Inc",
+        "addr": "329 Rev Walton Drive, Lockport, IL",
+        "true_size": 0
+      },
+      "records": [
+        {
+          "s1_id": "S1-302869473",
+          "rec_id": "S2-521228093",
+          "s1_name": "International Automation Consultants Inc",
+          "rec_name": "International Automation Consultants Group",
+          "s1_addr": "329 Rev Walton Drive, Lockport, IL",
+          "rec_addr": "338-342 REV WALTON DR, LOCKPORT, IL",
+          "name_added": "group",
+          "name_dropped": "",
+          "addr_added": "",
+          "addr_dropped": "",
+          "label": "no match",
+          "pattern": "name: one word added | address: only numbers differ | numbers: number nearby (<=50 apart)",
+          "country": "US",
+          "source": "S2",
+          "comparable": true,
+          "pattern_pairs": 107548,
+          "pattern_match_rate": 0.4,
+          "pattern_majority": "non-match",
+          "model_p": 0.0,
+          "flag_pattern": false,
+          "flag_model": false,
+          "expected_s1": "S1-302869473"
+        },
+        {
+          "s1_id": "S1-302869473",
+          "rec_id": "S3-765861618",
+          "s1_name": "International Automation Consultants Inc",
+          "rec_name": "International Automation Consultants Corp",
+          "s1_addr": "329 Rev Walton Drive, Lockport, IL",
+          "rec_addr": "338 Rev Walton Dr, Lockport, Illinois",
+          "name_added": "",
+          "name_dropped": "",
+          "addr_added": "",
+          "addr_dropped": "",
+          "label": "no match",
+          "pattern": "name: legal form / filler only | address: only numbers differ | numbers: number nearby (<=50 apart)",
+          "country": "US",
+          "source": "S3",
+          "comparable": true,
+          "pattern_pairs": 71487,
+          "pattern_match_rate": 3.26,
+          "pattern_majority": "non-match",
+          "model_p": 0.0025,
+          "flag_pattern": false,
+          "flag_model": false,
+          "expected_s1": "S1-302869473"
+        }
+      ]
+    },
+    {
+      "s1": {
+        "s1_id": "S1-730719211",
+        "name": "Renee G. Garcia, O.D.",
+        "addr": "516 Main Street, Cleburne, TX",
+        "true_size": 4
+      },
+      "records": [
+        {
+          "s1_id": "S1-730719211",
+          "rec_id": "S2-467798366",
+          "s1_name": "Renee G. Garcia, O.D.",
+          "rec_name": "Renee G. Garcia,",
+          "s1_addr": "516 Main Street, Cleburne, TX",
+          "rec_addr": "51 MAIN ST, CLEBURNE, TX",
+          "name_added": "",
+          "name_dropped": "",
+          "addr_added": "",
+          "addr_dropped": "",
+          "label": "match",
+          "pattern": "name: legal form / filler only | address: only numbers differ | numbers: number cut short",
+          "country": "US",
+          "source": "S2",
+          "comparable": true,
+          "pattern_pairs": 29926,
+          "pattern_match_rate": 82.85,
+          "pattern_majority": "match",
+          "model_p": 0.993,
+          "flag_pattern": false,
+          "flag_model": false,
+          "expected_s1": "S1-730719211"
+        },
+        {
+          "s1_id": "S1-730719211",
+          "rec_id": "S2-61695240",
+          "s1_name": "Renee G. Garcia, O.D.",
+          "rec_name": "RENEE G. GARCIA, O.D.",
+          "s1_addr": "516 Main Street, Cleburne, TX",
+          "rec_addr": "TX, CLEBURNE, 51 MAIN STREET",
+          "name_added": "",
+          "name_dropped": "",
+          "addr_added": "",
+          "addr_dropped": "",
+          "label": "match",
+          "pattern": "name: identical | address: only numbers differ | numbers: number cut short",
+          "country": "US",
+          "source": "S2",
+          "comparable": true,
+          "pattern_pairs": 38200,
+          "pattern_match_rate": 99.86,
+          "pattern_majority": "match",
+          "model_p": 0.9992,
+          "flag_pattern": false,
+          "flag_model": false,
+          "expected_s1": "S1-730719211"
+        },
+        {
+          "s1_id": "S1-730719211",
+          "rec_id": "S2-241456014",
+          "s1_name": "Renee G. Garcia, O.D.",
+          "rec_name": "renee g. garcia, o.d.",
+          "s1_addr": "516 Main Street, Cleburne, TX",
+          "rec_addr": "51 MAIN STREET, CLEBURNE, TX",
+          "name_added": "",
+          "name_dropped": "",
+          "addr_added": "",
+          "addr_dropped": "",
+          "label": "match",
+          "pattern": "name: identical | address: only numbers differ | numbers: number cut short",
+          "country": "US",
+          "source": "S2",
+          "comparable": true,
+          "pattern_pairs": 38200,
+          "pattern_match_rate": 99.86,
+          "pattern_majority": "match",
+          "model_p": 0.999,
+          "flag_pattern": false,
+          "flag_model": false,
+          "expected_s1": "S1-730719211"
+        },
+        {
+          "s1_id": "S1-730719211",
+          "rec_id": "S3-951830396",
+          "s1_name": "Renee G. Garcia, O.D.",
+          "rec_name": "Renee G Garcia, OD",
+          "s1_addr": "516 Main Street, Cleburne, TX",
+          "rec_addr": "516 Main St, Cleburne, Texas",
+          "name_added": "od",
+          "name_dropped": "",
+          "addr_added": "",
+          "addr_dropped": "",
+          "label": "match",
+          "pattern": "name: one word added | address: identical | numbers: same numbers",
+          "country": "US",
+          "source": "S3",
+          "comparable": true,
+          "pattern_pairs": 76886,
+          "pattern_match_rate": 99.77,
+          "pattern_majority": "match",
+          "model_p": 0.9999,
+          "flag_pattern": false,
+          "flag_model": false,
+          "expected_s1": "S1-730719211"
+        }
+      ]
+    },
+    {
+      "s1": {
+        "s1_id": "S1-262997549",
+        "name": "Gabriella's Preferred Security",
+        "addr": "1013 Girard Avenue, Indianola, IA",
+        "true_size": 0
+      },
+      "records": [
+        {
+          "s1_id": "S1-262997549",
+          "rec_id": "S2-879297655",
+          "s1_name": "Gabriella's Preferred Security",
+          "rec_name": "Gabriella's Preferred Security Ltd",
+          "s1_addr": "1013 Girard Avenue, Indianola, IA",
+          "rec_addr": "001020 GIRARD AVE, INDIANOLA, IA",
+          "name_added": "",
+          "name_dropped": "",
+          "addr_added": "",
+          "addr_dropped": "",
+          "label": "no match",
+          "pattern": "name: legal form / filler only | address: only numbers differ | numbers: number nearby (<=50 apart)",
+          "country": "US",
+          "source": "S2",
+          "comparable": true,
+          "pattern_pairs": 70793,
+          "pattern_match_rate": 3.69,
+          "pattern_majority": "non-match",
+          "model_p": 0.0106,
+          "flag_pattern": false,
+          "flag_model": false,
+          "expected_s1": "S1-262997549"
+        },
+        {
+          "s1_id": "S1-262997549",
+          "rec_id": "S3-910786226",
+          "s1_name": "Gabriella's Preferred Security",
+          "rec_name": "Co Gabriella'S Preferred Security",
+          "s1_addr": "1013 Girard Avenue, Indianola, IA",
+          "rec_addr": "1020 Girard Ave, Indianola, Iowa",
+          "name_added": "",
+          "name_dropped": "",
+          "addr_added": "",
+          "addr_dropped": "",
+          "label": "no match",
+          "pattern": "name: legal form / filler only | address: only numbers differ | numbers: number nearby (<=50 apart)",
+          "country": "US",
+          "source": "S3",
+          "comparable": true,
+          "pattern_pairs": 71487,
+          "pattern_match_rate": 3.26,
+          "pattern_majority": "non-match",
+          "model_p": 0.0089,
+          "flag_pattern": false,
+          "flag_model": false,
+          "expected_s1": "S1-262997549"
+        }
+      ]
+    },
+    {
+      "s1": {
+        "s1_id": "S1-989924267",
+        "name": "Garrity Pinnacle Capital LLC",
+        "addr": "505 Innovation Way, Walton, KY",
+        "true_size": 3
+      },
+      "records": [
+        {
+          "s1_id": "S1-989924267",
+          "rec_id": "S2-941206792",
+          "s1_name": "Garrity Pinnacle Capital LLC",
+          "rec_name": "6arrity Pinnace Capital LLC",
+          "s1_addr": "505 Innovation Way, Walton, KY",
+          "rec_addr": "507 INNOVATION WAY, WALTN, KY",
+          "name_added": "",
+          "name_dropped": "",
+          "addr_added": "",
+          "addr_dropped": "",
+          "label": "match",
+          "pattern": "name: typo only | address: typo in words + numbers differ | numbers: number: one character changed",
+          "country": "US",
+          "source": "S2",
+          "comparable": true,
+          "pattern_pairs": 277,
+          "pattern_match_rate": 33.57,
+          "pattern_majority": "non-match",
+          "model_p": 0.4022,
+          "flag_pattern": true,
+          "flag_model": false,
+          "expected_s1": "S1-989924267"
+        },
+        {
+          "s1_id": "S1-989924267",
+          "rec_id": "S2-973482655",
+          "s1_name": "Garrity Pinnacle Capital LLC",
+          "rec_name": "Garrity Pinnacle LLC 5ervices",
+          "s1_addr": "505 Innovation Way, Walton, KY",
+          "rec_addr": "",
+          "name_added": "5ervices",
+          "name_dropped": "capital",
+          "addr_added": "",
+          "addr_dropped": "",
+          "label": "match",
+          "pattern": "name: words replaced | address: record address empty | numbers: n/a",
+          "country": "US",
+          "source": "S2",
+          "comparable": false,
+          "pattern_pairs": null,
+          "pattern_match_rate": null,
+          "pattern_majority": null,
+          "model_p": 0.9979,
+          "flag_pattern": false,
+          "flag_model": false,
+          "expected_s1": "S1-989924267"
+        },
+        {
+          "s1_id": "S1-989924267",
+          "rec_id": "S3-262595741",
+          "s1_name": "Garrity Pinnacle Capital LLC",
+          "rec_name": "Garrity Pinnacle Capital",
+          "s1_addr": "505 Innovation Way, Walton, KY",
+          "rec_addr": "##505 Innovation Way, Walton, Kentucky",
+          "name_added": "",
+          "name_dropped": "",
+          "addr_added": "",
+          "addr_dropped": "",
+          "label": "match",
+          "pattern": "name: legal form / filler only | address: identical | numbers: same numbers",
+          "country": "US",
+          "source": "S3",
+          "comparable": true,
+          "pattern_pairs": 220502,
+          "pattern_match_rate": 99.97,
+          "pattern_majority": "match",
+          "model_p": 0.9999,
+          "flag_pattern": false,
+          "flag_model": false,
+          "expected_s1": "S1-989924267"
+        }
+      ]
+    },
+    {
+      "s1": {
+        "s1_id": "S1-783518091",
+        "name": "New Delhi Nath Private Limited",
+        "addr": "Property No.-K-92 (F.F) K Block New Mahabir Nagar Near Tilak Nagar, New Delhi, Delhi",
+        "true_size": 0
+      },
+      "records": [
+        {
+          "s1_id": "S1-783518091",
+          "rec_id": "S3-188760616",
+          "s1_name": "New Delhi Nath Private Limited",
+          "rec_name": "Private New Delhi Nath Overseas Limited",
+          "s1_addr": "Property No.-K-92 (F.F) K Block New Mahabir Nagar Near Tilak Nagar, New Delhi, Delhi",
+          "rec_addr": "Property No.-k-95 (F.F) K Block New Mahabir Nagar Near Tilak Nagar, New Delhi, DL",
+          "name_added": "overseas",
+          "name_dropped": "",
+          "addr_added": "",
+          "addr_dropped": "",
+          "label": "no match",
+          "pattern": "name: one word added | address: only numbers differ | numbers: number: one character changed",
+          "country": "India",
+          "source": "S3",
+          "comparable": true,
+          "pattern_pairs": 31509,
+          "pattern_match_rate": 1.6,
+          "pattern_majority": "non-match",
+          "model_p": 0.0,
+          "flag_pattern": false,
+          "flag_model": false,
+          "expected_s1": "S1-783518091"
+        },
+        {
+          "s1_id": "S1-783518091",
+          "rec_id": "S3-44406563",
+          "s1_name": "New Delhi Nath Private Limited",
+          "rec_name": "New Delhi Nath L.L.P.",
+          "s1_addr": "Property No.-K-92 (F.F) K Block New Mahabir Nagar Near Tilak Nagar, New Delhi, Delhi",
+          "rec_addr": "Property No.-k-95 (F.F) K Block New Mahabir Nagar Near Tilak Nagar, New Delhi, दिल्ली",
+          "name_added": "",
+          "name_dropped": "",
+          "addr_added": "",
+          "addr_dropped": "",
+          "label": "no match",
+          "pattern": "name: legal form / filler only | address: only numbers differ | numbers: number: one character changed",
+          "country": "India",
+          "source": "S3",
+          "comparable": true,
+          "pattern_pairs": 9359,
+          "pattern_match_rate": 30.28,
+          "pattern_majority": "non-match",
+          "model_p": 0.001,
+          "flag_pattern": false,
+          "flag_model": false,
+          "expected_s1": "S1-783518091"
+        }
+      ]
+    },
+    {
+      "s1": {
+        "s1_id": "S1-14448673",
+        "name": "Gail's Medical",
+        "addr": "611 5th Street, Hardin, MT",
+        "true_size": 0
+      },
+      "records": [
+        {
+          "s1_id": "S1-14448673",
+          "rec_id": "S3-219141874",
+          "s1_name": "Gail's Medical",
+          "rec_name": "The Gail's Medical Holdings",
+          "s1_addr": "611 5th Street, Hardin, MT",
+          "rec_addr": "620 Fifth Street, Hardin, Montana",
+          "name_added": "holdings",
+          "name_dropped": "",
+          "addr_added": "",
+          "addr_dropped": "",
+          "label": "no match",
+          "pattern": "name: one word added | address: only numbers differ | numbers: number nearby (<=50 apart)",
+          "country": "US",
+          "source": "S3",
+          "comparable": true,
+          "pattern_pairs": 110730,
+          "pattern_match_rate": 0.38,
+          "pattern_majority": "non-match",
+          "model_p": 0.0,
+          "flag_pattern": false,
+          "flag_model": false,
+          "expected_s1": "S1-14448673"
+        }
+      ]
+    },
+    {
+      "s1": {
+        "s1_id": "S1-115182842",
+        "name": "Overy Cardiology",
+        "addr": "17958 Quantico Road, Unit UNIT, Apple Valley, CA",
+        "true_size": 3
+      },
+      "records": [
+        {
+          "s1_id": "S1-115182842",
+          "rec_id": "S2-464452285",
+          "s1_name": "Overy Cardiology",
+          "rec_name": "-- Overy Center",
+          "s1_addr": "17958 Quantico Road, Unit UNIT, Apple Valley, CA",
+          "rec_addr": "17887 QUANTICO RD, CA, APPLE VALLEY",
+          "name_added": "center",
+          "name_dropped": "cardiology",
+          "addr_added": "",
+          "addr_dropped": "",
+          "label": "match",
+          "pattern": "name: words replaced | address: only numbers differ | numbers: number far-off",
+          "country": "US",
+          "source": "S2",
+          "comparable": true,
+          "pattern_pairs": 9793,
+          "pattern_match_rate": 39.33,
+          "pattern_majority": "non-match",
+          "model_p": 0.9962,
+          "flag_pattern": true,
+          "flag_model": false,
+          "expected_s1": "S1-115182842"
+        },
+        {
+          "s1_id": "S1-115182842",
+          "rec_id": "S2-440934584",
+          "s1_name": "Overy Cardiology",
+          "rec_name": "Overy Cardiology [Corp]",
+          "s1_addr": "17958 Quantico Road, Unit UNIT, Apple Valley, CA",
+          "rec_addr": "17887 QUANTICO ROAD, APPLE VALLEY, CA",
+          "name_added": "",
+          "name_dropped": "",
+          "addr_added": "",
+          "addr_dropped": "",
+          "label": "match",
+          "pattern": "name: legal form / filler only | address: only numbers differ | numbers: number far-off",
+          "country": "US",
+          "source": "S2",
+          "comparable": true,
+          "pattern_pairs": 13478,
+          "pattern_match_rate": 53.38,
+          "pattern_majority": "match",
+          "model_p": 0.9681,
+          "flag_pattern": false,
+          "flag_model": false,
+          "expected_s1": "S1-115182842"
+        },
+        {
+          "s1_id": "S1-115182842",
+          "rec_id": "S3-176968062",
+          "s1_name": "Overy Cardiology",
+          "rec_name": "Overy Cardiology",
+          "s1_addr": "17958 Quantico Road, Unit UNIT, Apple Valley, CA",
+          "rec_addr": "017958 Quantico Road, PMB 3525, Apple Valley, California",
+          "name_added": "",
+          "name_dropped": "",
+          "addr_added": "",
+          "addr_dropped": "",
+          "label": "match",
+          "pattern": "name: identical | address: only numbers differ | numbers: number added",
+          "country": "US",
+          "source": "S3",
+          "comparable": true,
+          "pattern_pairs": 40122,
+          "pattern_match_rate": 100.0,
+          "pattern_majority": "match",
+          "model_p": 0.9999,
+          "flag_pattern": false,
+          "flag_model": false,
+          "expected_s1": "S1-115182842"
+        },
+        {
+          "s1_id": "S1-115182842",
+          "rec_id": "S2-716420516",
+          "s1_name": "Overy Cardiology",
+          "rec_name": "Overy Cardiology Eastgate",
+          "s1_addr": "17958 Quantico Road, Unit UNIT, Apple Valley, CA",
+          "rec_addr": "17959. QUANTICO ROAD, APPLE VALLEY, CA",
+          "name_added": "eastgate",
+          "name_dropped": "",
+          "addr_added": "",
+          "addr_dropped": "",
+          "label": "no match",
+          "pattern": "name: one word added | address: only numbers differ | numbers: number: one character changed",
+          "country": "US",
+          "source": "S2",
+          "comparable": true,
+          "pattern_pairs": 78331,
+          "pattern_match_rate": 1.28,
+          "pattern_majority": "non-match",
+          "model_p": 0.0,
+          "flag_pattern": false,
+          "flag_model": false,
+          "expected_s1": "S1-115182842"
+        }
+      ]
+    },
+    {
+      "s1": {
+        "s1_id": "S1-733655541",
+        "name": "Womens Health Center",
+        "addr": "2260 B Avenue, Schleswig, IA",
+        "true_size": 0
+      },
+      "records": [
+        {
+          "s1_id": "S1-733655541",
+          "rec_id": "S2-229535269",
+          "s1_name": "Womens Health Center",
+          "rec_name": "Womens Health Center  LLC",
+          "s1_addr": "2260 B Avenue, Schleswig, IA",
+          "rec_addr": "2262 B AVENUE, SCHLESWIG, IA",
+          "name_added": "",
+          "name_dropped": "",
+          "addr_added": "",
+          "addr_dropped": "",
+          "label": "no match",
+          "pattern": "name: legal form / filler only | address: only numbers differ | numbers: number: one character changed",
+          "country": "US",
+          "source": "S2",
+          "comparable": true,
+          "pattern_pairs": 55099,
+          "pattern_match_rate": 11.39,
+          "pattern_majority": "non-match",
+          "model_p": 0.1556,
+          "flag_pattern": false,
+          "flag_model": false,
+          "expected_s1": "S1-733655541"
+        }
+      ]
+    },
+    {
+      "s1": {
+        "s1_id": "S1-570477188",
+        "name": "Garrett Chemical",
+        "addr": "63 Nahanton Avenue, Milton, MA",
+        "true_size": 0
+      },
+      "records": [
+        {
+          "s1_id": "S1-570477188",
+          "rec_id": "S2-783520744",
+          "s1_name": "Garrett Chemical",
+          "rec_name": "Garrett Chemical Northside",
+          "s1_addr": "63 Nahanton Avenue, Milton, MA",
+          "rec_addr": "67 1/2 NAHANTON AVE, MILTON, MA",
+          "name_added": "northside",
+          "name_dropped": "",
+          "addr_added": "",
+          "addr_dropped": "",
+          "label": "no match",
+          "pattern": "name: one word added | address: only numbers differ | numbers: number: one character changed",
+          "country": "US",
+          "source": "S2",
+          "comparable": true,
+          "pattern_pairs": 78331,
+          "pattern_match_rate": 1.28,
+          "pattern_majority": "non-match",
+          "model_p": 0.0,
+          "flag_pattern": false,
+          "flag_model": false,
+          "expected_s1": "S1-570477188"
+        }
+      ]
+    },
+    {
+      "s1": {
+        "s1_id": "S1-963588162",
+        "name": "Maa Hospitality Private Limited",
+        "addr": "Plot No D-195, Ff Sector 8 Bagdola Dwarka Block D, New Delhi, West Delhi, Delhi",
+        "true_size": 0
+      },
+      "records": [
+        {
+          "s1_id": "S1-963588162",
+          "rec_id": "S3-481869771",
+          "s1_name": "Maa Hospitality Private Limited",
+          "rec_name": "मां केयर प्राइवेट लिमिटेड",
+          "s1_addr": "Plot No D-195, Ff Sector 8 Bagdola Dwarka Block D, New Delhi, West Delhi, Delhi",
+          "rec_addr": "New Delhi, West Delhi, DL, #C-242 Plot No D-196, Ff Sector 8 Bagdola Dwarka Block D",
+          "name_added": "keyr",
+          "name_dropped": "hospitality",
+          "addr_added": "c",
+          "addr_dropped": "",
+          "label": "no match",
+          "pattern": "name: other script: words replaced | address: words added | numbers: number: one character changed",
+          "country": "India",
+          "source": "S3",
+          "comparable": true,
+          "pattern_pairs": 240,
+          "pattern_match_rate": 1.67,
+          "pattern_majority": "non-match",
+          "model_p": 0.0,
+          "flag_pattern": false,
+          "flag_model": false,
+          "expected_s1": "S1-963588162"
+        }
+      ]
+    },
+    {
+      "s1": {
+        "s1_id": "S1-250404567",
+        "name": "Integrated Payroll International",
+        "addr": "Forney, 1220 Falcon Heigh Drive, TX",
+        "true_size": 1
+      },
+      "records": [
+        {
+          "s1_id": "S1-250404567",
+          "rec_id": "S2-32283955",
+          "s1_name": "Integrated Payroll International",
+          "rec_name": "Integrated Payroll International LLC",
+          "s1_addr": "Forney, 1220 Falcon Heigh Drive, TX",
+          "rec_addr": "01220 FALCON HEIGH DRIVE, FORNEY, TX",
+          "name_added": "",
+          "name_dropped": "",
+          "addr_added": "",
+          "addr_dropped": "",
+          "label": "match",
+          "pattern": "name: legal form / filler only | address: identical | numbers: same numbers",
+          "country": "US",
+          "source": "S2",
+          "comparable": true,
+          "pattern_pairs": 214789,
+          "pattern_match_rate": 99.96,
+          "pattern_majority": "match",
+          "model_p": 0.9997,
+          "flag_pattern": false,
+          "flag_model": false,
+          "expected_s1": "S1-250404567"
+        }
+      ]
+    },
+    {
+      "s1": {
+        "s1_id": "S1-71142843",
+        "name": "Good Logistics Private Limited",
+        "addr": "Unit-715. B-Wing.Crystal, Plaza 7-Floor New Link Rd, Mumbai, Maharashtra",
+        "true_size": 2
+      },
+      "records": [
+        {
+          "s1_id": "S1-71142843",
+          "rec_id": "S2-964683665",
+          "s1_name": "Good Logistics Private Limited",
+          "rec_name": "गुड लॉजिस्टिक्स प्राइवेट लिमिटेड",
+          "s1_addr": "Unit-715. B-Wing.Crystal, Plaza 7-Floor New Link Rd, Mumbai, Maharashtra",
+          "rec_addr": "UNIT-7-15. B-WING.CRYSTAL, PLAZA 7-FLOOR NEW LINK RD, MUMBAI, Maharashtra",
+          "name_added": "",
+          "name_dropped": "",
+          "addr_added": "",
+          "addr_dropped": "",
+          "label": "match",
+          "pattern": "name: other script: same words | address: identical | numbers: same numbers",
+          "country": "India",
+          "source": "S2",
+          "comparable": true,
+          "pattern_pairs": 86280,
+          "pattern_match_rate": 100.0,
+          "pattern_majority": "match",
+          "model_p": 1.0,
+          "flag_pattern": false,
+          "flag_model": false,
+          "expected_s1": "S1-71142843"
+        },
+        {
+          "s1_id": "S1-71142843",
+          "rec_id": "S3-665555605",
+          "s1_name": "Good Logistics Private Limited",
+          "rec_name": "Good Logistics Private",
+          "s1_addr": "Unit-715. B-Wing.Crystal, Plaza 7-Floor New Link Rd, Mumbai, Maharashtra",
+          "rec_addr": "Unit-715. B-wing.crystal, Plaza 7-Floor New Link Rd, Mumbai, MH",
+          "name_added": "",
+          "name_dropped": "",
+          "addr_added": "",
+          "addr_dropped": "",
+          "label": "match",
+          "pattern": "name: legal form / filler only | address: identical | numbers: same numbers",
+          "country": "India",
+          "source": "S3",
+          "comparable": true,
+          "pattern_pairs": 147049,
+          "pattern_match_rate": 99.97,
+          "pattern_majority": "match",
+          "model_p": 0.9995,
+          "flag_pattern": false,
+          "flag_model": false,
+          "expected_s1": "S1-71142843"
+        }
+      ]
+    }
+  ]
+}

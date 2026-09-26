@@ -1,0 +1,138 @@
+{
+  "US": {
+    "house_number_relation": {
+      "true matches": {
+        "equal": 78.4,
+        "number dropped": 10.6,
+        "differs: truncated (516↔51)": 4.8,
+        "differs: different number": 4.3,
+        "differs: one digit changed": 1.7,
+        "no number": 0.3,
+        "number added": 0.0,
+        "n": 2985273
+      },
+      "unmatched decoys": {
+        "differs: different number": 58.5,
+        "differs: one digit changed": 33.9,
+        "equal": 3.3,
+        "number dropped": 2.4,
+        "differs: truncated (516↔51)": 1.5,
+        "no number": 0.3,
+        "number added": 0.0,
+        "n": 930697
+      }
+    },
+    "when_numbers_differ": {
+      "true matches": {
+        "differs: truncated (516↔51)": 44.6,
+        "differs: different number": 39.9,
+        "differs: one digit changed": 15.6,
+        "n": 319609
+      },
+      "unmatched decoys": {
+        "differs: different number": 62.3,
+        "differs: one digit changed": 36.1,
+        "differs: truncated (516↔51)": 1.6,
+        "n": 873987
+      }
+    },
+    "gap_when_different_number": {
+      "true matches": {
+        ">500": 57229,
+        "51–500": 46692,
+        "≤10": 9336,
+        "11–50": 14235
+      },
+      "unmatched decoys": {
+        "11–50": 228487,
+        "≤10": 203631,
+        ">500": 67675,
+        "51–500": 45041
+      }
+    },
+    "singletons": {
+      "count": 73896,
+      "pct_with_a_lookalike_decoy": 71.3,
+      "pct_of_matched_S1_with_a_lookalike_decoy": 62.2
+    },
+    "unmatched_records": 1608351,
+    "unmatched_copying_an_S1_address_pct": 57.9
+  },
+  "India": {
+    "house_number_relation": {
+      "true matches": {
+        "equal": 72.4,
+        "no number": 14.1,
+        "differs: different number": 6.7,
+        "differs: truncated (516↔51)": 3.4,
+        "differs: one digit changed": 2.1,
+        "number added": 1.3,
+        "number dropped": 0.1,
+        "n": 507553
+      },
+      "unmatched decoys": {
+        "differs: different number": 40.3,
+        "equal": 20.2,
+        "differs: one digit changed": 19.4,
+        "number added": 12.1,
+        "differs: truncated (516↔51)": 3.8,
+        "no number": 3.7,
+        "number dropped": 0.5,
+        "n": 145865
+      }
+    },
+    "when_numbers_differ": {
+      "true matches": {
+        "differs: different number": 55.2,
+        "differs: truncated (516↔51)": 27.9,
+        "differs: one digit changed": 16.9,
+        "n": 61753
+      },
+      "unmatched decoys": {
+        "differs: different number": 63.5,
+        "differs: one digit changed": 30.6,
+        "differs: truncated (516↔51)": 5.9,
+        "n": 92587
+      }
+    },
+    "gap_when_different_number": {
+      "true matches": {
+        ">500": 10968,
+        "11–50": 4670,
+        "51–500": 16889,
+        "≤10": 1566
+      },
+      "unmatched decoys": {
+        "51–500": 13260,
+        "11–50": 21886,
+        "≤10": 16976,
+        ">500": 6679
+      }
+    },
+    "singletons": {
+      "count": 49351,
+      "pct_with_a_lookalike_decoy": 21.7,
+      "pct_of_matched_S1_with_a_lookalike_decoy": 14.7
+    },
+    "unmatched_records": 1073503,
+    "unmatched_copying_an_S1_address_pct": 13.6
+  },
+  "examples_US": {
+    "typo-like decoys": [
+      "S1-522406368 '5304 Conklin Drive, Hilliard, OH'  vs  S2-402816908 '5307 CONKLIN DRIVE, HILLIARD, OH'",
+      "S1-935035739 '251 Roseland Place, NC, Aberdeen'  vs  S2-736654053 '256  ROSELAND PLACE, ABERDEEN, NC'",
+      "S1-78547652 '5 Bittersweet Lane, Westport, CT'  vs  S2-612169234 '8-12 BITTERSWEET LANE, WESTPORT, CT'",
+      "S1-469972461 '133 Cottonstone Lane, Troy, NC'  vs  S2-529238319 '134. COTTONSTONE LN, TROY, NC'",
+      "S1-521367873 'AL, 101 Shepherd Street, Cordova'  vs  S2-175642159 '10 SHEPHERD ST, CORDOVA, AL'",
+      "S1-458641339 '5717 Plank Road, Charlotte, NC'  vs  S2-646516046 '05718 PLANK RD, CHARLOTTE, NC'"
+    ],
+    "true matches with a different number": [
+      "S1-728385931 '1487 Highway 49, Ashland City, TN'  vs  S2-634015823 'HIGHWAY 49, ASHLAND CITY, TN'",
+      "S1-529975173 '1406 Mills Street, Sandusky, OH'  vs  S2-56744275 '458 MILLS STREET, SANDUSKY, OH'",
+      "S1-214189301 'CA, 3732 Kimball Plains Road, Cottonwood'  vs  S2-164086509 'KIMBALL PLAINS ROAD, PO BOX 3611, COTTONWOOD, CA'",
+      "S1-244022161 'Unit 207, Charlotte, NC, 8226 Chesthunt Place Drive'  vs  S2-686350780 '08226 Chesthunt Place Drive, CHARLOTTE, NC'",
+      "S1-393296426 '1201 School Street, Rockford, IL'  vs  S2-232105388 '1199 SCHOOL STREET, ROCKFORD, IL'",
+      "S1-161871331 '2703 County Road 404 Loop, Davilla, TX'  vs  S2-292552164 'COUNTY ROAD 404 LOOP, DAVILLA, TX'"
+    ]
+  }
+}
