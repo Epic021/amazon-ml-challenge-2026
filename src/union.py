@@ -21,7 +21,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.environ.get("BER_DATA", os.path.join(ROOT, "data"))   # override for smoke runs
 CAND = os.path.join(DATA, "cand")
 PQ = os.path.join(DATA, "parquet")
-RETRIEVERS = ("word", "namechar", "addr", "numaddr", "theirs")
+RETRIEVERS = ("word", "namechar", "addr", "numaddr")
 
 
 def main():
