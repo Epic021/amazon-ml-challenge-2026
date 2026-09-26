@@ -53,7 +53,7 @@ Design reasoning and decision options: [bottle_necks.md](bottle_necks.md). Resea
 - **France:** the French decoy words score as decoy-like (participations −1.99, holding −1.99, international −2.01, développement −1.35, groupe −1.31, france −1.13).
 - **Risk:** France's scale is shifted (median −0.69), which could make the model over-reject French matches.
 - **Watch:** France predicted matches per S1 vs B1's 3.18. If it drops, standardize the scores within each country (G3b).
-| **B2 = union candidates + G3 → retrain → decode** | chained on the VM | ⏳ Queued automatically (features → train → decode). ETA ~3 h |
+| **B2 = union candidates + G3 → retrain → decode** | chained on the VM | ✅ **Holdout 0.9772.** File at `output_b2/matching_results.tsv` (VM + laptop). B2-noLO running overnight |
 | **D1/D2: exact expected-F DP + soft exclusivity** | `src/efdp.py`, `src/decode.py` | ✅ Written and **smoke-tested**. DP = brute force in 300/300 cases; ~2 min for all of test. Re-decodes B1 as soon as its predictions exist |
 
 ### R2. Next steps, in order (owner = suggested; est = wall-clock)
@@ -141,6 +141,8 @@ Char 3-gram retrievers (name with spaces removed, name only, address only) targe
 |---|---|---|---|---|---|
 | B0 | Exact key (country + name tokens + first number) | 0.587 (all train) | 0.371 | – | Precision 0.982 |
 | B1 | Blocking v1 (word) + 60 features + LightGBM (1,642 rounds) + isotonic + **soft exclusivity + threshold 0.55** | **0.9662** (India 0.9546, US 0.9739; singletons 0.9818, non-singletons 0.9652) | 0.937 | **0.952** | Ceiling 0.9768, so the model reaches 98.9% of it. Details below |
+
+| B2 | + namechar & addr retrievers (union), + G3 per-country label-free word roles; soft exclusivity, threshold 0.55 | **0.9772** (India 0.966, US 0.9847; singletons 0.9846, non-singletons 0.9768) | 0.966 | ⏳ upload | Ceiling 0.9867; the model reaches 99.0% of it. France: 3.22 predicted matches/S1, 6.0% empty, so no over-rejection |
 
 B1 details:
 - **Soft vs hard exclusivity:** soft beats hard by +0.0008.
