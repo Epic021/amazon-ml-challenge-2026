@@ -1,9 +1,11 @@
 # Amazon ML Challenge 2026: Business Entity Resolution. Strategy
 
-**Status (Sep 26, ~11:30 IST):**
+**Status (Sep 26, ~11:15 IST):**
 - **Best submission:** B2. Holdout 0.9772, **LB 0.970**.
 - **Target:** top 50 (≥ 0.979 on Sep 26), so we need **+0.009**.
-- **Running:** B3 (name-uniqueness features) and the EMB retriever (Indian-script names).
+- **Running:** B3 (name-uniqueness features): training, holdout log-loss 0.0043 at round 450.
+- **Also running:** the EMB retriever (Indian-script names), relaunched after an out-of-memory fix.
+- **Repo is private:** code reaches the VM via `git archive HEAD src scripts requirements.txt | ssh vm tar -x` until the VM has a deploy key.
 - **Deadline:** around early Sep 28 IST. Verify on the portal.
 
 Supporting docs:
@@ -90,7 +92,7 @@ Blocking always runs on the full universe.
 
 **Reading the LB:** test is 46.8% India, 38.3% US, 15% France. So `LB ≈ 0.468·India + 0.383·US + 0.15·France`, with India and US taken from the holdout, which gives the implied France score.
 
-**Keep a change** only if the holdout improves by ≥ +0.1 and the France proxy does not get worse. Submit whenever that holds and the validator passes.
+**Keep a change** only if the holdout macro F0.5 improves by **≥ +0.001** and the France proxy does not get worse. Submit whenever that holds and the validator passes.
 
 ## 5. Results
 
@@ -120,14 +122,14 @@ Blocking always runs on the full universe.
 
 | # | Item | Targets | Est | Keep if |
 |---|---|---|---|---|
-| 1 | **G5 name uniqueness** (B3, running) | Empty-address rejections (74% of model misses) | running | Holdout ≥ +0.1 |
-| 2 | **RET-EMB** (running): model2vec retriever for non-Latin names; the correct English name ranks first in 5/5 real misses | India blocking (6.1% of India's true pairs) | running | India ceiling ≥ +0.3 |
+| 1 | **G5 name uniqueness** (B3, running) | Empty-address rejections (74% of model misses) | running | Holdout ≥ +0.001 |
+| 2 | **RET-EMB** (running): model2vec retriever for non-Latin names; the correct English name ranks first in 5/5 real misses | India blocking (6.1% of India's true pairs) | running | India ceiling ≥ +0.003 |
 | 3 | **B4 = union with EMB → features (G5 built in) → retrain** | Both of the above | ~4 h | Holdout > B3 |
-| 4 | **G4 house-number roles** (locality cardinality; match levels) | France's dense streets, remaining decoys | 2 h | France proxy ↓, holdout ≥ +0.1 |
+| 4 | **G4 house-number roles** (locality cardinality; match levels) | France's dense streets, remaining decoys | 2 h | France proxy ↓, holdout ≥ +0.001 |
 | 5 | **F1 synthetic French decoys** (number ±1–2, added frequent word) | Measure France rejection directly | 1.5 h | Diagnostic |
-| 6 | **RET-B reranker**: wide union → top 40 | Recall at a fixed candidate budget | 3 h | Recall@40 ≥ union − 0.1 |
-| 7 | **G1 normalize v2**: structural rules only, drop the hand-written maps | Generality, code audit | 2 h | Holdout within −0.1 |
-| 8 | Stretch: S3 larger training set (60% of S1); S2 S2↔S3 twins; cross-encoder feature (laptop GPU → ONNX) | +0.1–0.3 each | 1–6 h | Holdout |
+| 6 | **RET-B reranker**: wide union → top 40 | Recall at a fixed candidate budget | 3 h | Recall@40 ≥ union recall − 0.001 |
+| 7 | **G1 normalize v2**: structural rules only, drop the hand-written maps | Generality, code audit | 2 h | Holdout ≥ B-current − 0.001 |
+| 8 | Stretch: S3 larger training set (60% of S1); S2 S2↔S3 twins; cross-encoder feature (laptop GPU → ONNX) | +0.001–0.003 each (est.) | 1–6 h | Holdout ≥ +0.001 |
 
 **Final 12 h, no new features:**
 1. Freeze.
