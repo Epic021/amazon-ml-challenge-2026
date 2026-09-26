@@ -38,10 +38,28 @@ _REP = re.compile(r"(.)\1+")
 LO_ADD, LO_DROP = {}, {}
 EQ_ADDR, EQ_NAME = {}, {}          # variant -> set of canonical forms (mined, see mine_equiv.py)
 PLO_ADD, PLO_DROP, S1DF = {}, {}, {}  # per-country, label-free word roles (see build_role_tables)
+ALO_ADD, ALO_DROP = {}, {}            # label log-odds of added / dropped ADDRESS words (folds 0-1)
+_DIGRAPH = [("ph", "f"), ("sh", "s"), ("ch", "c"), ("kh", "k"), ("gh", "g"), ("th", "t"),
+            ("dh", "d"), ("bh", "b"), ("ck", "k")]
+_LETTER = str.maketrans({"c": "k", "q": "k", "z": "s", "x": "s", "j": "g", "w": "v", "y": "a"})
+_NASAL = re.compile(r"m(?=[bcdfghjklnpqrstvwxz])")
 
 
 def fold_of(ids: pd.Series) -> np.ndarray:
     return (ids.str[3:].astype(np.int64) % 10).values
+
+
+def sound_token(t: str) -> str:
+    """Sound-alike key: digraphs, nasal m before a consonant -> n, c/q->k, z/x->s, j->g, w->v, y->a,
+    then drop vowels after the first letter and collapse repeats (praivet -> prvt = private)."""
+    for a_, b_ in _DIGRAPH:
+        t = t.replace(a_, b_)
+    t = _NASAL.sub("n", t).translate(_LETTER)
+    return _REP.sub(r"\1", t[:1] + re.sub(r"[aeiou]", "", t[1:]))
+
+
+def sound_str(s: str) -> str:
+    return " ".join(sound_token(t) for t in s.split())
 
 
 def skel_str(s: str) -> str:
@@ -80,6 +98,20 @@ def _num_feats(a: str, b: str):
     return rel, first_eq, s1first_in, len(sa & sb), len(sa - sb), len(sb - sa), min_lev, prefix, fdiff
 
 
+def _numx_feats(a: str, b: str):
+    """Finer number relations (EDA: truncation 516->51 is typo-like; a gap <= 10 is decoy-like;
+    7-15 vs 715 is the same number)."""
+    A, B = a.split(), b.split()
+    sa, sb = set(A), set(B)
+    ua, ub = list(sa - sb)[:6], list(sb - sa)[:6]
+    suffix, gap = -1, -1.0
+    if ua and ub:
+        suffix = int(any(x.endswith(y) or y.endswith(x) for x in ua for y in ub))
+        gap = float(min(abs(int(x[:9]) - int(y[:9])) for x in ua for y in ub))
+    concat = int(bool(A) and bool(B) and A != B and "".join(A) == "".join(B))
+    return suffix, concat, (np.log1p(gap) if gap >= 0 else -1.0), (int(0 <= gap <= 10) if gap >= 0 else -1)
+
+
 def _name_diff(a: str, b: str):
     ta, tb = set(a.split()), set(b.split())
     return tb - ta, ta - tb, ta, tb
@@ -104,7 +136,7 @@ def _lo_stats(vals):
 
 def loop_feats(args):
     s1n, cn, s1c, cc, s1num, cnum, s1a, ca, ctry = args
-    out = np.zeros((len(s1n), 36), dtype=np.float32)
+    out = np.zeros((len(s1n), 48), dtype=np.float32)
     for i in range(len(s1n)):
         added, dropped, ta, tb = _name_diff(s1n[i], cn[i])
         la, lb = ta & LEGAL, tb & LEGAL
@@ -137,6 +169,14 @@ def loop_feats(args):
         gen = [dfm.get(t, -20.0) for t in added]
         out[i, 34] = max(gen) if gen else -30.0                   # most generic added word (log S1-name share)
         out[i, 35] = sum(t not in dfm for t in added)             # added words never seen in this country's S1 names
+        out[i, 36:40] = _numx_feats(s1num[i], cnum[i])
+        a_add, a_drop = ab - aa, aa - ab                          # address words (no digits) added / dropped
+        lo_aa = [ALO_ADD[t] for t in a_add if t in ALO_ADD]
+        lo_ad = [ALO_DROP[t] for t in a_drop if t in ALO_DROP]
+        out[i, 40:43] = _lo_stats(lo_aa)
+        out[i, 43:46] = _lo_stats(lo_ad)
+        out[i, 46] = len(a_add) - len(lo_aa)
+        out[i, 47] = len(a_drop) - len(lo_ad)
     return out
 
 
@@ -146,7 +186,10 @@ LOOP_COLS = ["num_rel", "num_first_eq", "num_s1first_in", "num_common", "num_s1_
              "n_added", "n_dropped", "n_added_unknown", "n_dropped_unknown", "legal_conflict", "legal_added",
              "core_eq", "core_s1_in_c", "core_c_in_s1", "addr_tok_jacc", "addr_c_only", "addr_s1_only",
              "addr_diff_explained", "name_diff_explained",
-             "padd_sum", "padd_max", "padd_min", "pdrop_sum", "pdrop_max", "add_gen_max", "add_novel"]
+             "padd_sum", "padd_max", "padd_min", "pdrop_sum", "pdrop_max", "add_gen_max", "add_novel",
+             "numx_suffix", "numx_concat_eq", "numx_min_logdiff", "numx_gap_le10",
+             "aadd_lo_sum", "aadd_lo_max", "aadd_lo_min", "adrop_lo_sum", "adrop_lo_max", "adrop_lo_min",
+             "aadd_unknown", "adrop_unknown"]
 
 
 def diff_tokens(args):
@@ -270,6 +313,23 @@ def name_count_cols(c: pd.DataFrame, rec_indexed: pd.DataFrame) -> pd.DataFrame:
                          "c_core_n_q": cd.n_q.values}, index=c.index)
 
 
+def twin_feats(cand: pl.DataFrame, rec: pd.DataFrame) -> pl.DataFrame:
+    """Twin agreement (teammate EDA twin_signal: when the number differs from S1, an other-source record
+    under the same S1 with the same number lifts P(true) 40% -> 90% for far-off numbers).
+    twin_num  = other-source candidates of the same S1 with the identical number set
+    twin_name = other-source candidates of the same S1 with the identical core name"""
+    r = pl.from_pandas(rec[["id", "src", "nums", "name_core"]]).rename(
+        {"id": "cand_id", "src": "_src", "nums": "_nums", "name_core": "_core"})
+    c = cand.join(r, on="cand_id", how="left")
+    c = c.with_columns(
+        (pl.len().over(["s1_id", "_nums"]) - pl.len().over(["s1_id", "_nums", "_src"])).alias("_tn"),
+        (pl.len().over(["s1_id", "_core"]) - pl.len().over(["s1_id", "_core", "_src"])).alias("_tc"))
+    return c.with_columns(
+        pl.when(pl.col("_nums") == "").then(-1).otherwise(pl.col("_tn")).cast(pl.Int16).alias("twin_num"),
+        pl.when(pl.col("_core") == "").then(-1).otherwise(pl.col("_tc")).cast(pl.Int16).alias("twin_name"),
+    ).drop(["_src", "_nums", "_core", "_tn", "_tc"])
+
+
 class RecStore:
     """Records as numpy arrays + an id -> row index, built once (lookups by get_indexer + take)."""
 
@@ -290,6 +350,7 @@ def attach_records(c: pd.DataFrame, store: "RecStore") -> pd.DataFrame:
         c[f"{side}_addr"] = a["addr_norm"][pos]
         c[f"{side}_nums"] = a["nums"][pos]
         c[f"{side}_skel"] = a["skel"][pos]
+        c[f"{side}_snd"] = a["snd"][pos]
         if side == "s1":
             c["country"] = a["country"][pos]
             if "n_s1" in a:
@@ -317,6 +378,8 @@ def string_feats(c: pd.DataFrame) -> pd.DataFrame:
     f["name_tset"] = cp("s1_name", "c_name", fuzz.token_set_ratio)
     f["skel_ratio"] = cp("s1_skel", "c_skel", fuzz.ratio)
     f["skel_tset"] = cp("s1_skel", "c_skel", fuzz.token_set_ratio)
+    f["snd_ratio"] = cp("s1_snd", "c_snd", fuzz.ratio)
+    f["snd_tset"] = cp("s1_snd", "c_snd", fuzz.token_set_ratio)
     f["addr_ratio"] = cp("s1_addr", "c_addr", fuzz.ratio)
     f["addr_tset"] = cp("s1_addr", "c_addr", fuzz.token_set_ratio)
     f["addr_tsort"] = cp("s1_addr", "c_addr", fuzz.token_sort_ratio)
@@ -338,6 +401,14 @@ def _skel_chunk(names):
     return [skel_str(x) for x in names]
 
 
+def _snd_chunk(names):
+    return [sound_str(x) for x in names]
+
+
+def _addr_words(strs):
+    return [" ".join(t for t in x.split() if not t.isdigit()) for x in strs]
+
+
 def load_equiv(split: str):
     tabs = [f"{DATA}/equiv/train.parquet"] + ([f"{DATA}/equiv/test.parquet"] if split == "test" else [])
     eq = pd.concat([pd.read_parquet(t) for t in tabs if os.path.isfile(t)], ignore_index=True)
@@ -348,7 +419,7 @@ def load_equiv(split: str):
 
 
 def main():
-    global LO_ADD, LO_DROP, EQ_ADDR, EQ_NAME, PLO_ADD, PLO_DROP, S1DF
+    global LO_ADD, LO_DROP, EQ_ADDR, EQ_NAME, PLO_ADD, PLO_DROP, S1DF, ALO_ADD, ALO_DROP
     ap = argparse.ArgumentParser()
     ap.add_argument("--split", required=True, choices=["train", "test"])
     ap.add_argument("--chunk", type=int, default=6_000_000)
@@ -375,8 +446,11 @@ def main():
         step = len(rec) // (procs * 4) + 1
         rec["skel"] = [x for part in p.map(_skel_chunk, [rec.name_core.values[i:i + step]
                                                           for i in range(0, len(rec), step)]) for x in part]
+        rec["snd"] = [x for part in p.map(_snd_chunk, [rec.name_core.values[i:i + step]
+                                                        for i in range(0, len(rec), step)]) for x in part]
     rec = add_name_counts(rec)
     store = RecStore(rec)
+    cand = twin_feats(cand, rec)
     print(f"[{a.split}] {len(cand):,} pairs; context done {time.time() - t0:.0f}s", flush=True)
 
     if a.split == "train":
@@ -388,6 +462,15 @@ def main():
         LO_ADD, LO_DROP = build_logodds(stats, procs)
         pd.DataFrame({"token": list(LO_ADD), "lo": list(LO_ADD.values())}).to_parquet(f"{FEAT}/lo_add.parquet")
         pd.DataFrame({"token": list(LO_DROP), "lo": list(LO_DROP.values())}).to_parquet(f"{FEAT}/lo_drop.parquet")
+        with Pool(procs) as p:                       # address-word evidence (digits removed), same folds
+            n_ = len(stats) // (procs * 4) + 1
+            aw = lambda col: [x for part in p.map(_addr_words, [stats[col].values[i:i + n_]
+                                                                for i in range(0, len(stats), n_)]) for x in part]
+            astats = pd.DataFrame({"s1_name": aw("s1_addr"), "c_name": aw("c_addr"), "y": stats.y.values})
+        ALO_ADD, ALO_DROP = build_logodds(astats, procs)
+        pd.DataFrame({"token": list(ALO_ADD), "lo": list(ALO_ADD.values())}).to_parquet(f"{FEAT}/alo_add.parquet")
+        pd.DataFrame({"token": list(ALO_DROP), "lo": list(ALO_DROP.values())}).to_parquet(f"{FEAT}/alo_drop.parquet")
+        del astats
         top = sorted(LO_ADD.items(), key=lambda kv: kv[1])
         print(f"log-odds: add={len(LO_ADD):,} drop={len(LO_DROP):,}; most negative added: "
               f"{[t for t, _ in top[:15]]}; most positive added: {[t for t, _ in top[-15:]]}", flush=True)
@@ -395,6 +478,8 @@ def main():
     else:
         LO_ADD = dict(pd.read_parquet(f"{FEAT}/lo_add.parquet").itertuples(index=False))
         LO_DROP = dict(pd.read_parquet(f"{FEAT}/lo_drop.parquet").itertuples(index=False))
+        ALO_ADD = dict(pd.read_parquet(f"{FEAT}/alo_add.parquet").itertuples(index=False))
+        ALO_DROP = dict(pd.read_parquet(f"{FEAT}/alo_drop.parquet").itertuples(index=False))
 
     if a.no_label_lo:
         LO_ADD, LO_DROP = {}, {}
@@ -408,7 +493,7 @@ def main():
         os.remove(out_dir)
     os.makedirs(out_dir)
     writer, n_rows, n_cols = None, 0, 0
-    drop_cols = [f"{side}_{k}" for side in ("s1", "c") for k in ("name", "core", "addr", "nums", "skel")] + ["country"]
+    drop_cols = [f"{side}_{k}" for side in ("s1", "c") for k in ("name", "core", "addr", "nums", "skel", "snd")] + ["country"]
     with Pool(procs) as pool:                        # forked once, after all lookup tables are set
         for part, i in enumerate(range(0, len(cand), a.chunk)):
             t1 = time.time()
