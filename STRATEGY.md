@@ -1,7 +1,7 @@
 # Amazon ML Challenge 2026: Business Entity Resolution. Strategy
 
 **Status (Sep 26, ~11:15 IST):**
-- **Best submission:** B2. Holdout 0.9772, **LB 0.970**.
+- **Best on the holdout:** B3, 0.9777 (upload pending). **Best on the LB:** B2, holdout 0.9772, LB 0.970.
 - **Target:** top 50 (≥ 0.979 on Sep 26), so we need **+0.009**.
 - **Running:** B3 (name-uniqueness features): training, holdout log-loss 0.0043 at round 450.
 - **Also running:** the EMB retriever (Indian-script names), relaunched after an out-of-memory fix.
@@ -100,9 +100,9 @@ Blocking always runs on the full universe.
 |---|---|---|---|---|---|
 | B0 | Exact key: name tokens + first number | 0.587 | – | – | Baseline |
 | B1 | word retriever + 60 features + LightGBM + calibration + soft exclusivity + threshold 0.55 | 0.9662 (0.9546 / 0.9739) | 0.9768 | 0.952 | Implied France ≈ 0.88 |
-| **B2** | + namechar & addr retrievers + G3 label-free word roles | **0.9772** (0.966 / 0.9847) | 0.9867 | **0.970** | **Best.** Implied France ≈ 0.94; France decoy share 2.08% → 0.16% |
+| **B2** | + namechar & addr retrievers + G3 label-free word roles | **0.9772** (0.966 / 0.9847) | 0.9867 | **0.970** | Implied France ≈ 0.94; France decoy share 2.08% → 0.16% |
 | B2-noLO | B2 without the English word log-odds | 0.9762 | 0.9867 | – | Dropped |
-| B3 | B2 + G5 name uniqueness | ⏳ | 0.9867 | – | Running |
+| **B3** | B2 + G5 name uniqueness | **0.9777** (0.9664 / 0.9853) | 0.9867 | ⏳ upload | **Best.** +0.00051 over B2, bootstrap 95% CI [+0.00038, +0.00062]: small but real. Singletons 0.9857. France proxy 0.19% (≈ B2). File: `output_b3/` |
 
 **What we learned:**
 - **The model reaches ~99% of its ceiling. Blocking recall and France are the levers, not the model.**
@@ -122,7 +122,7 @@ Blocking always runs on the full universe.
 
 | # | Item | Targets | Est | Keep if |
 |---|---|---|---|---|
-| 1 | **G5 name uniqueness** (B3, running) | Empty-address rejections (74% of model misses) | running | Holdout ≥ +0.001 |
+| 1 | ~~**G5 name uniqueness**~~ **done (B3): +0.0005, CI > 0, kept** | Empty-address rejections | – | – |
 | 2 | **RET-EMB** (running): model2vec retriever for non-Latin names; the correct English name ranks first in 5/5 real misses | India blocking (6.1% of India's true pairs) | running | India ceiling ≥ +0.003 |
 | 3 | **B4 = union with EMB → features (G5 built in) → retrain** | Both of the above | ~4 h | Holdout > B3 |
 | 4 | **G4 house-number roles** (locality cardinality; match levels) | France's dense streets, remaining decoys | 2 h | France proxy ↓, holdout ≥ +0.001 |
