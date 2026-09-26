@@ -144,6 +144,23 @@ Char 3-gram retrievers (name with spaces removed, name only, address only) targe
 
 | B2 | + namechar & addr retrievers (union), + G3 per-country label-free word roles; soft exclusivity, threshold 0.55 | **0.9772** (India 0.966, US 0.9847; singletons 0.9846, non-singletons 0.9768) | 0.966 | ⏳ upload | Ceiling 0.9867; the model reaches 99.0% of it. France: 3.22 predicted matches/S1, 6.0% empty, so no over-rejection |
 
+**B2 follow-up (overnight Sep 26):**
+- **France check, corrected:** the decoy-signature share dropped from 2.08% (B1) to **0.16%**, with 3.22 predictions/S1. India and US are unchanged. **Expected LB ~0.97.**
+- **Error analysis on the holdout** (`scripts/error_analysis.py`; loss 0.0228):
+
+  | Source of loss | Size | Detail |
+  |---|---|---|
+  | Blocking misses | 3.45% of true pairs | **India 6.1%**, US 1.7%. Mostly Indian-script names with partial addresses |
+  | Model rejections | 2.0% | **74% are candidates with an empty address** (p 0.1–0.5) |
+  | Accepted wrong pairs | 0.33% of predictions | 1.5% of singletons get a prediction |
+- **Mistake, fixed:** the first B2-noLO run inherited the smoke-test data path (`BER_DATA`) from the launching shell, so its result was invalid. The script now clears these variables. Re-running on the real data.
+
+**Next, in this order (proposed Sep 26 morning):**
+1. Upload B2.
+2. **G5, name-uniqueness features:** count of S1 in the country with the same name core, and the same for the candidate's name. Targets the empty-address rejections. Features + retrain.
+3. **India recall:** better transliteration (uroman, MIT) for Indian-script names and/or a model2vec retriever. Wider address candidates in crowded blocks (addr topq 5 → 10).
+4. B2-noLO vs B2: pick by holdout + France check.
+
 B1 details:
 - **Soft vs hard exclusivity:** soft beats hard by +0.0008.
 - **Exact DP vs plain threshold:** the DP (0.9657) did **not** beat the threshold (0.9662). The likely cause is dependence between candidates, since the DP assumes independent probabilities.
