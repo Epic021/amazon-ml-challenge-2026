@@ -6,6 +6,7 @@ itself is committed: the repo `.gitignore` excludes `*.tsv` / `*.parquet`.
 | Path | What it is | How to use it |
 |---|---|---|
 | [`docs/DATASET_STRATEGY.md`](DATASET_STRATEGY.md) | **Start here.** How each kind of record or noise is treated, in plain words, with real examples | read |
+| [`docs/EXPERIMENTS.md`](EXPERIMENTS.md) | **Currently running.** Tracker for the 7 data-handling strategies (A–G) and pipeline progress, updated as results arrive | read |
 | [`docs/METHODOLOGY.md`](METHODOLOGY.md) | The solution methodology: normalization, retrieval, features, two-stage model, decoding, France | read |
 | [`eda_output/report.html`](../eda_output/report.html) | EDA report with charts (distributions, noise patterns, anomalies, test vs train) | open in a browser; the scripts `eda.py`, `eda2.py`, `verify.py`, `reverify_*.py` rebuild it |
 | [`eda_output/label_audit/REPORT.md`](../eda_output/label_audit/REPORT.md) | Training-label audit: 11 insights with match / no-match examples, the hand-checked cases, and the label-cleaning experiment (5 variants) | read; rerun with `build_pairs.py → analyze.py → curation_experiment.py → examples.py → build_markdown.py` |
