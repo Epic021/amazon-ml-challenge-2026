@@ -19,10 +19,10 @@ Each strategy changes only **which training rows the model learns from**, or the
 
 | Strategy | What changes in training | Why try it | Status | Macro F0.5 | vs A |
 |---|---|---|---|---|---|
-| **A** | nothing: keep every label (baseline, used for the first submission) | the label audit found cleaning hurts | RUNNING | – | – |
-| **D** | drop pairs the first-stage model contradicts strongly (match with p < 0.02, no-match with p > 0.98) | audit: −0.01 (idealised) | queued | – | – |
-| **E** | easy pairs (p < 0.002 or > 0.998): keep 10%, weight ×10 | audit: −0.05, with 30% of the rows | queued | – | – |
-| **G** | down-weight (×0.2) the pairs in D instead of dropping them | soft version of D | queued | – | – |
+| **A** | nothing: keep every label (baseline, used for the first submission) | the label audit found cleaning hurts | DONE | 0.98217 | – |
+| **D** | drop pairs the first-stage model contradicts strongly (match with p < 0.02, no-match with p > 0.98) | audit: −0.01 (idealised) | DONE | 0.98231 | +0.00014 |
+| **E** | easy pairs (p < 0.002 or > 0.998): keep 10%, weight ×10 | audit: −0.05, with 30% of the rows | DONE | 0.98247 | +0.00030 |
+| **G** | down-weight (×0.2) the pairs in D instead of dropping them | soft version of D | RUNNING | – | – |
 | **B** | drop pairs labelled against their pattern's majority | audit: −1.59 (idealised) | queued | – | – |
 | **C** | drop whole patterns whose minority label exceeds 5% | audit: −0.46 | queued | – | – |
 | **F** | drop empty-address records whose identical name is labelled inconsistently | the one exact-duplicate conflict in the audit | queued | – | – |
@@ -45,9 +45,9 @@ Each strategy changes only **which training rows the model learns from**, or the
 | Train retrieval | DONE | 116.1M candidate pairs (52.6 per S1); **98.55%** of true pairs retrieved; ceiling macro F0.5 0.9953 |
 | Train pair features | DONE | 116.1M pairs |
 | Test prep + retrieval | DONE | 108.8M candidate pairs; areas learned for France 24, India 223, US 186 |
-| Test pair features | RUNNING | – |
-| Model training (A, then D, E, G, B, C, F) | queued | – |
-| Test predictions + `matching_results.tsv` (A) | queued | – |
+| Test pair features | DONE | 108.8M pairs |
+| Model training (A, then D, E, G, B, C, F) | RUNNING | A: stage 1 macro F0.5 0.98048, after self-correction (stage 2) **0.98217**; ceiling after pruning 0.99519 (9.96M pairs) |
+| Test predictions + `matching_results.tsv` (A) | DONE | validator PASS; predicted singletons ~5.3–5.8% and ~3.3 matches per S1 in every country (France included) |
 
 ## Reproduce
 
