@@ -3,8 +3,7 @@
 **Status (Sep 26, ~11:15 IST):**
 - **LB 0.970** (B2 and B3 both; B3's +0.0005 is invisible at 3 decimals).
 - **Target:** top 50 (≥ 0.979 on Sep 26), so we need **+0.009**.
-- **Running:** B3 (name-uniqueness features): training, holdout log-loss 0.0043 at round 450.
-- **Also running:** the EMB retriever (Indian-script names), relaunched after an out-of-memory fix.
+- **Running:** B4 (RET-BLOCK candidates; ceiling 0.9917), ETA ~3.5 h.
 - **Repo is private:** code reaches the VM only via `git archive HEAD src scripts requirements.txt | ssh vm tar -x` (the team decided on no deploy key).
 - **Deadline:** around early Sep 28 IST. Verify on the portal.
 
@@ -133,8 +132,10 @@ Blocking always runs on the full universe.
 |---|---|---|---|---|
 | 1 | ~~**G5 name uniqueness**~~ **done (B3): +0.0005, CI > 0, kept** | Empty-address rejections | – | – |
 | 2 | ~~RET-EMB~~ **dropped.** Full run: 14% recall on its target pairs, only 0.16% of true pairs found only by it, India ceiling +0.0021 (< +0.003), and the test run would cost ~3 h. The 5-example test was misleading | – | – | – |
-| 2b | **RET-BLOCK** (`block_numaddr.py`): number\|token address blocks → name re-rank. Sample: recovers **54.5% of India's / 49.7% of US union misses** at ~5 pairs/query. Train+test candidates done; **train-union ceiling being measured** | India + US blocking | done | Ceiling ≥ +0.003 |
-| 3 | **B4 = union with EMB → features (G5 built in) → retrain** | Both of the above | ~4 h | Holdout > B3 |
+| 2b | **RET-BLOCK: gate PASSED.** Pair recall 0.9655 → **0.9769** (pruned). **Ceiling 0.9867 → 0.9917 (+0.0050); India 0.9749 → 0.9859 (+0.011)**, US 0.9946 → 0.9956. 1.1% of true pairs are found only by it | India + US blocking | done | ✓ |
+| 2c | **More training data: gate FAILED.** Pilot (small LightGBM): 10% 0.97472 → 30% 0.97551 → 50% 0.97574 (+0.0002). B3-big cancelled | – | done | ✗ |
+| 3 | **B4 = union with RET-BLOCK → features → retrain** (candidate change only; G5 built in). **Running** since Sep 26 ~15:00 IST, ETA ~3–3.5 h. Expected holdout ≈ 0.9917 × 0.99 ≈ **0.982**, LB ≈ **0.975** | India recall | running | Holdout ≥ +0.001 over B3 |
+| 3b | **EDA-driven feature pilot** (10% of S1, with vs without): twin agreement, finer number classes (cut-short at either end, concatenation, gap ≤ 10), address-word log-odds + evidence dropout, sound-alike skeleton | Decoys, France, Indic names | next | Pilot ≥ +0.001 |
 | 4 | **G4 house-number roles** (locality cardinality; match levels) | France's dense streets, remaining decoys | 2 h | France proxy ↓, holdout ≥ +0.001 |
 | 5 | **F1 synthetic French decoys** (number ±1–2, added frequent word) | Measure France rejection directly | 1.5 h | Diagnostic |
 | 6 | **RET-B reranker**: wide union → top 40 | Recall at a fixed candidate budget | 3 h | Recall@40 ≥ union recall − 0.001 |
