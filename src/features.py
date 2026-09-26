@@ -14,10 +14,13 @@ import os
 import re
 import time
 from collections import Counter
+import shutil
+import threading
 from multiprocessing import Pool
 
 import numpy as np
 import pandas as pd
+import polars as pl
 from rapidfuzz import fuzz, process
 from rapidfuzz.distance import JaroWinkler, Levenshtein
 
@@ -222,22 +225,26 @@ def build_logodds(df: pd.DataFrame, procs: int, min_count: int = 30):
 
 
 # ---------------------------------------------------------------- main
-def context_feats(c: pd.DataFrame) -> pd.DataFrame:
-    g1, gc = c.groupby("s1_id").score, c.groupby("cand_id").score
-    c["s1_best"] = g1.transform("max")
-    c["gap_s1"] = c.s1_best - c.score
-    c["rank_in_s1"] = g1.rank(ascending=False, method="first").astype(np.int16)
-    c["n_s1_cands"] = g1.transform("size").astype(np.int16)
-    c["c_best"] = gc.transform("max")
-    c["gap_c"] = c.c_best - c.score
-    c["n_c_s1"] = gc.transform("size").astype(np.int16)
-    srt = c[["cand_id", "score"]].sort_values(["cand_id", "score"], ascending=[True, False])
-    srt["k"] = srt.groupby("cand_id").cumcount()
-    c["c_second"] = c.cand_id.map(srt[srt.k == 1].set_index("cand_id").score).fillna(0)
-    c["c_margin"] = c.c_best - c.c_second
-    c["is_c_best"] = (c.gap_c == 0).astype(np.int8)
-    c["mutual_best"] = ((c.gap_c == 0) & (c.gap_s1 == 0)).astype(np.int8)
-    return c.drop(columns=["c_second"])
+def context_feats(c: pl.DataFrame) -> pl.DataFrame:
+    """Rank context over the full candidate list (polars windows, all cores)."""
+    c = c.with_columns(
+        pl.col("score").max().over("s1_id").alias("s1_best"),
+        pl.col("score").rank("ordinal", descending=True).over("s1_id").cast(pl.Int16).alias("rank_in_s1"),
+        pl.len().over("s1_id").cast(pl.Int16).alias("n_s1_cands"),
+        pl.col("score").max().over("cand_id").alias("c_best"),
+        pl.len().over("cand_id").cast(pl.Int16).alias("n_c_s1"),
+        pl.col("score").top_k(2).min().over("cand_id").alias("_top2min"),
+    )
+    c = c.with_columns(
+        (pl.col("s1_best") - pl.col("score")).alias("gap_s1"),
+        (pl.col("c_best") - pl.col("score")).alias("gap_c"),
+        pl.when(pl.col("n_c_s1") >= 2).then(pl.col("_top2min")).otherwise(0.0).alias("_c_second"),
+    )
+    return c.with_columns(
+        (pl.col("c_best") - pl.col("_c_second")).alias("c_margin"),
+        (pl.col("gap_c") == 0).cast(pl.Int8).alias("is_c_best"),
+        ((pl.col("gap_c") == 0) & (pl.col("gap_s1") == 0)).cast(pl.Int8).alias("mutual_best"),
+    ).drop(["_top2min", "_c_second"])
 
 
 def add_name_counts(rec: pd.DataFrame) -> pd.DataFrame:
@@ -263,23 +270,37 @@ def name_count_cols(c: pd.DataFrame, rec_indexed: pd.DataFrame) -> pd.DataFrame:
                          "c_core_n_q": cd.n_q.values}, index=c.index)
 
 
-def attach_records(c: pd.DataFrame, rec: pd.DataFrame) -> pd.DataFrame:
-    r = rec.set_index("id")
+class RecStore:
+    """Records as numpy arrays + an id -> row index, built once (lookups by get_indexer + take)."""
+
+    def __init__(self, rec: pd.DataFrame):
+        self.idx = pd.Index(rec.id.values)
+        self.a = {k: rec[k].values for k in rec.columns if k != "id"}
+
+    def take(self, ids, col):
+        return self.a[col][self.idx.get_indexer(ids)]
+
+
+def attach_records(c: pd.DataFrame, store: "RecStore") -> pd.DataFrame:
     for side, key in (("s1", "s1_id"), ("c", "cand_id")):
-        sub = r.reindex(c[key].values)
-        c[f"{side}_name"] = sub.name_norm.values
-        c[f"{side}_core"] = sub.name_core.values
-        c[f"{side}_addr"] = sub.addr_norm.values
-        c[f"{side}_nums"] = sub.nums.values
-        c[f"{side}_skel"] = sub.skel.values
+        pos = store.idx.get_indexer(c[key].values)
+        a = store.a
+        c[f"{side}_name"] = a["name_norm"][pos]
+        c[f"{side}_core"] = a["name_core"][pos]
+        c[f"{side}_addr"] = a["addr_norm"][pos]
+        c[f"{side}_nums"] = a["nums"][pos]
+        c[f"{side}_skel"] = a["skel"][pos]
         if side == "s1":
-            c["country"] = sub.country.values
+            c["country"] = a["country"][pos]
+            if "n_s1" in a:
+                c["s1_core_n_s1"] = a["n_s1"][pos]
         if side == "c":
-            c["c_src_s3"] = (sub.src.values == "S3").astype(np.int8)
-            c["c_nonlatin"] = sub.nonlatin.values.astype(np.int8)
-            c["c_addr_empty"] = sub.addr_empty.values.astype(np.int8)
-    if "n_s1" in r.columns:
-        c[NAME_COUNT_COLS] = name_count_cols(c, r).values
+            c["c_src_s3"] = (a["src"][pos] == "S3").astype(np.int8)
+            c["c_nonlatin"] = a["nonlatin"][pos].astype(np.int8)
+            c["c_addr_empty"] = a["addr_empty"][pos].astype(np.int8)
+            if "n_s1" in a:
+                c["c_core_n_s1"] = a["n_s1"][pos]
+                c["c_core_n_q"] = a["n_q"][pos]
     return c
 
 
@@ -305,13 +326,16 @@ def string_feats(c: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(f, index=c.index)
 
 
-def run_loop(c: pd.DataFrame, procs: int) -> pd.DataFrame:
-    n = 200_000
+def run_loop(c: pd.DataFrame, pool, procs: int) -> pd.DataFrame:
+    n = max(20_000, len(c) // (procs * 3) + 1)
     cols = ["s1_name", "c_name", "s1_core", "c_core", "s1_nums", "c_nums", "s1_addr", "c_addr", "country"]
     chunks = [tuple(c[k].values[i:i + n] for k in cols) for i in range(0, len(c), n)]
-    with Pool(procs) as p:
-        arr = np.vstack(p.map(loop_feats, chunks))
+    arr = np.vstack(pool.map(loop_feats, chunks))
     return pd.DataFrame(arr, columns=LOOP_COLS, index=c.index)
+
+
+def _skel_chunk(names):
+    return [skel_str(x) for x in names]
 
 
 def load_equiv(split: str):
@@ -341,23 +365,26 @@ def main():
     EQ_ADDR, EQ_NAME = load_equiv(a.split)
     print(f"equivalence rules: addr={len(EQ_ADDR)} name={len(EQ_NAME)}", flush=True)
 
-    cand = pd.read_parquet(f"{CAND}/{a.split}.parquet")
+    cand = pl.read_parquet(f"{CAND}/{a.split}.parquet")
     if a.sample < 1.0:
-        cand = cand[(cand.s1_id.str[3:].astype(np.int64) % 1000) < a.sample * 1000]
+        cand = cand.filter(pl.col("s1_id").str.slice(3).cast(pl.Int64) % 1000 < a.sample * 1000)
     cand = context_feats(cand)                       # context over the full candidate list
-    cand = cand[(cand.rank_q <= a.max_rank_q) | (cand.rank_s <= a.max_rank_s)].reset_index(drop=True)
+    cand = cand.filter((pl.col("rank_q") <= a.max_rank_q) | (pl.col("rank_s") <= a.max_rank_s))
     rec = pd.concat([pd.read_parquet(f"{NORM}/{a.split}_s{k}.parquet") for k in (1, 2, 3)], ignore_index=True)
-    rec["skel"] = [skel_str(s) for s in rec.name_core.values]
+    with Pool(procs) as p:
+        step = len(rec) // (procs * 4) + 1
+        rec["skel"] = [x for part in p.map(_skel_chunk, [rec.name_core.values[i:i + step]
+                                                          for i in range(0, len(rec), step)]) for x in part]
     rec = add_name_counts(rec)
+    store = RecStore(rec)
     print(f"[{a.split}] {len(cand):,} pairs; context done {time.time() - t0:.0f}s", flush=True)
 
     if a.split == "train":
-        truth = pd.read_parquet(f"{PQ}/train_pairs.parquet")
-        truth["y"] = np.int8(1)
-        cand = cand.merge(truth, on=["s1_id", "cand_id"], how="left")
-        cand["y"] = cand.y.fillna(0).astype(np.int8)
-        cand["fold"] = fold_of(cand.s1_id)
-        stats = attach_records(cand[cand.fold <= 1][["s1_id", "cand_id", "y"]].copy(), rec)
+        truth = pl.read_parquet(f"{PQ}/train_pairs.parquet").with_columns(pl.lit(1, dtype=pl.Int8).alias("y"))
+        cand = cand.join(truth, on=["s1_id", "cand_id"], how="left").with_columns(
+            pl.col("y").fill_null(0).cast(pl.Int8),
+            (pl.col("s1_id").str.slice(3).cast(pl.Int64) % 10).cast(pl.Int8).alias("fold"))
+        stats = attach_records(cand.filter(pl.col("fold") <= 1).select(["s1_id", "cand_id", "y"]).to_pandas(), store)
         LO_ADD, LO_DROP = build_logodds(stats, procs)
         pd.DataFrame({"token": list(LO_ADD), "lo": list(LO_ADD.values())}).to_parquet(f"{FEAT}/lo_add.parquet")
         pd.DataFrame({"token": list(LO_DROP), "lo": list(LO_DROP.values())}).to_parquet(f"{FEAT}/lo_drop.parquet")
@@ -371,20 +398,32 @@ def main():
 
     if a.no_label_lo:
         LO_ADD, LO_DROP = {}, {}
-    PLO_ADD, PLO_DROP, S1DF = build_role_tables(cand, rec, procs)
+    PLO_ADD, PLO_DROP, S1DF = build_role_tables(
+        cand.filter(pl.col("rank_q") == 1).select(["s1_id", "cand_id", "rank_q"]).to_pandas(), rec, procs)
 
-    parts = []
-    for i in range(0, len(cand), a.chunk):
-        t1 = time.time()
-        c = attach_records(cand.iloc[i:i + a.chunk].copy(), rec)
-        c = pd.concat([c, string_feats(c), run_loop(c, procs)], axis=1)
-        c = c.drop(columns=[f"{side}_{k}" for side in ("s1", "c")
-                            for k in ("name", "core", "addr", "nums", "skel")] + ["country"])
-        parts.append(c)
-        print(f"  chunk {i // a.chunk}: {len(c):,} pairs in {time.time() - t1:.0f}s", flush=True)
-    out = pd.concat(parts, ignore_index=True)
-    out.to_parquet(a.out or f"{FEAT}/{a.split}.parquet", index=False)
-    print(f"[{a.split}] features {out.shape} written in {time.time() - t0:.0f}s", flush=True)
+    out_dir = a.out or f"{FEAT}/{a.split}.parquet"
+    if os.path.isdir(out_dir):
+        shutil.rmtree(out_dir)
+    elif os.path.exists(out_dir):
+        os.remove(out_dir)
+    os.makedirs(out_dir)
+    writer, n_rows, n_cols = None, 0, 0
+    drop_cols = [f"{side}_{k}" for side in ("s1", "c") for k in ("name", "core", "addr", "nums", "skel")] + ["country"]
+    with Pool(procs) as pool:                        # forked once, after all lookup tables are set
+        for part, i in enumerate(range(0, len(cand), a.chunk)):
+            t1 = time.time()
+            c = attach_records(cand.slice(i, a.chunk).to_pandas(), store)
+            c = pd.concat([c, string_feats(c), run_loop(c, pool, procs)], axis=1).drop(columns=drop_cols)
+            if writer is not None:
+                writer.join()
+            writer = threading.Thread(target=c.to_parquet, args=(f"{out_dir}/part-{part:04d}.parquet",),
+                                      kwargs={"index": False})
+            writer.start()
+            n_rows, n_cols = n_rows + len(c), c.shape[1]
+            print(f"  chunk {part}: {len(c):,} pairs in {time.time() - t1:.0f}s", flush=True)
+    if writer is not None:
+        writer.join()
+    print(f"[{a.split}] features ({n_rows:,}, {n_cols}) written to {out_dir} in {time.time() - t0:.0f}s", flush=True)
 
 
 if __name__ == "__main__":

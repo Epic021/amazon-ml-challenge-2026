@@ -88,6 +88,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", default="v1")
     ap.add_argument("--calib_folds", default="6,7,8,9", help="folds for isotonic calibration (never trained on)")
+    ap.add_argument("--dp", action="store_true", help="also evaluate the exact expected-F DP (slow; never beat the threshold)")
     a = ap.parse_args()
     calib_folds = tuple(int(x) for x in a.calib_folds.split(","))
 
@@ -111,7 +112,7 @@ def main():
     for ex in views:
         for t in np.round(np.arange(0.3, 0.96, 0.05), 2):
             rules[(ex, "thr", float(t))] = lambda d, t=t: threshold(d, t)
-        for c in (0.0, 0.5, 1.0, 2.0):
+        for c in ((0.0, 0.5, 1.0, 2.0) if a.dp else ()):
             rules[(ex, "dp", c)] = lambda d, c=c: dp_decode(d, c, recall)
     scores, per = {}, {}
     for key, fn in rules.items():
