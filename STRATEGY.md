@@ -110,6 +110,7 @@ Blocking always runs on the full universe.
 | B1 | word retriever + 60 features + LightGBM + calibration + soft exclusivity + threshold 0.55 | 0.9662 (0.9546 / 0.9739) | 0.9768 | 0.952 | Implied France ≈ 0.88 |
 | **B2** | + namechar & addr retrievers + G3 label-free word roles | **0.9772** (0.966 / 0.9847) | 0.9867 | **0.970** | Implied France ≈ 0.94; France decoy share 2.08% → 0.16% |
 | B2-noLO | B2 without the English word log-odds | 0.9762 | 0.9867 | – | Dropped |
+| **B4** | + RET-BLOCK (number\|token address blocks) candidates; fast polars pipeline | **0.98265** (0.9772 / 0.9863) | 0.9917 | ⏳ | Best single model. Model efficiency 99.1%. France: 3.34 predictions/S1, decoy share 0.23%. Pipeline wall time 2 h 21 min |
 | **B3** | B2 + G5 name uniqueness | **0.9777** (0.9664 / 0.9853) | 0.9867 | **0.970** | **No visible LB gain** (the LB shows 3 decimals, and +0.0005 is below that). Holdout +0.00051, CI [+0.00038, +0.00062]: real but below the +0.001 bar; it should not have been submitted as a separate run |
 
 **What we learned:**
