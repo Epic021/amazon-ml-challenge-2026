@@ -4,6 +4,7 @@
 #  2. B2-noLO: retrain without the label-based (English-only) word log-odds -> decode -> validate + diag
 #  3. write logs/night_summary.txt
 set -uo pipefail
+unset BER_DATA BER_OUT   # never inherit smoke-test paths from the launching shell
 cd /work/amazon-ml-challenge-2026
 source /work/venv/bin/activate
 export PYTHONUNBUFFERED=1

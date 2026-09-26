@@ -52,7 +52,8 @@ def main():
     th = th.assign(country=th.s1_id.map(ctry).values)
     print("\ntrue pairs: missed by BLOCKING", round(fn_block.mean(), 4), "| rejected by MODEL", round(fn_model.mean(), 4))
     print("  by country (blocking / model):",
-          {c: (round(fn_block[th.country == c].mean(), 4), round(fn_model[th.country == c].mean(), 4)) for c in th.country.unique()})
+          {c: (round(fn_block.values[(th.country == c).values].mean(), 4),
+               round(fn_model.values[(th.country == c).values].mean(), 4)) for c in th.country.unique()})
     print("predicted pairs that are WRONG:", round(len(fp) / max(len(pred), 1), 4),
           " by country:", fp.s1_id.map(ctry).value_counts().div(pred.s1_id.map(ctry).value_counts()).round(4).to_dict())
     n_true = th.groupby("s1_id").size().reindex(f.index, fill_value=0)
