@@ -23,7 +23,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "src"))
 DATA = os.environ.get("BER_DATA", os.path.join(ROOT, "data"))
 TUNE, HOLD = [6, 7, 8, 9], 5
-W, THR, THR_O, THR_T = 0.5, 0.45, 0.55, 0.5
+THR_O, THR_T = 0.55, 0.5
 FOLD = (pl.col("s1_id").str.slice(3).cast(pl.Int64) % 10).cast(pl.Int8)
 KEY = ["s1_id", "cand_id"]
 
@@ -88,7 +88,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", default="b4")
     ap.add_argument("--feat_dir", default=f"{DATA}/feat_b4")
+    ap.add_argument("--w", type=float, default=0.5, help="weight on ours (1.0 = ours alone)")
+    ap.add_argument("--thr", type=float, default=0.45)
+    ap.add_argument("--only_a", action="store_true", help="expected-vs-actual F only")
     a = ap.parse_args()
+    W, THR = a.w, a.thr
     pl.Config.set_tbl_rows(40).set_tbl_cols(20).set_tbl_width_chars(220)
 
     tr = pairs("train", a.tag)
@@ -131,6 +135,8 @@ def main():
                                      pl.col("exp_matches").mean().round(3), pl.col("n_pred").mean().round(3),
                                      (pl.col("ef") < 0.9).mean().round(4).alias("share_ef<0.9"))
             .sort("country"))
+    if a.only_a:
+        return
 
     # B) uncertainty profile
     print("\n== B) grey pairs (0.2<=r<=0.8) per S1; near-threshold predicted pairs ==")
