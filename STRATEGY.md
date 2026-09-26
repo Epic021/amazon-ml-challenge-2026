@@ -5,7 +5,7 @@
 - **Target:** top 50 (≥ 0.979 on Sep 26), so we need **+0.009**.
 - **Running:** B3 (name-uniqueness features): training, holdout log-loss 0.0043 at round 450.
 - **Also running:** the EMB retriever (Indian-script names), relaunched after an out-of-memory fix.
-- **Repo is private:** code reaches the VM via `git archive HEAD src scripts requirements.txt | ssh vm tar -x` until the VM has a deploy key.
+- **Repo is private:** code reaches the VM only via `git archive HEAD src scripts requirements.txt | ssh vm tar -x` (the team decided on no deploy key).
 - **Deadline:** around early Sep 28 IST. Verify on the portal.
 
 Supporting docs:
