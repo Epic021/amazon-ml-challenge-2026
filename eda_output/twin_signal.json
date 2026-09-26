@@ -1,0 +1,42 @@
+{
+  "same": {
+    "true matches": 2338604,
+    "decoys": 30848,
+    "other source has the same number: true %": 62.6,
+    "other source has the same number: decoy %": 60.7,
+    "P(true) when other source confirms the number": 98.7,
+    "P(true) when it does not": 98.6
+  },
+  "cut short (516→51)": {
+    "true matches": 142364,
+    "decoys": 14047,
+    "other source has the same number: true %": 5.0,
+    "other source has the same number: decoy %": 2.7,
+    "P(true) when other source confirms the number": 95.0,
+    "P(true) when it does not": 90.8
+  },
+  "one digit changed (505→507)": {
+    "true matches": 49685,
+    "decoys": 315017,
+    "other source has the same number: true %": 7.1,
+    "other source has the same number: decoy %": 4.0,
+    "P(true) when other source confirms the number": 21.8,
+    "P(true) when it does not": 13.2
+  },
+  "nearby number (1013→1020)": {
+    "true matches": 23558,
+    "decoys": 431936,
+    "other source has the same number: true %": 25.8,
+    "other source has the same number: decoy %": 3.7,
+    "P(true) when other source confirms the number": 27.8,
+    "P(true) when it does not": 4.0
+  },
+  "far-off number": {
+    "true matches": 103899,
+    "decoys": 112693,
+    "other source has the same number: true %": 29.1,
+    "other source has the same number: decoy %": 2.9,
+    "P(true) when other source confirms the number": 90.3,
+    "P(true) when it does not": 40.2
+  }
+}

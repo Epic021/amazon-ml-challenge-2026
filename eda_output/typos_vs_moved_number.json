@@ -1,0 +1,150 @@
+{
+  "same": {
+    "true, same street": {
+      "n": 2338604,
+      "name typo %": 8.0,
+      "address typo %": 0.0,
+      "added non-typo word %": 29.4
+    },
+    "decoy, same street": {
+      "n": 30848,
+      "name typo %": 20.4,
+      "address typo %": null,
+      "added non-typo word %": 74.2
+    },
+    "true, street also changed": {
+      "n": 1096636,
+      "name typo %": 8.5,
+      "address typo %": 33.6,
+      "added non-typo word %": 25.8
+    },
+    "P(true) if name has a typo": 96.7,
+    "P(true) if name is clean": 98.9
+  },
+  "number missing": {
+    "true, same street": {
+      "n": 316546,
+      "name typo %": 8.5,
+      "address typo %": 0.0,
+      "added non-typo word %": 25.7
+    },
+    "decoy, same street": {
+      "n": 22729,
+      "name typo %": 6.7,
+      "address typo %": null,
+      "added non-typo word %": 71.9
+    },
+    "true, street also changed": {
+      "n": 339829,
+      "name typo %": 7.8,
+      "address typo %": 10.0,
+      "added non-typo word %": 24.2
+    },
+    "P(true) if name has a typo": 94.7,
+    "P(true) if name is clean": 93.2
+  },
+  "cut short (516→51)": {
+    "true, same street": {
+      "n": 142364,
+      "name typo %": 8.5,
+      "address typo %": 0.0,
+      "added non-typo word %": 25.8
+    },
+    "decoy, same street": {
+      "n": 14047,
+      "name typo %": 9.3,
+      "address typo %": null,
+      "added non-typo word %": 66.6
+    },
+    "true, street also changed": {
+      "n": 58874,
+      "name typo %": 8.6,
+      "address typo %": 27.1,
+      "added non-typo word %": 25.8
+    },
+    "P(true) if name has a typo": 90.2,
+    "P(true) if name is clean": 91.1
+  },
+  "one digit changed (505→507)": {
+    "true, same street": {
+      "n": 49685,
+      "name typo %": 8.3,
+      "address typo %": 0.0,
+      "added non-typo word %": 25.8
+    },
+    "decoy, same street": {
+      "n": 315017,
+      "name typo %": 7.5,
+      "address typo %": null,
+      "added non-typo word %": 64.8
+    },
+    "true, street also changed": {
+      "n": 20511,
+      "name typo %": 8.2,
+      "address typo %": 28.3,
+      "added non-typo word %": 25.5
+    },
+    "P(true) if name has a typo": 14.9,
+    "P(true) if name is clean": 13.5
+  },
+  "nearby number (1013→1020)": {
+    "true, same street": {
+      "n": 23558,
+      "name typo %": 8.4,
+      "address typo %": 0.0,
+      "added non-typo word %": 26.2
+    },
+    "decoy, same street": {
+      "n": 431936,
+      "name typo %": 7.4,
+      "address typo %": null,
+      "added non-typo word %": 65.1
+    },
+    "true, street also changed": {
+      "n": 10573,
+      "name typo %": 8.3,
+      "address typo %": 33.7,
+      "added non-typo word %": 25.6
+    },
+    "P(true) if name has a typo": 5.8,
+    "P(true) if name is clean": 5.1
+  },
+  "far-off number": {
+    "true, same street": {
+      "n": 103899,
+      "name typo %": 8.2,
+      "address typo %": 0.0,
+      "added non-typo word %": 27.1
+    },
+    "decoy, same street": {
+      "n": 112693,
+      "name typo %": 4.5,
+      "address typo %": null,
+      "added non-typo word %": 82.8
+    },
+    "true, street also changed": {
+      "n": 58264,
+      "name typo %": 8.7,
+      "address typo %": 27.5,
+      "added non-typo word %": 26.1
+    },
+    "P(true) if name has a typo": 62.7,
+    "P(true) if name is clean": 47.0
+  },
+  "examples": {
+    "decoy, clean copy": [
+      "Crystal Engineering Worldwide | 5304 Conklin Drive, Hilliard, OH   ->   Crystal Worldwide Group Partners | 5307 CONKLIN DRIVE, HILLIARD, OH",
+      "Cardiology Clinic Inc. | 251 Roseland Place, NC, Aberdeen   ->   Cardiology Clinic Metro Inc. | 256  ROSELAND PLACE, ABERDEEN, NC",
+      "Dermatology Capital Medicine, LLC | 5 Bittersweet Lane, Westport, CT   ->   DERMATOLOGY CAPITAL MEDICINE, HOLDINGS | 8-12 BITTERSWEET LANE, WESTPORT, CT",
+      "Troy Empire Ses LLC | 133 Cottonstone Lane, Troy, NC   ->   Troy Empire Ses Ltd. | 134. COTTONSTONE LN, TROY, NC",
+      "2741 Union Boulevard Company | 5717 Plank Road, Charlotte, NC   ->   2741 Union Boulevard Company LLC | 05718 PLANK RD, CHARLOTTE, NC"
+    ],
+    "true, typo-heavy": [
+      "Shepherd, Carter and Peterson Indigo, LLC | IL, 8513 Mobile Avenue, Burbank   ->   SHEPHERD,  CARTER AND PETERSON LLC CENTER | 1513 MOBILE AVE, BURBAK, IL",
+      "Behavioral Health Care of Auburn | 850 Dakota Drive, Auburn, AL   ->   Behavioral Health Ctrs of Auburn | AL, AUBURRN, 650 DAKOTA DR",
+      "Foot & Ankle Health | 110 36th Avenue W, Tulsa, OK   ->   Foot & Anke Health | 114 36TH AVE WERT, TULSA, OK",
+      "Dermatology Direct Center | Atlanta, Unit 15B, GA, 475 Oakdale Road   ->   Dermatology Direct-Cetr | 275 OAKDALE RD, ATLNATA, GA",
+      "Calhoun Sierra Co | 1518 Celia Drive, Wichita Falls, TX   ->   CALHOUN SIOTRRA CO | TX, 1517 CELIA DR, WICHITA FALS"
+    ]
+  }
+}

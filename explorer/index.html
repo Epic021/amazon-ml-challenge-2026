@@ -1,0 +1,881 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dataset Explorer</title>
+<style>
+:root {
+  --ground:#EEF1F4; --surface:#FFFFFF; --raised:#F6F8FA; --ink:#141A21; --muted:#5C6775; --faint:#8A95A3;
+  --line:#DCE2E8; --line-strong:#C5CDD6;
+  --accent:#16707F; --accent-ink:#FFFFFF; --accent-soft:#DCEDF0;
+  --warn:#B04A27; --warn-soft:#F8E4DA; --good:#2C7547; --good-soft:#DFF0E5;
+  --mark:#FFE08A; --mark-ink:#141A21;
+  --s1:#3461A8; --s2:#B35C25; --s3:#2F7F54; --gt:#6A55A0;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans","Noto Sans Devanagari",sans-serif;
+  --mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Mono",Menlo,Consolas,"Noto Sans Mono","Noto Sans Devanagari",monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:#0C1015; --surface:#141A21; --raised:#10151B; --ink:#E4E9EF; --muted:#97A3B0; --faint:#6A7582;
+    --line:#232B35; --line-strong:#323C48;
+    --accent:#5BB3C2; --accent-ink:#06161A; --accent-soft:#12303A;
+    --warn:#E6895C; --warn-soft:#351F17; --good:#6BBF8B; --good-soft:#15301F;
+    --mark:#6A5410; --mark-ink:#FFF3D1;
+    --s1:#86A8E6; --s2:#E6A06A; --s3:#7CC79A; --gt:#B7A3EA;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground:#0C1015; --surface:#141A21; --raised:#10151B; --ink:#E4E9EF; --muted:#97A3B0; --faint:#6A7582;
+  --line:#232B35; --line-strong:#323C48;
+  --accent:#5BB3C2; --accent-ink:#06161A; --accent-soft:#12303A;
+  --warn:#E6895C; --warn-soft:#351F17; --good:#6BBF8B; --good-soft:#15301F;
+  --mark:#6A5410; --mark-ink:#FFF3D1;
+  --s1:#86A8E6; --s2:#E6A06A; --s3:#7CC79A; --gt:#B7A3EA;
+  color-scheme:dark;
+}
+
+* { box-sizing:border-box; }
+html, body { height:100%; }
+body { margin:0; background:var(--ground); color:var(--ink); font:13.5px/1.45 var(--sans);
+  display:flex; flex-direction:column; overflow:hidden; }
+button, input, select { font:inherit; color:inherit; }
+button { cursor:pointer; }
+button:disabled { cursor:default; opacity:.4; }
+:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+[hidden] { display:none !important; }
+
+/* ---------- top bar ---------- */
+.top { background:var(--surface); border-bottom:1px solid var(--line); padding:10px 14px 8px;
+  display:grid; gap:8px; padding-top:calc(10px + env(safe-area-inset-top, 0px)); }
+.top-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.brand { display:flex; align-items:baseline; gap:10px; min-width:0; }
+.brand b { font-size:15px; letter-spacing:-.01em; white-space:nowrap; }
+.brand small { color:var(--faint); font:11.5px var(--mono); white-space:nowrap; overflow:hidden;
+  text-overflow:ellipsis; max-width:34ch; }
+.search { display:flex; gap:6px; align-items:center; flex:1 1 560px; min-width:0; flex-wrap:wrap; }
+.search input[type=search] { flex:1 1 260px; min-width:0; height:34px; padding:0 12px;
+  border:1px solid var(--line-strong); border-radius:8px; background:var(--raised); font:13px var(--mono); }
+.search input[type=search]::placeholder { font-family:var(--sans); color:var(--faint); }
+select, .btn { height:34px; border:1px solid var(--line-strong); border-radius:8px; background:var(--surface);
+  padding:0 10px; }
+.btn:hover:not(:disabled), select:hover { border-color:var(--faint); }
+.btn.primary { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); font-weight:600; }
+.btn.ghost { border-color:transparent; background:transparent; color:var(--accent); }
+.btn.ghost:hover { background:var(--accent-soft); }
+.tgl[aria-pressed="true"] { background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
+.tog { position:relative; display:inline-flex; }
+.tog input { position:absolute; inset:0; opacity:0; margin:0; cursor:pointer; }
+.tog span { display:inline-grid; place-items:center; min-width:34px; height:34px; padding:0 8px;
+  border:1px solid var(--line-strong); border-radius:8px; font:600 12.5px var(--mono); color:var(--muted);
+  background:var(--surface); }
+.tog input:checked + span { background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
+.tog input:focus-visible + span { outline:2px solid var(--accent); outline-offset:1px; }
+.chips { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+.lbl { font:600 10.5px var(--sans); letter-spacing:.08em; text-transform:uppercase; color:var(--faint); margin-right:2px; }
+.chip { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); border-radius:999px;
+  padding:2px 10px 2px 3px; font-size:12px; background:var(--surface); color:var(--muted); }
+.chip[aria-pressed="true"] { border-color:var(--accent); background:var(--accent-soft); color:var(--ink); }
+.chip[aria-pressed="false"] .src { opacity:.45; }
+.lnk { border:0; background:none; padding:2px 4px; color:var(--accent); font-size:12px; border-radius:4px; }
+.lnk:hover { text-decoration:underline; }
+.scope-msg { color:var(--warn); font-size:12px; }
+
+/* ---------- source pills & tags ---------- */
+.src { display:inline-grid; place-items:center; min-width:24px; height:18px; padding:0 5px; border-radius:4px;
+  font:700 10.5px var(--mono); color:var(--surface); letter-spacing:.02em; flex:none; }
+.src-s1 { background:var(--s1); } .src-s2 { background:var(--s2); } .src-s3 { background:var(--s3); }
+.src-gt { background:var(--gt); } .src-x { background:var(--faint); }
+.tag { font:600 10px var(--mono); letter-spacing:.08em; text-transform:uppercase; padding:2px 6px;
+  border-radius:4px; border:1px solid var(--line-strong); color:var(--muted); flex:none; }
+.tag-accent { border-color:var(--accent); color:var(--accent); }
+
+/* ---------- layout ---------- */
+.main { flex:1; display:flex; min-height:0; }
+.side { flex:0 0 272px; width:272px; background:var(--surface); border-right:1px solid var(--line);
+  overflow:auto; padding:12px 12px calc(16px + env(safe-area-inset-bottom, 0px)); }
+.side h2 { font:600 10.5px var(--sans); letter-spacing:.08em; text-transform:uppercase; color:var(--faint);
+  margin:4px 4px 8px; }
+.fgroup { margin:0 0 14px; }
+.fgroup h3 { font:600 11px var(--mono); letter-spacing:.06em; text-transform:uppercase; color:var(--muted);
+  margin:0 4px 4px; }
+.fitem { display:grid; grid-template-columns:auto 1fr auto; gap:2px 8px; align-items:center; width:100%;
+  text-align:left; border:1px solid transparent; border-radius:8px; padding:7px 8px; background:none; }
+.fitem:hover { background:var(--raised); border-color:var(--line); }
+.fn { font:12.5px var(--mono); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.fm { grid-column:2 / 4; color:var(--muted); font-size:11.5px; font-variant-numeric:tabular-nums; }
+.st { font-size:10.5px; padding:1px 7px; border-radius:999px; white-space:nowrap; }
+.st-ok { color:var(--good); background:var(--good-soft); }
+.st-wait { color:var(--muted); border:1px solid var(--line-strong); }
+.st-err { color:var(--warn); background:var(--warn-soft); }
+.side form { display:flex; gap:6px; margin:0 4px; }
+.side form input { flex:1; min-width:0; height:32px; border:1px solid var(--line-strong); border-radius:8px;
+  background:var(--raised); padding:0 10px; font:12.5px var(--mono); }
+.side form .btn { height:32px; }
+.side-msg { margin:6px 4px 0; font-size:12px; color:var(--warn); min-height:1em; }
+.side-note { margin:18px 4px 0; color:var(--muted); font-size:12px; line-height:1.5; max-width:34ch; }
+.side-note kbd { font:11px var(--mono); border:1px solid var(--line-strong); border-radius:4px; padding:0 4px; }
+
+.strip { flex:1; display:flex; overflow-x:auto; min-width:0; padding:10px;
+  padding-bottom:calc(10px + env(safe-area-inset-bottom, 0px)); }
+.pane { flex:1 1 0; min-width:340px; display:flex; flex-direction:column; min-height:0;
+  background:var(--surface); border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+.pane.flash { animation:flash .9s ease-out; }
+@keyframes flash { from { box-shadow:0 0 0 3px var(--accent); } to { box-shadow:0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .pane.flash { animation:none; } }
+.gutter { flex:0 0 10px; cursor:col-resize; position:relative; touch-action:none; }
+.gutter::after { content:""; position:absolute; left:4px; top:calc(50% - 24px); height:48px; width:2px;
+  border-radius:2px; background:var(--line-strong); }
+.gutter:hover::after, .gutter:active::after { background:var(--accent); }
+
+.pane-h { display:flex; align-items:center; gap:8px; padding:8px 8px 8px 12px; border-bottom:1px solid var(--line);
+  background:var(--raised); min-width:0; }
+.pane-title { font:600 13px var(--mono); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+.pane-meta { color:var(--muted); font-size:12px; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.x { margin-left:auto; border:0; background:transparent; width:28px; height:28px; border-radius:6px;
+  color:var(--muted); font-size:18px; line-height:1; flex:none; }
+.x:hover { background:var(--line); color:var(--ink); }
+.toolbar { display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:6px 8px; border-bottom:1px solid var(--line); }
+.toolbar:empty { display:none; }
+.toolbar .btn, .toolbar select { height:28px; padding:0 8px; font-size:12.5px; border-radius:6px; }
+.toolbar input { height:28px; border:1px solid var(--line-strong); border-radius:6px; background:var(--raised);
+  padding:0 8px; font:12.5px var(--mono); min-width:0; }
+.toolbar input.num { width:84px; }
+.toolbar input.find { flex:1 1 140px; }
+.grp { display:inline-flex; align-items:center; gap:4px; }
+.grp.end { margin-left:auto; }
+.range { font:12px var(--mono); color:var(--muted); padding:0 6px; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.hint { color:var(--muted); font-size:12px; padding:0 4px; }
+.body { flex:1; overflow:auto; min-height:0; }
+
+/* ---------- tables ---------- */
+table { border-collapse:separate; border-spacing:0; width:100%; font:12.5px/1.5 var(--mono); }
+th { position:sticky; top:0; z-index:1; background:var(--raised); text-align:left; vertical-align:bottom;
+  font:600 10.5px var(--sans); letter-spacing:.05em; text-transform:uppercase; color:var(--muted);
+  padding:7px 8px; border-bottom:1px solid var(--line); }
+td { padding:5px 8px; border-bottom:1px solid var(--line); vertical-align:top; overflow-wrap:anywhere; }
+td.rn, th.rn { text-align:right; width:1%; white-space:nowrap; color:var(--faint); font-variant-numeric:tabular-nums; }
+td.rn.odd::after { content:"•"; color:var(--warn); margin-left:3px; }
+td[data-col="entity_id"], td[data-col="source1_entity_id"], td[data-col="country"] { white-space:nowrap; }
+table.nowrap td { white-space:nowrap; max-width:46ch; overflow:hidden; text-overflow:ellipsis; overflow-wrap:normal; }
+tbody tr:hover td { background:color-mix(in srgb, var(--accent-soft) 55%, transparent); }
+tr.focus td { background:var(--accent-soft); }
+tr.focus td.rn { color:var(--accent); font-weight:700; }
+mark { background:var(--mark); color:var(--mark-ink); border-radius:2px; padding:0 1px; }
+.ws { color:var(--faint); }
+.empty { color:var(--faint); font:italic 11.5px var(--sans); }
+.idlink { font:inherit; color:var(--accent); background:none; border:0; padding:0; text-align:left;
+  text-decoration:underline; text-decoration-color:color-mix(in srgb, var(--accent) 35%, transparent);
+  text-underline-offset:2px; }
+.idlink:hover { text-decoration-color:var(--accent); }
+.idchips { display:flex; flex-wrap:wrap; gap:3px 10px; }
+.rowbtn { font:inherit; color:var(--accent); background:none; border:0; padding:0; }
+.rowbtn:hover { text-decoration:underline; }
+
+/* ---------- search pane ---------- */
+.summary { display:flex; flex-wrap:wrap; gap:6px; padding:10px 12px; border-bottom:1px solid var(--line); }
+.sum-item { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); border-radius:8px;
+  padding:3px 8px 3px 4px; background:var(--surface); font-size:12px; }
+.sum-item b { font:600 12px var(--mono); font-variant-numeric:tabular-nums; }
+.sum-item.zero { color:var(--faint); }
+.sum-item.zero .src { opacity:.4; }
+button.sum-item:hover { border-color:var(--accent); }
+.banner { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:10px 12px 0; padding:8px 10px;
+  border-radius:8px; background:var(--accent-soft); font-size:12.5px; }
+.banner .btn { height:28px; font-size:12.5px; }
+.sec-h { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:14px 12px 8px; }
+.sec-name { font:600 12.5px var(--mono); }
+.sec-count { color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums; }
+.sec-h .btn { height:26px; font-size:12px; padding:0 8px; }
+.findbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:8px 12px; font-size:12.5px;
+  border-bottom:1px solid var(--line); background:var(--raised); }
+.findbar .btn { height:26px; font-size:12px; }
+
+/* ---------- entity pane ---------- */
+.group { padding:12px; display:grid; gap:10px; }
+.group + .group { border-top:1px solid var(--line); }
+.grp-h { display:flex; align-items:flex-start; gap:8px; }
+.state { font-size:12.5px; color:var(--muted); line-height:1.4; }
+.st-singleton, .st-unmatched { color:var(--warn); }
+.card { border:1px solid var(--line); border-radius:8px; padding:9px 12px 8px; display:grid; gap:3px; }
+.card.ref { background:var(--raised); border-color:var(--line-strong); }
+.card.focus { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+.card-h { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font:12px var(--mono); }
+.muted { color:var(--faint); }
+.nm { font-size:14px; font-weight:600; line-height:1.35; overflow-wrap:anywhere; }
+.ad { font:12.5px/1.45 var(--mono); color:var(--muted); overflow-wrap:anywhere; }
+.roman { font:italic 12px var(--mono); color:var(--faint); overflow-wrap:anywhere; }
+.badge { font:11px var(--sans); padding:1px 7px; border-radius:999px; border:1px solid var(--line-strong);
+  color:var(--muted); white-space:nowrap; }
+.badge.good { background:var(--good-soft); color:var(--good); border-color:transparent; }
+.badge.bad { background:var(--warn-soft); color:var(--warn); border-color:transparent; font-weight:600; }
+.d-add { background:var(--accent-soft); border-radius:3px; padding:0 2px; box-shadow:inset 0 -1px 0 var(--accent); }
+.d-acc { text-decoration:underline dotted var(--muted); text-underline-offset:3px; }
+.d-num { background:var(--warn-soft); color:var(--warn); border-radius:3px; padding:0 2px; font-weight:700; }
+.card-a { display:flex; gap:2px; margin:2px -4px 0; }
+.card.missing { border-style:dashed; }
+
+/* ---------- states ---------- */
+.note { padding:14px 16px; color:var(--muted); }
+.error { margin:12px; padding:10px 12px; border-radius:8px; background:var(--warn-soft); color:var(--warn); }
+.empty-strip { margin:auto; max-width:56ch; text-align:center; color:var(--muted); padding:24px; }
+.es-t { font-size:16px; color:var(--ink); font-weight:600; margin:0 0 6px; text-wrap:balance; }
+.empty-strip p { margin:0 0 6px; }
+.es-a { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:16px; }
+
+@media (max-width: 760px) {
+  .side { position:absolute; z-index:5; top:0; bottom:0; left:0; box-shadow:0 8px 30px rgba(0,0,0,.25); }
+  .main { position:relative; }
+  .brand small { display:none; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-row">
+    <button class="btn tgl" id="sideToggle" type="button" aria-pressed="true" aria-controls="side" title="Show or hide the file list">Files</button>
+    <div class="brand"><b>Dataset Explorer</b><small id="dataRoot"></small></div>
+    <form class="search" id="searchForm" role="search">
+      <input id="q" type="search" autocomplete="off" spellcheck="false" aria-label="Search every file"
+             placeholder="Search every file: a name, part of an address, or an ID like S2-681193310   ( / )">
+      <select id="col" aria-label="Column to search" title="Search every column, or just one"><option value="">All columns</option></select>
+      <label class="tog" title="Match case"><input type="checkbox" id="case"><span>Aa</span></label>
+      <label class="tog" title="Regular expression (POSIX extended)"><input type="checkbox" id="regex"><span>.*</span></label>
+      <select id="limit" aria-label="Results per file" title="Most rows shown per file">
+        <option value="50">50 / file</option><option value="100" selected>100 / file</option>
+        <option value="250">250 / file</option><option value="1000">1000 / file</option>
+      </select>
+      <button class="btn primary" type="submit">Search</button>
+    </form>
+  </div>
+  <div class="chips" id="chips"></div>
+</header>
+
+<div class="main">
+  <aside class="side" id="side">
+    <h2>Files</h2>
+    <div id="fileList"><div class="note">Connecting…</div></div>
+    <h2>Open an entity</h2>
+    <form id="entityForm">
+      <input id="eid" placeholder="S1-965667" aria-label="Entity ID" autocomplete="off" spellcheck="false">
+      <button class="btn" type="submit">Open</button>
+    </form>
+    <div class="side-msg" id="eidMsg" role="status"></div>
+    <p class="side-note">Click a file to open it as a new pane; panes sit side by side, and you can drag the gap between two panes to resize them. Click any entity ID to see its whole match group. Press <kbd>/</kbd> to jump to search.</p>
+  </aside>
+  <main class="strip" id="strip" aria-label="Open panes"></main>
+</div>
+
+<script>
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k === 'class') el.className = v;
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat()) if (kid != null && kid !== false && kid !== '') el.append(kid);
+  return el;
+}
+const fmt = n => (n == null ? '…' : Number(n).toLocaleString('en-US'));
+const fmtBytes = b => (b >= 1e9 ? (b / 1e9).toFixed(2) + ' GB' : Math.round(b / 1e6) + ' MB');
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const smooth = () => (reduceMotion.matches ? 'auto' : 'smooth');
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('dx.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('dx.' + k, JSON.stringify(v)); } catch {} },
+};
+async function api(path, params = {}) {
+  const u = new URL(path, location.origin);
+  for (const [k, v] of Object.entries(params)) {
+    if (v === undefined || v === null || v === '' || v === false) continue;
+    u.searchParams.set(k, v === true ? '1' : v);
+  }
+  let r;
+  try { r = await fetch(u); } catch { throw new Error('Cannot reach the explorer server. Is it still running?'); }
+  const j = await r.json().catch(() => ({ error: `The server answered HTTP ${r.status}.` }));
+  if (!r.ok || j.error) throw new Error(j.error || `HTTP ${r.status}`);
+  return j;
+}
+
+const S = { files: [], byId: new Map(), panes: [], searchFiles: new Set(), uid: 0 };
+const ID_RX = /^S[123]-\d+$/i;
+
+/* ---------- small renderers ---------- */
+const srcKey = f => (f.kind === 'ground_truth' ? 'gt' : (f.source || 'x').toLowerCase());
+const shortName = f => (f.kind === 'ground_truth' ? 'ground truth' : f.source ? 'source ' + f.source.slice(1) : f.name);
+function pill(f) {
+  return h('span', { class: `src src-${srcKey(f)}`, title: f.kind === 'ground_truth' ? 'Ground truth' : shortName(f) },
+    f.kind === 'ground_truth' ? 'GT' : (f.source || '?'));
+}
+const pillFor = id => h('span', { class: `src src-${id.slice(0, 2).toLowerCase()}` }, id.slice(0, 2).toUpperCase());
+function status(msg, cls = 'note') { return h('div', { class: cls, role: cls === 'error' ? 'alert' : 'status' }, msg); }
+
+function appendWs(host, t, ws) {
+  if (!ws) { host.append(t); return; }
+  t.split(' ').forEach((part, i) => { if (i) host.append(h('span', { class: 'ws' }, '·')); if (part) host.append(part); });
+}
+function renderText(parent, text, { re = null, ws = false } = {}) {
+  if (text == null || text === '') { parent.append(h('span', { class: 'empty' }, 'empty')); return; }
+  if (!re) { appendWs(parent, text, ws); return; }
+  re.lastIndex = 0;
+  let last = 0, m;
+  while ((m = re.exec(text))) {
+    if (m[0] === '') { re.lastIndex++; continue; }
+    if (m.index > last) appendWs(parent, text.slice(last, m.index), ws);
+    const mk = h('mark'); appendWs(mk, m[0], ws); parent.append(mk);
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) appendWs(parent, text.slice(last), ws);
+}
+function hlRegex(q, regex, cs) {
+  const src = regex ? q : q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const flags = cs ? 'g' : 'gi';
+  for (const f of [flags + 'u', flags]) { try { return new RegExp(src, f); } catch {} }
+  return null;
+}
+function idLink(id, split, re) {
+  const b = h('button', { class: 'idlink', type: 'button', title: `Open ${id} with its match group (Shift-click: new pane)`,
+    onclick: e => openEntity(id, split, e.shiftKey) });
+  renderText(b, id, { re });
+  return b;
+}
+function cell(file, col, val, opt) {
+  const td = h('td', { 'data-col': col });
+  const re = opt.re && (!opt.reCol || opt.reCol === col) ? opt.re : null;
+  if ((col === 'entity_id' || col === 'source1_entity_id') && ID_RX.test(val)) td.append(idLink(val, file.split, re));
+  else if (col === 'matched_entity_ids') {
+    if (!val) td.append(h('span', { class: 'empty' }, 'none (singleton)'));
+    else td.append(h('div', { class: 'idchips' }, val.split(',').map(id => idLink(id, file.split, re))));
+  } else renderText(td, val, { re, ws: opt.ws });
+  return td;
+}
+// let long column names like business_address break after an underscore
+const thLabel = c => c.split('_').flatMap((part, i, a) => (i < a.length - 1 ? [part + '_', h('wbr')] : [part]));
+function table(file, rows, opt, onRow) {
+  const thead = h('thead', {}, h('tr', {}, h('th', { class: 'rn', title: 'Data row (the header is not counted)' }, 'row'),
+    file.columns.map(c => h('th', { title: c }, thLabel(c)))));
+  const tbody = h('tbody');
+  for (const r of rows) {
+    const odd = r.fields.length !== file.columns.length;
+    const label = fmt(r.row + 1);
+    const rn = h('td', { class: 'rn' + (odd ? ' odd' : ''), title: odd ? `This line has ${r.fields.length} fields; the header has ${file.columns.length}.` : null },
+      onRow ? h('button', { class: 'rowbtn', type: 'button', title: `Show row ${label} in its file`, onclick: () => onRow(r.row) }, label) : label);
+    tbody.append(h('tr', { class: opt.focusRow === r.row ? 'focus' : null },
+      rn, file.columns.map((c, i) => cell(file, c, r.fields[i] ?? '', opt))));
+  }
+  return h('table', { class: opt.wrap === false ? 'nowrap' : null }, thead, tbody);
+}
+function toggle(label, title, on, onChange) {
+  const b = h('button', { class: 'btn tgl', type: 'button', title, 'aria-pressed': String(!!on) }, label);
+  b.addEventListener('click', () => { const v = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', String(v)); onChange(v); });
+  return b;
+}
+function countAllBtn(fileId, q, target, shown) {
+  const b = h('button', { class: 'btn ghost', type: 'button', title: 'Count every match in this file' }, 'Count all');
+  b.addEventListener('click', async () => {
+    b.disabled = true; b.textContent = 'Counting…';
+    try {
+      const j = await api('/api/count', { file: fileId, q: q.q, col: q.col, regex: q.regex, case: q.case });
+      target.textContent = `${fmt(shown)} of ${fmt(j.count)} rows`;
+      b.remove();
+    } catch (e) { b.textContent = 'Count failed'; b.title = e.message; }
+  });
+  return b;
+}
+
+/* ---------- panes ---------- */
+const strip = $('#strip');
+function shell(p, title, tags) {
+  p.titleEl = h('div', { class: 'pane-title', title }, title);
+  p.metaEl = h('span', { class: 'pane-meta' });
+  p.head = h('div', { class: 'pane-h' }, tags, p.titleEl, p.metaEl,
+    h('button', { class: 'x', type: 'button', title: 'Close pane', 'aria-label': 'Close pane', onclick: () => closePane(p) }, '×'));
+  p.tools = h('div', { class: 'toolbar' });
+  p.body = h('div', { class: 'body' });
+  p.el = h('section', { class: 'pane' }, p.head, p.tools, p.body);
+  p.req = 0;
+  p.uid = ++S.uid;
+}
+function addPane(p, { at = null, focus = true } = {}) {
+  if (!p) return null;
+  if (at == null) S.panes.push(p); else S.panes.splice(at, 0, p);
+  layout(); p.load(); persist();
+  if (focus) requestAnimationFrame(() => p.el.scrollIntoView({ behavior: smooth(), block: 'nearest', inline: 'nearest' }));
+  return p;
+}
+function closePane(p) { S.panes = S.panes.filter(x => x !== p); layout(); persist(); }
+function layout() {
+  strip.replaceChildren();
+  if (!S.panes.length) { strip.append(emptyState()); return; }
+  S.panes.forEach((p, i) => { if (i) strip.append(gutter(S.panes[i - 1], p)); strip.append(p.el); });
+}
+function flash(p) {
+  p.el.classList.remove('flash'); void p.el.offsetWidth; p.el.classList.add('flash');
+  p.el.scrollIntoView({ behavior: smooth(), block: 'nearest', inline: 'nearest' });
+}
+function gutter(a, b) {
+  const g = h('div', { class: 'gutter', role: 'separator', 'aria-orientation': 'vertical', title: 'Drag to resize · double-click to reset widths' });
+  g.addEventListener('pointerdown', e => {
+    e.preventDefault(); g.setPointerCapture(e.pointerId);
+    for (const p of S.panes) p.el.style.flex = `0 0 ${p.el.getBoundingClientRect().width}px`;
+    const x0 = e.clientX, wa = a.el.getBoundingClientRect().width, wb = b.el.getBoundingClientRect().width, MIN = 340;
+    const move = ev => {
+      const dx = Math.max(MIN - wa, Math.min(wb - MIN, ev.clientX - x0));
+      a.el.style.flex = `0 0 ${wa + dx}px`; b.el.style.flex = `0 0 ${wb - dx}px`;
+    };
+    const up = () => { g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); };
+    g.addEventListener('pointermove', move); g.addEventListener('pointerup', up);
+  });
+  g.addEventListener('dblclick', () => { for (const p of S.panes) p.el.style.flex = ''; });
+  return g;
+}
+
+function FilePane(fileId, o = {}) {
+  const f = S.byId.get(fileId);
+  if (!f) return null;
+  const p = { type: 'file', fileId, start: o.start || 0, pageSize: o.pageSize || store.get('pageSize', 100),
+    focusRow: o.focusRow ?? null, find: null, total: f.rows, wrap: store.get('wrap', true), ws: store.get('ws', false) };
+  shell(p, f.name, [h('span', { class: 'tag' }, f.split), pill(f)]);
+  const btn = (label, title, fn) => h('button', { class: 'btn', type: 'button', title, 'aria-label': title, onclick: fn }, label);
+  p.first = btn('«', 'First page', () => p.go(0));
+  p.prev = btn('‹', 'Previous page', () => p.go(p.start - p.pageSize));
+  p.next = btn('›', 'Next page', () => p.go(p.start + p.pageSize));
+  p.last = btn('»', 'Last page', () => p.go((p.total || 1) - 1));
+  p.range = h('span', { class: 'range' });
+  const jump = h('input', { type: 'number', min: '1', class: 'num', placeholder: 'row #', 'aria-label': 'Go to row number', title: 'Go to row (press Enter)' });
+  jump.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    const n = parseInt(jump.value, 10);
+    if (n >= 1) p.goRow(Math.min(n, p.total || n) - 1);
+  });
+  const size = h('select', { 'aria-label': 'Rows per page', title: 'Rows per page' },
+    [50, 100, 200, 500].map(n => h('option', { value: String(n), selected: n === p.pageSize }, `${n} / page`)));
+  size.addEventListener('change', () => { p.pageSize = +size.value; store.set('pageSize', p.pageSize); p.go(p.start); });
+  const rnd = btn('Random', 'Jump to a random page', () => { if (p.total) p.go(Math.floor(Math.random() * p.total)); });
+  const findIn = h('input', { type: 'search', class: 'find', placeholder: 'Find in this file', 'aria-label': 'Find in this file', title: 'Press Enter to search this file' });
+  findIn.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    const q = findIn.value.trim();
+    p.find = q ? { q } : null; p.load();
+  });
+  findIn.addEventListener('search', () => { if (!findIn.value && p.find) { p.find = null; p.load(); } });
+  const wrapB = toggle('Wrap', 'Wrap long cells', p.wrap, v => { p.wrap = v; store.set('wrap', v); p.render(); });
+  const wsB = toggle('Spaces', 'Show spaces as · to spot double or trailing spaces', p.ws, v => { p.ws = v; store.set('ws', v); p.render(); });
+  p.tools.append(h('div', { class: 'grp' }, p.first, p.prev, p.range, p.next, p.last), jump, size, rnd, findIn,
+    h('div', { class: 'grp end' }, wrapB, wsB));
+
+  const lastStart = () => Math.max(0, Math.floor(((p.total || 1) - 1) / p.pageSize) * p.pageSize);
+  p.go = s => {
+    p.find = null; findIn.value = ''; p.focusRow = null;
+    p.start = Math.max(0, Math.min(lastStart(), Math.floor(s / p.pageSize) * p.pageSize));
+    p.load();
+  };
+  p.goRow = row => {
+    p.find = null; findIn.value = '';
+    p.focusRow = row; p.start = Math.floor(row / p.pageSize) * p.pageSize;
+    p.load();
+  };
+  p.load = async () => {
+    const t = ++p.req;
+    p.body.replaceChildren(status(S.byId.get(fileId)?.rows == null ? 'Indexing this file (first start only)…' : 'Loading…'));
+    try {
+      if (p.find) {
+        const j = await api('/api/search', { q: p.find.q, files: fileId, limit: 500 });
+        if (t !== p.req) return;
+        p.data = { mode: 'find', res: j.results[0] };
+      } else {
+        const j = await api('/api/rows', { file: fileId, start: p.start, limit: p.pageSize });
+        if (t !== p.req) return;
+        p.total = j.total; p.data = { mode: 'page', rows: j.rows };
+      }
+      p.render();
+    } catch (e) { if (t === p.req) p.body.replaceChildren(status(e.message, 'error')); }
+    persist();
+  };
+  p.render = () => {
+    const d = p.data; if (!d) return;
+    const fNow = S.byId.get(fileId);
+    p.metaEl.textContent = `${fmt(p.total)} rows`;
+    const paging = d.mode === 'page';
+    p.first.disabled = p.prev.disabled = !paging || p.start <= 0;
+    p.next.disabled = p.last.disabled = !paging || p.start + p.pageSize >= p.total;
+    if (paging) {
+      p.range.textContent = d.rows.length ? `${fmt(p.start + 1)}–${fmt(p.start + d.rows.length)} of ${fmt(p.total)}` : 'no rows';
+      p.body.replaceChildren(table(fNow, d.rows, { wrap: p.wrap, ws: p.ws, focusRow: p.focusRow }));
+      const fr = p.body.querySelector('tr.focus');
+      if (fr) fr.scrollIntoView({ block: 'center' }); else p.body.scrollTop = 0;
+      return;
+    }
+    const r = d.res;
+    p.range.textContent = 'search results';
+    if (r.error) { p.body.replaceChildren(status(r.error, 'error')); return; }
+    const n = r.rows.length;
+    const count = h('span', {}, n ? `${fmt(n)}${r.more ? '+' : ''} matching row${n === 1 ? '' : 's'} for “${p.find.q}”` : `No rows match “${p.find.q}”.`);
+    const bar = h('div', { class: 'findbar' }, count,
+      r.more ? countAllBtn(fileId, { q: p.find.q }, count, n) : null,
+      h('button', { class: 'btn ghost', type: 'button', onclick: () => p.go(p.start) }, 'Back to browsing'));
+    p.body.replaceChildren(bar, n ? table(fNow, r.rows, { wrap: p.wrap, ws: p.ws, re: hlRegex(p.find.q, false, false) }, row => p.goRow(row)) : '');
+  };
+  return p;
+}
+
+function describeQuery(q) {
+  return [q.col ? `column ${q.col}` : 'all columns', q.case ? 'match case' : 'ignore case',
+    q.regex ? 'regex' : 'plain text', `${q.files.length} of ${S.files.length} files`, `first ${q.limit} per file`].join(' · ');
+}
+function SearchPane(query) {
+  const p = { type: 'search', query };
+  shell(p, '', [h('span', { class: 'tag tag-accent' }, 'Search')]);
+  p.setQuery = q => { p.query = q; p.load(); flash(p); };
+  p.load = async () => {
+    const q = p.query, t = ++p.req;
+    p.titleEl.textContent = `“${q.q}”`; p.titleEl.title = q.q; p.metaEl.textContent = '';
+    p.tools.replaceChildren(h('span', { class: 'hint' }, describeQuery(q)));
+    p.body.replaceChildren(status(`Searching ${q.files.length} file${q.files.length === 1 ? '' : 's'}…`));
+    try {
+      const j = await api('/api/search', { q: q.q, files: q.files.join(','), col: q.col, regex: q.regex, case: q.case, limit: q.limit });
+      if (t === p.req) p.render(j);
+    } catch (e) { if (t === p.req) p.body.replaceChildren(status(e.message, 'error')); }
+  };
+  p.render = j => {
+    const q = p.query, re = hlRegex(q.q, q.regex, q.case);
+    const hits = j.results.filter(r => r.rows && r.rows.length);
+    const shown = hits.reduce((a, r) => a + r.rows.length, 0);
+    p.metaEl.textContent = `${fmt(shown)}${hits.some(r => r.more) ? '+' : ''} rows · ${fmt(j.ms)} ms`;
+    const out = [];
+    const trimmed = q.q.trim();
+    if (ID_RX.test(trimmed)) {
+      out.push(h('div', { class: 'banner' }, `${trimmed.toUpperCase()} is an entity ID.`,
+        h('button', { class: 'btn', type: 'button', onclick: () => openEntity(trimmed, null) }, 'Open its match group')));
+    }
+    const sections = new Map();
+    const sum = h('div', { class: 'summary' });
+    for (const r of j.results) {
+      const f = S.byId.get(r.file); if (!f) continue;
+      const n = r.rows ? r.rows.length : 0;
+      const label = r.error ? 'error' : r.skipped ? 'n/a' : `${fmt(n)}${r.more ? '+' : ''}`;
+      const inner = [pill(f), `${f.split} ${shortName(f)}`, h('b', {}, label)];
+      sum.append(n
+        ? h('button', { class: 'sum-item', type: 'button', title: `Jump to ${f.id}`, onclick: () => sections.get(r.file)?.scrollIntoView({ behavior: smooth(), block: 'start' }) }, inner)
+        : h('span', { class: 'sum-item zero', title: r.error || r.skipped || 'No matches' }, inner));
+    }
+    out.push(sum);
+    const errs = j.results.filter(r => r.error);
+    if (errs.length) out.push(status(errs[0].error, 'error'));
+    for (const r of hits) {
+      const f = S.byId.get(r.file);
+      const count = h('span', { class: 'sec-count' }, `${fmt(r.rows.length)}${r.more ? '+' : ''} row${r.rows.length === 1 ? '' : 's'}`);
+      const head = h('div', { class: 'sec-h' }, pill(f), h('span', { class: 'sec-name' }, f.name), h('span', { class: 'tag' }, f.split), count,
+        r.more ? countAllBtn(f.id, q, count, r.rows.length) : null,
+        h('button', { class: 'btn ghost', type: 'button', onclick: () => openAt(f.id, r.rows[0].row) }, 'Open file'));
+      const sec = h('section', {}, head, table(f, r.rows, { wrap: true, re, reCol: q.col || null }, row => openAt(f.id, row)));
+      sections.set(r.file, sec);
+      out.push(sec);
+    }
+    if (!hits.length && !errs.length) out.push(status('No matches. Try fewer words, turn off Aa, or search all columns.'));
+    p.body.replaceChildren(...out);
+  };
+  return p;
+}
+
+/* ---------- entity inspector ---------- */
+const get = (rec, col) => (rec && rec.fields ? rec.fields[rec.columns.indexOf(col)] ?? '' : '');
+const TOK = /[\p{L}\p{N}\p{M}]+/gu;
+const LEGAL = new Set('pvt private ltd limited llc inc incorporated corp corporation llp co company plc sarl sas sasu eurl sci sa ei'.split(' '));
+function normTok(t) { t = t.normalize('NFKC').toLowerCase(); return /^\d+$/.test(t) ? t.replace(/^0+(?=\d)/, '') : t; }
+const toks = s => (s || '').match(TOK)?.map(normTok) || [];
+// accent-insensitive form: 'bárbershop' and 'barbershop' compare equal
+const fold = t => t.normalize('NFD').replace(/\p{Mn}/gu, '');
+function firstNum(s) { const m = (s || '').match(/\d+/); return m ? m[0].replace(/^0+(?=\d)/, '') : null; }
+function overlap(a, b) {
+  const A = new Set(a.map(fold)), B = new Set(b.map(fold));
+  if (!A.size || !B.size) return null;
+  let i = 0; for (const x of A) if (B.has(x)) i++;
+  return i / (A.size + B.size - i);
+}
+function diffText(parent, text, ref) {
+  if (!text) { parent.append(h('span', { class: 'empty' }, 'empty')); return; }
+  const refToks = toks(ref), refSet = new Set(refToks), refFold = new Set(refToks.map(fold));
+  let last = 0;
+  for (const m of text.matchAll(TOK)) {
+    if (m.index > last) parent.append(text.slice(last, m.index));
+    const t = normTok(m[0]);
+    if (refSet.has(t)) parent.append(m[0]);
+    else if (refFold.has(fold(t))) parent.append(h('span', { class: 'd-acc', title: 'Same word as Source 1 apart from accents' }, m[0]));
+    else {
+      const num = /^\p{N}+$/u.test(t);
+      parent.append(h('span', { class: num ? 'd-num' : 'd-add', title: num ? 'Number not in the Source-1 record' : 'Word not in the Source-1 record' }, m[0]));
+    }
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) parent.append(text.slice(last));
+}
+function lev(a, b) {
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[b.length];
+}
+// every digit in the address, leading zeros dropped: "UNIT-7-15 ... 7-FLOOR" and "Unit-715 ... 7-Floor" both give "7157"
+const digitSig = s => ((s || '').match(/\d+/g) || []).map(x => x.replace(/^0+(?=\d)/, '')).join('');
+// [css class, label, tooltip]. Rates are from US training pairs on the same street as their S1 business.
+function houseRel(ref, addr) {
+  if (!addr) return ['', 'address empty', ''];
+  const a = firstNum(ref), b = firstNum(addr);
+  if (!a && !b) return ['', 'no house number', ''];
+  if (a && !b) return ['', `house no. dropped (S1 ${a})`, 'About 93% of pairs like this are true matches.'];
+  if (!a && b) return ['', `house no. added: ${b}`, ''];
+  if (a === b) return ['good', `same house no. ${a}`, 'About 99% of pairs like this are true matches.'];
+  if (digitSig(ref) === digitSig(addr)) return ['good', 'same digits, written differently', `The address digits match once separators like "-" are ignored (${b}… vs ${a}…).`];
+  if (a.startsWith(b) || b.startsWith(a) || a.endsWith(b) || b.endsWith(a))
+    return ['good', `house no. cut short: ${b} vs ${a}`, 'Looks like a typo: about 91% of pairs like this are true matches.'];
+  if (lev(a, b) === 1)
+    return ['bad', `one digit changed: ${b} vs ${a}`, 'Usually a decoy: about 14% are true matches, but about 94% when the name is otherwise identical.'];
+  const gap = Math.abs(Number(a) - Number(b));
+  if (gap <= 50)
+    return ['bad', `house no. ${gap} away: ${b} vs ${a}`, 'A nearby number is how decoys are placed: about 5% are true matches, but about 85% when the name is otherwise identical.'];
+  return ['', `house no. far off: ${b} vs ${a}`, 'A far-off number is a coin flip (about 48% true matches); decide on the name.'];
+}
+const INDIC = /[\u0900-\u0DFF]/;
+function nameCore(name) {
+  const words = name.replace(/^[\s\-.*#/]+/, '').trim().split(/\s+/);
+  while (words.length > 1 && LEGAL.has(words[words.length - 1].toLowerCase().replace(/[^\p{L}]/gu, ''))) words.pop();
+  return words.join(' ');
+}
+// Street and town from an address, without the house number. Components come in any
+// order across sources, so the query matches both orders: (street.*town|town.*street).
+function streetQuery(addr) {
+  const segs = (addr || '').split(',').map(x => x.trim()).filter(Boolean);
+  const clean = x => x.split(/\s+/).filter(w => w && !/\d/.test(w) && !w.startsWith('#')).join(' ')
+    .replace(/^[^\p{L}]+|[^\p{L}]+$/gu, '');
+  const wordy = x => /\p{L}{3,}/u.test(x);
+  let si = segs.findIndex(x => /\d/.test(x) && wordy(clean(x)));
+  if (si < 0) si = segs.findIndex(x => wordy(clean(x)));
+  if (si < 0) return null;
+  const st = clean(segs[si]);
+  const town = segs.map(clean).find((x, i) => i !== si && /\p{L}{4,}/u.test(x) && x.toLowerCase() !== st.toLowerCase());
+  const esc = x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return town
+    ? { q: `(${esc(st)}.*${esc(town)}|${esc(town)}.*${esc(st)})`, regex: true, label: `${st} + ${town}` }
+    : { q: st, regex: false, label: st };
+}
+function recCard(rec, { ref = null, isRef = false, focus = false } = {}) {
+  if (rec.missing) {
+    return h('div', { class: 'card missing' }, h('div', { class: 'card-h' }, pillFor(rec.id), h('span', {}, rec.id)),
+      h('div', { class: 'state' }, `Listed in ground truth but not found in the ${rec.split} source files.`));
+  }
+  const name = get(rec, 'business_name'), addr = get(rec, 'business_address'), country = get(rec, 'country');
+  const head = h('div', { class: 'card-h' }, pillFor(rec.id),
+    h('button', { class: 'idlink', type: 'button', title: `Show row ${fmt(rec.row + 1)} of ${rec.file}`, onclick: () => openAt(rec.file, rec.row) }, rec.id),
+    h('span', { class: 'muted' }, `row ${fmt(rec.row + 1)}`),
+    isRef ? h('span', { class: 'badge' }, 'reference') : null,
+    country ? h('span', { class: 'badge' }, country) : null);
+  const nm = h('div', { class: 'nm' }), ad = h('div', { class: 'ad' });
+  if (ref && !isRef) {
+    const [cls, txt, tip] = houseRel(get(ref, 'business_address'), addr);
+    head.append(h('span', { class: `badge ${cls}`, title: tip || 'House number compared with Source 1' }, txt));
+    const refName = get(ref, 'business_name');
+    const otherScript = INDIC.test(name) && !INDIC.test(refName);
+    const no = otherScript ? null : overlap(toks(name), toks(refName));
+    const ao = overlap(toks(addr), toks(get(ref, 'business_address')));
+    if (otherScript) head.append(h('span', { class: 'badge', title: 'Written in an Indic script, so word overlap with the Latin Source-1 name is not meaningful.' }, 'name in Indic script'));
+    else if (no != null) head.append(h('span', { class: 'badge', title: 'Distinct name words shared with Source 1' }, `name ${Math.round(no * 100)}%`));
+    if (ao != null) head.append(h('span', { class: 'badge', title: 'Distinct address words shared with Source 1' }, `address ${Math.round(ao * 100)}%`));
+    if (otherScript) renderText(nm, name); else diffText(nm, name, refName);
+    diffText(ad, addr, get(ref, 'business_address'));
+  } else { renderText(nm, name); renderText(ad, addr); }
+  const sq = streetQuery(addr);
+  const actions = h('div', { class: 'card-a' },
+    name ? h('button', { class: 'lnk', type: 'button', title: 'Search every file for this name, legal suffix removed', onclick: () => quickSearch(nameCore(name)) }, 'Search name') : null,
+    sq ? h('button', { class: 'lnk', type: 'button', title: `Search every file for ${sq.label}, ignoring the house number, to find neighbours and near-copies`, onclick: () => quickSearch(sq.q, sq.regex) }, 'Search street') : null);
+  const roman = rec.roman ? h('div', { class: 'roman', title: 'Romanized with anyascii' }, `reads as: ${rec.roman}`) : null;
+  return h('div', { class: 'card' + (isRef ? ' ref' : '') + (focus ? ' focus' : '') }, head, nm, roman, ad, actions);
+}
+function groupView(g) {
+  const members = g.members || [];
+  const n2 = members.filter(m => m.id.toUpperCase().startsWith('S2')).length;
+  const lines = {
+    group: `Source-1 business with ${members.length} matched record${members.length === 1 ? '' : 's'}: ${n2} from source 2, ${members.length - n2} from source 3.`,
+    singleton: 'Singleton: ground truth lists no matches, so the correct output is an empty list.',
+    unmatched: 'Unmatched: this record is in no ground-truth match list and belongs to no Source-1 business.',
+    no_gt: `The ${g.split} split has no ground truth. Use Search name or Search street to look for candidates.`,
+    missing_gt: 'This Source-1 record has no ground-truth row.',
+  };
+  const cards = [];
+  if (g.s1) cards.push(recCard(g.s1, { isRef: true, focus: g.focus === g.s1.id }));
+  else cards.push(recCard(g.record, { focus: true }));
+  for (const m of members) cards.push(recCard(m, { ref: g.s1, focus: m.id === g.focus }));
+  return h('div', { class: 'group' },
+    h('div', { class: 'grp-h' }, h('span', { class: 'tag' }, g.split), h('span', { class: `state st-${g.status}` }, lines[g.status] || g.status)),
+    cards,
+    g.gt ? h('div', {}, h('button', { class: 'lnk', type: 'button', onclick: () => openAt(g.gt.file, g.gt.row) }, `Show the ground-truth row in ${g.gt.file}`)) : null);
+}
+function EntityPane(id, split) {
+  const p = { type: 'entity', id, split, history: [] };
+  shell(p, id, [h('span', { class: 'tag tag-accent' }, 'Entity')]);
+  p.back = h('button', { class: 'btn', type: 'button', title: 'Previous entity' }, '‹ Back');
+  p.back.addEventListener('click', () => { const prev = p.history.pop(); if (prev) { p.id = prev.id; p.split = prev.split; p.load(); } });
+  p.show = (nid, nsplit) => {
+    if (nid !== p.id || nsplit !== p.split) { p.history.push({ id: p.id, split: p.split }); p.id = nid; p.split = nsplit; p.load(); }
+    flash(p);
+  };
+  p.load = async () => {
+    const t = ++p.req;
+    p.titleEl.textContent = p.titleEl.title = p.id; p.metaEl.textContent = '';
+    p.back.disabled = !p.history.length;
+    p.tools.replaceChildren(p.back, h('span', { class: 'hint' }, 'Tinted: word or number missing from Source 1 · dotted: accents only · hover a house-number badge for how often that change is a true match.'));
+    p.body.replaceChildren(status('Looking up… the first lookup after a restart can take a few seconds.'));
+    try {
+      const j = await api('/api/entity', { id: p.id, split: p.split });
+      if (t !== p.req) return;
+      p.metaEl.textContent = j.groups.map(g => g.split).join(' · ');
+      p.body.replaceChildren(...j.groups.map(groupView));
+    } catch (e) { if (t === p.req) p.body.replaceChildren(status(e.message, 'error')); }
+    persist();
+  };
+  return p;
+}
+function openEntity(id, split, newPane = false) {
+  id = id.trim().toUpperCase();
+  const p = !newPane && [...S.panes].reverse().find(x => x.type === 'entity');
+  if (p) p.show(id, split); else addPane(EntityPane(id, split));
+}
+function openAt(fileId, row) {
+  const p = [...S.panes].reverse().find(x => x.type === 'file' && x.fileId === fileId);
+  if (p) { p.goRow(row); flash(p); return; }
+  const size = store.get('pageSize', 100);
+  addPane(FilePane(fileId, { start: Math.floor(row / size) * size, focusRow: row }));
+}
+
+/* ---------- search bar ---------- */
+function runSearch() {
+  const q = $('#q').value.trim();
+  if (!q) { $('#q').focus(); return; }
+  const files = S.files.map(f => f.id).filter(id => S.searchFiles.has(id));
+  if (!files.length) { $('#scopeMsg').textContent = 'Pick at least one file to search.'; return; }
+  const query = { q, col: $('#col').value, regex: $('#regex').checked, case: $('#case').checked, limit: +$('#limit').value, files };
+  store.set('opts', { col: query.col, regex: query.regex, case: query.case, limit: query.limit });
+  const p = S.panes.find(x => x.type === 'search');
+  if (p) p.setQuery(query); else addPane(SearchPane(query), { at: 0 });
+}
+function quickSearch(text, regex = false) {
+  $('#q').value = text; $('#regex').checked = regex; $('#col').value = '';
+  runSearch();
+}
+function renderChips() {
+  const box = $('#chips');
+  box.replaceChildren(h('span', { class: 'lbl' }, 'Search in'));
+  for (const f of S.files) {
+    const on = S.searchFiles.has(f.id);
+    box.append(h('button', { class: 'chip', type: 'button', 'aria-pressed': String(on), title: f.id, onclick: () => {
+      if (on) S.searchFiles.delete(f.id); else S.searchFiles.add(f.id);
+      store.set('searchFiles', [...S.searchFiles]); renderChips();
+    } }, pill(f), `${f.split} ${shortName(f)}`));
+  }
+  const setAll = ids => { S.searchFiles = new Set(ids); store.set('searchFiles', ids); renderChips(); };
+  box.append(h('button', { class: 'lnk', type: 'button', onclick: () => setAll(S.files.map(f => f.id)) }, 'All'),
+    h('button', { class: 'lnk', type: 'button', onclick: () => setAll([]) }, 'None'),
+    h('span', { class: 'scope-msg', id: 'scopeMsg', role: 'status' }));
+}
+function renderColumns(opts) {
+  const sel = $('#col');
+  const cols = [...new Set(S.files.flatMap(f => f.columns))];
+  sel.replaceChildren(h('option', { value: '' }, 'All columns'), cols.map(c => h('option', { value: c }, c)));
+  if (opts && cols.includes(opts.col)) sel.value = opts.col;
+}
+function stateChip(f) {
+  const map = { ready: ['ok', 'ready'], browsable: ['wait', 'indexing'], waiting: ['wait', 'queued'], error: ['err', 'error'] };
+  const [c, t] = map[f.state] || ['wait', f.state.replace('indexing ', '') + '…'];
+  return h('span', { class: `st st-${c}`, title: f.error || (c === 'wait' ? 'Building the index. Browsing works; ID lookups wait for it.' : 'Fully indexed') }, t);
+}
+function renderSidebar() {
+  const list = $('#fileList');
+  list.replaceChildren();
+  for (const split of [...new Set(S.files.map(f => f.split))]) {
+    list.append(h('div', { class: 'fgroup' }, h('h3', {}, split),
+      S.files.filter(f => f.split === split).map(f => h('button', { class: 'fitem', type: 'button', title: `Open ${f.id} in a new pane`, onclick: () => addPane(FilePane(f.id)) },
+        pill(f), h('span', { class: 'fn' }, f.name), stateChip(f),
+        h('span', { class: 'fm' }, `${fmt(f.rows)} rows · ${fmtBytes(f.size)} · ${f.columns.length} cols`)))));
+  }
+}
+function emptyState() {
+  const pick = (split, key) => S.files.find(f => f.split === split && srcKey(f) === key);
+  const preset = (label, fs) => {
+    fs = fs.filter(Boolean);
+    return fs.length ? h('button', { class: 'btn', type: 'button', onclick: () => fs.forEach(f => addPane(FilePane(f.id), { focus: false })) }, label) : null;
+  };
+  return h('div', { class: 'empty-strip' },
+    h('p', { class: 'es-t' }, 'Open a file from the list, or search every file from the bar above.'),
+    h('p', {}, 'Files open as panes side by side. Click any entity ID to see its whole match group.'),
+    h('div', { class: 'es-a' },
+      preset('Train sources 1, 2, 3', [pick('train', 's1'), pick('train', 's2'), pick('train', 's3')]),
+      preset('Train source 1 + ground truth', [pick('train', 's1'), pick('train', 'gt')]),
+      preset('Test sources 1, 2, 3', [pick('test', 's1'), pick('test', 's2'), pick('test', 's3')])));
+}
+
+/* ---------- persistence & boot ---------- */
+function persist() {
+  store.set('panes', S.panes.filter(p => p.type !== 'search').map(p => (p.type === 'file'
+    ? { type: 'file', fileId: p.fileId, start: p.start, pageSize: p.pageSize }
+    : { type: 'entity', id: p.id, split: p.split })));
+}
+function restorePanes() {
+  for (const s of store.get('panes', [])) {
+    const p = s.type === 'file' ? FilePane(s.fileId, s) : s.type === 'entity' && s.id ? EntityPane(s.id, s.split) : null;
+    if (p) S.panes.push(p);
+  }
+  layout();
+  S.panes.forEach(p => p.load());
+}
+async function refreshFiles() {
+  let j;
+  try { j = await api('/api/files'); }
+  catch (e) { $('#fileList').replaceChildren(status(e.message, 'error')); setTimeout(refreshFiles, 3000); return; }
+  const first = !S.files.length;
+  S.files = j.files; S.byId = new Map(j.files.map(f => [f.id, f]));
+  if (first) {
+    $('#dataRoot').textContent = $('#dataRoot').title = j.root;
+    const saved = store.get('searchFiles', null);
+    S.searchFiles = new Set((saved || j.files.map(f => f.id)).filter(id => S.byId.has(id)));
+    if (saved && saved.length && !S.searchFiles.size) S.searchFiles = new Set(j.files.map(f => f.id));
+    const opts = store.get('opts', {});
+    $('#regex').checked = !!opts.regex; $('#case').checked = !!opts.case;
+    if (opts.limit) $('#limit').value = String(opts.limit);
+    renderChips(); renderColumns(opts); restorePanes();
+  }
+  renderSidebar();
+  if (j.files.some(f => f.state !== 'ready' && f.state !== 'error')) setTimeout(refreshFiles, 2000);
+}
+
+$('#searchForm').addEventListener('submit', e => { e.preventDefault(); $('#scopeMsg') && ($('#scopeMsg').textContent = ''); runSearch(); });
+$('#entityForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const v = $('#eid').value.trim();
+  if (!ID_RX.test(v)) { $('#eidMsg').textContent = 'Use an ID like S1-965667, S2-681193310 or S3-775321672.'; return; }
+  $('#eidMsg').textContent = '';
+  openEntity(v, null);
+});
+$('#sideToggle').addEventListener('click', e => {
+  const side = $('#side'); side.hidden = !side.hidden;
+  e.currentTarget.setAttribute('aria-pressed', String(!side.hidden)); store.set('side', !side.hidden);
+});
+if (store.get('side', true) === false) { $('#side').hidden = true; $('#sideToggle').setAttribute('aria-pressed', 'false'); }
+document.addEventListener('keydown', e => {
+  if (e.key === '/' && !/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement?.tagName || '')) {
+    e.preventDefault(); $('#q').focus(); $('#q').select();
+  }
+});
+layout();
+refreshFiles();
+</script>
+</body>
+</html>

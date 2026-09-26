@@ -1,0 +1,331 @@
+{
+  "train": {
+    "train_S1": {
+      "file": "train_source1.tsv",
+      "n_records": 2206821,
+      "id_prefixes": {
+        "S1-": 2206821
+      },
+      "country_counts": {
+        "US": 1323633,
+        "India": 883188
+      },
+      "empty_name": 0,
+      "empty_name_pct": 0.0,
+      "empty_addr": 0,
+      "empty_addr_pct": 0.0,
+      "name_len": {
+        "min": 3,
+        "p25": 18,
+        "median": 24,
+        "mean": 24.0,
+        "p75": 30,
+        "p95": 37,
+        "p99": 42,
+        "max": 105
+      },
+      "addr_len": {
+        "min": 11,
+        "p25": 33,
+        "median": 41,
+        "mean": 52.1,
+        "p75": 70,
+        "p95": 103,
+        "p99": 124,
+        "max": 256
+      },
+      "dup_entity_id": 0,
+      "dup_business_name": 667592,
+      "dup_business_name_pct": 30.251,
+      "name_script_pct": {
+        "latin": 100.0
+      },
+      "name_has_legal_suffix_pct": 64.996,
+      "name_is_domain_pct": 0.0,
+      "name_leading_junk_pct": 0.0,
+      "addr_has_near_landmark_pct": 4.509,
+      "addr_has_digit_pct": 96.509,
+      "name_len_le2_pct": 0.0,
+      "name_numeric_only": 0
+    },
+    "train_S2": {
+      "file": "train_source2.tsv",
+      "n_records": 5034616,
+      "id_prefixes": {
+        "S2-": 5034616
+      },
+      "country_counts": {
+        "US": 3016817,
+        "India": 2017799
+      },
+      "empty_name": 0,
+      "empty_name_pct": 0.0,
+      "empty_addr": 168967,
+      "empty_addr_pct": 3.356,
+      "name_len": {
+        "min": 2,
+        "p25": 19,
+        "median": 25,
+        "mean": 25.1,
+        "p75": 31,
+        "p95": 40,
+        "p99": 48,
+        "max": 104
+      },
+      "addr_len": {
+        "min": 0,
+        "p25": 30,
+        "median": 37,
+        "mean": 46.2,
+        "p75": 61,
+        "p95": 96,
+        "p99": 118,
+        "max": 249
+      },
+      "dup_entity_id": 0,
+      "dup_business_name": 632607,
+      "dup_business_name_pct": 12.565,
+      "name_script_pct": {
+        "latin": 84.856,
+        "other_nonlatin": 9.827,
+        "devanagari": 5.318
+      },
+      "name_has_legal_suffix_pct": 51.144,
+      "name_is_domain_pct": 3.996,
+      "name_leading_junk_pct": 0.874,
+      "addr_has_near_landmark_pct": 3.862,
+      "addr_has_digit_pct": 90.646,
+      "name_len_le2_pct": 0.014,
+      "name_numeric_only": 455954
+    },
+    "train_S3": {
+      "file": "train_source3.tsv",
+      "n_records": 5285603,
+      "id_prefixes": {
+        "S3-": 5285603
+      },
+      "country_counts": {
+        "US": 3170056,
+        "India": 2115547
+      },
+      "empty_name": 0,
+      "empty_name_pct": 0.0,
+      "empty_addr": 175916,
+      "empty_addr_pct": 3.328,
+      "name_len": {
+        "min": 2,
+        "p25": 18,
+        "median": 25,
+        "mean": 25.2,
+        "p75": 31,
+        "p95": 42,
+        "p99": 50,
+        "max": 123
+      },
+      "addr_len": {
+        "min": 0,
+        "p25": 35,
+        "median": 42,
+        "mean": 46.7,
+        "p75": 54,
+        "p95": 91,
+        "p99": 115,
+        "max": 240
+      },
+      "dup_entity_id": 0,
+      "dup_business_name": 633994,
+      "dup_business_name_pct": 11.995,
+      "name_script_pct": {
+        "latin": 88.51,
+        "other_nonlatin": 8.486,
+        "devanagari": 3.004
+      },
+      "name_has_legal_suffix_pct": 53.672,
+      "name_is_domain_pct": 3.989,
+      "name_leading_junk_pct": 0.87,
+      "addr_has_near_landmark_pct": 2.929,
+      "addr_has_digit_pct": 90.799,
+      "name_len_le2_pct": 0.175,
+      "name_numeric_only": 244054
+    },
+    "ground_truth": {
+      "n_source1_entities": 2206821,
+      "singletons": 123247,
+      "singleton_pct": 5.585,
+      "with_matches": 2083574,
+      "match_count_stats": {
+        "mean": 3.461,
+        "median": 3,
+        "p95": 6,
+        "p99": 8,
+        "max": 11
+      },
+      "matched_id_source_mix": {
+        "S2": 3693619,
+        "S3": 3944746,
+        "S2_pct": 48.356,
+        "S3_pct": 51.644,
+        "total_matched_ids": 7638365
+      },
+      "entities_with_S2": 1919076,
+      "entities_with_S3": 1940545,
+      "entities_with_both": 1776047,
+      "entities_S2_only": 143029,
+      "entities_S3_only": 164498
+    }
+  },
+  "test": {
+    "test_S1": {
+      "file": "test_source1.tsv",
+      "n_records": 1732544,
+      "id_prefixes": {
+        "S1-": 1732544
+      },
+      "country_counts": {
+        "India": 809986,
+        "US": 663106,
+        "France": 259452
+      },
+      "empty_name": 0,
+      "empty_name_pct": 0.0,
+      "empty_addr": 0,
+      "empty_addr_pct": 0.0,
+      "name_len": {
+        "min": 3,
+        "p25": 18,
+        "median": 24,
+        "mean": 23.8,
+        "p75": 29,
+        "p95": 36,
+        "p99": 42,
+        "max": 92
+      },
+      "addr_len": {
+        "min": 11,
+        "p25": 36,
+        "median": 50,
+        "mean": 57.2,
+        "p75": 74,
+        "p95": 105,
+        "p99": 126,
+        "max": 268
+      },
+      "dup_entity_id": 0,
+      "dup_business_name": 493677,
+      "dup_business_name_pct": 28.494,
+      "name_script_pct": {
+        "latin": 97.622,
+        "other_nonlatin": 2.378
+      },
+      "name_has_legal_suffix_pct": 59.584,
+      "name_is_domain_pct": 0.0,
+      "name_leading_junk_pct": 0.0,
+      "addr_has_near_landmark_pct": 5.246,
+      "addr_has_digit_pct": 95.854,
+      "name_len_le2_pct": 0.0,
+      "name_numeric_only": 0
+    },
+    "test_S2": {
+      "file": "test_source2.tsv",
+      "n_records": 4887273,
+      "id_prefixes": {
+        "S2-": 4887273
+      },
+      "country_counts": {
+        "India": 2312565,
+        "US": 1871330,
+        "France": 703378
+      },
+      "empty_name": 0,
+      "empty_name_pct": 0.0,
+      "empty_addr": 129408,
+      "empty_addr_pct": 2.648,
+      "name_len": {
+        "min": 2,
+        "p25": 19,
+        "median": 25,
+        "mean": 25.7,
+        "p75": 32,
+        "p95": 42,
+        "p99": 49,
+        "max": 102
+      },
+      "addr_len": {
+        "min": 0,
+        "p25": 32,
+        "median": 43,
+        "mean": 50.4,
+        "p75": 67,
+        "p95": 99,
+        "p99": 120,
+        "max": 269
+      },
+      "dup_entity_id": 0,
+      "dup_business_name": 576232,
+      "dup_business_name_pct": 11.79,
+      "name_script_pct": {
+        "latin": 81.024,
+        "other_nonlatin": 12.61,
+        "devanagari": 6.366
+      },
+      "name_has_legal_suffix_pct": 47.438,
+      "name_is_domain_pct": 3.192,
+      "name_leading_junk_pct": 0.67,
+      "addr_has_near_landmark_pct": 4.564,
+      "addr_has_digit_pct": 92.674,
+      "name_len_le2_pct": 0.208,
+      "name_numeric_only": 526162
+    },
+    "test_S3": {
+      "file": "test_source3.tsv",
+      "n_records": 5082316,
+      "id_prefixes": {
+        "S3-": 5082316
+      },
+      "country_counts": {
+        "India": 2405000,
+        "US": 1945701,
+        "France": 731615
+      },
+      "empty_name": 0,
+      "empty_name_pct": 0.0,
+      "empty_addr": 136098,
+      "empty_addr_pct": 2.678,
+      "name_len": {
+        "min": 2,
+        "p25": 19,
+        "median": 25,
+        "mean": 25.7,
+        "p75": 32,
+        "p95": 42,
+        "p99": 50,
+        "max": 103
+      },
+      "addr_len": {
+        "min": 0,
+        "p25": 35,
+        "median": 43,
+        "mean": 48.7,
+        "p75": 59,
+        "p95": 94,
+        "p99": 117,
+        "max": 267
+      },
+      "dup_entity_id": 0,
+      "dup_business_name": 560387,
+      "dup_business_name_pct": 11.026,
+      "name_script_pct": {
+        "latin": 85.485,
+        "other_nonlatin": 10.921,
+        "devanagari": 3.594
+      },
+      "name_has_legal_suffix_pct": 50.845,
+      "name_is_domain_pct": 3.226,
+      "name_leading_junk_pct": 0.676,
+      "addr_has_near_landmark_pct": 3.432,
+      "addr_has_digit_pct": 92.494,
+      "name_len_le2_pct": 0.392,
+      "name_numeric_only": 281017
+    }
+  }
+}

@@ -1,0 +1,313 @@
+{
+  "C_by_country": {
+    "US": {
+      "unmatched_sampled": 119566,
+      "pct_with_S1_addresskey_hit": 10.5,
+      "house_number_among_addresskey_decoys": {
+        "differs_pct": 96.8,
+        "equal_pct": 3.2,
+        "decoy_added_number_pct": 0.0,
+        "decoy_dropped_number_pct": 0.0,
+        "n": 12506
+      }
+    },
+    "India": {
+      "unmatched_sampled": 119638,
+      "pct_with_S1_addresskey_hit": 5.8,
+      "house_number_among_addresskey_decoys": {
+        "differs_pct": 76.1,
+        "equal_pct": 23.9,
+        "decoy_added_number_pct": 0.0,
+        "decoy_dropped_number_pct": 0.0,
+        "n": 6962
+      }
+    }
+  },
+  "C_overall": {
+    "pct_unmatched_with_S1_addresskey_hit": 8.1,
+    "house_number_among_addresskey_decoys": {
+      "differs_pct": 89.4,
+      "equal_pct": 10.6
+    }
+  },
+  "C_true_pairs_with_same_addresskey": {
+    "true_pairs_evaluated": 146892,
+    "with_matching_addr_key": 15397,
+    "pct_of_true_pairs_sharing_addr_key": 10.5,
+    "house_number": {
+      "equal_pct": 86.0,
+      "differs_pct": 8.6,
+      "dropped_pct": 5.2,
+      "added_pct": 0.1,
+      "n": 14813
+    }
+  },
+  "C_added_token_logodds_DECOY_positive": [
+    [
+      "group",
+      1266,
+      0,
+      6.4
+    ],
+    [
+      "holdings",
+      1237,
+      0,
+      6.37
+    ],
+    [
+      "enterprises",
+      328,
+      0,
+      5.05
+    ],
+    [
+      "industries",
+      317,
+      0,
+      5.01
+    ],
+    [
+      "ventures",
+      306,
+      0,
+      4.98
+    ],
+    [
+      "infratech",
+      303,
+      0,
+      4.97
+    ],
+    [
+      "public",
+      292,
+      0,
+      4.93
+    ],
+    [
+      "overseas",
+      288,
+      0,
+      4.92
+    ],
+    [
+      "exports",
+      273,
+      0,
+      4.87
+    ],
+    [
+      "east",
+      178,
+      0,
+      4.44
+    ],
+    [
+      "west",
+      178,
+      0,
+      4.44
+    ],
+    [
+      "north",
+      169,
+      0,
+      4.39
+    ],
+    [
+      "greater",
+      167,
+      0,
+      4.38
+    ],
+    [
+      "downtown",
+      165,
+      0,
+      4.36
+    ],
+    [
+      "metro",
+      165,
+      0,
+      4.36
+    ],
+    [
+      "valley",
+      161,
+      0,
+      4.34
+    ],
+    [
+      "southside",
+      158,
+      0,
+      4.32
+    ],
+    [
+      "summit",
+      156,
+      0,
+      4.31
+    ],
+    [
+      "westgate",
+      155,
+      0,
+      4.3
+    ],
+    [
+      "highland",
+      150,
+      0,
+      4.27
+    ],
+    [
+      "uptown",
+      150,
+      0,
+      4.27
+    ],
+    [
+      "partners",
+      1070,
+      92,
+      1.7
+    ]
+  ],
+  "C_added_token_logodds_TRUEMATCH_negative": [
+    [
+      "formerly",
+      0,
+      401,
+      -6.74
+    ],
+    [
+      "dba",
+      0,
+      390,
+      -6.72
+    ],
+    [
+      "as",
+      0,
+      355,
+      -6.62
+    ],
+    [
+      "k",
+      4,
+      381,
+      -5.08
+    ],
+    [
+      "b",
+      5,
+      270,
+      -4.56
+    ],
+    [
+      "a",
+      35,
+      792,
+      -3.84
+    ],
+    [
+      "f",
+      9,
+      216,
+      -3.82
+    ],
+    [
+      "t",
+      11,
+      140,
+      -3.21
+    ],
+    [
+      "com",
+      84,
+      672,
+      -2.82
+    ],
+    [
+      "d",
+      46,
+      269,
+      -2.5
+    ],
+    [
+      "trading",
+      41,
+      131,
+      -1.89
+    ],
+    [
+      "lp",
+      99,
+      94,
+      -0.7
+    ],
+    [
+      "center",
+      438,
+      361,
+      -0.55
+    ],
+    [
+      "c",
+      204,
+      157,
+      -0.49
+    ],
+    [
+      "services",
+      346,
+      263,
+      -0.47
+    ],
+    [
+      "service",
+      172,
+      127,
+      -0.45
+    ],
+    [
+      "l",
+      243,
+      180,
+      -0.45
+    ],
+    [
+      "praivet",
+      873,
+      529,
+      -0.25
+    ],
+    [
+      "pra",
+      171,
+      102,
+      -0.23
+    ],
+    [
+      "m",
+      101,
+      59,
+      -0.22
+    ],
+    [
+      "li",
+      173,
+      102,
+      -0.22
+    ],
+    [
+      "p",
+      121,
+      40,
+      0.34
+    ]
+  ]
+}

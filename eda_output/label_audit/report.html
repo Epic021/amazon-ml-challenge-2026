@@ -1,0 +1,973 @@
+<title>Train Label Audit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root {
+  --ground:#F2F4F6; --surface:#FFFFFF; --raised:#F7F8FA; --ink:#12171D; --muted:#5A6471; --faint:#8993A0;
+  --line:#DCE1E7; --accent:#0F6E7C; --accent-soft:#DDEEF1;
+  --match:#2D7A4F; --match-soft:#DFF0E6; --non:#B14A2A; --non-soft:#F7E3DA;
+  --hot:#A4481E; --hot-soft:#F8E2D6; --warm:#8A6400; --warm-soft:#F6ECD2; --mild:#566170; --mild-soft:#E9EDF1;
+  --sans:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:#0E1216; --surface:#151A20; --raised:#11161B; --ink:#E3E8EE; --muted:#9AA5B2; --faint:#6D7885;
+    --line:#252D36; --accent:#5DB6C4; --accent-soft:#12303A;
+    --match:#6CC08D; --match-soft:#16301F; --non:#E5895F; --non-soft:#361F16;
+    --hot:#EE9A70; --hot-soft:#3A2016; --warm:#E3B656; --warm-soft:#34290F; --mild:#A3AEBB; --mild-soft:#1E252D;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground:#0E1216; --surface:#151A20; --raised:#11161B; --ink:#E3E8EE; --muted:#9AA5B2; --faint:#6D7885;
+  --line:#252D36; --accent:#5DB6C4; --accent-soft:#12303A;
+  --match:#6CC08D; --match-soft:#16301F; --non:#E5895F; --non-soft:#361F16;
+  --hot:#EE9A70; --hot-soft:#3A2016; --warm:#E3B656; --warm-soft:#34290F; --mild:#A3AEBB; --mild-soft:#1E252D;
+  color-scheme:dark;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--ground); color:var(--ink); font:15px/1.6 var(--sans); }
+.wrap { max-width:1120px; margin:0 auto; padding-inline:20px; padding-block:48px 96px; }
+h1 { font-size:clamp(28px,4.2vw,40px); line-height:1.12; letter-spacing:-.015em; margin:0 0 12px; text-wrap:balance; font-weight:700; }
+h2 { font-size:22px; margin:0 0 6px; letter-spacing:-.01em; text-wrap:balance; }
+h3 { font-size:15px; margin:26px 0 8px; }
+p { margin:10px 0; max-width:72ch; }
+.eyebrow { font:600 11.5px var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin:0 0 12px; }
+.lede { color:var(--muted); font-size:17px; max-width:70ch; }
+.muted { color:var(--muted); }
+.mono { font-family:var(--mono); font-size:13px; }
+section { margin-top:48px; padding-top:28px; border-top:1px solid var(--line); }
+.lens { font:600 11.5px var(--mono); letter-spacing:.1em; text-transform:uppercase; color:var(--faint); margin:0 0 4px; }
+.tiles { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; margin:26px 0 8px; }
+.tile { background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:16px 18px; }
+.tv { font:600 28px/1.1 var(--mono); letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+.tl { font-weight:600; margin-top:6px; }
+.ts { color:var(--muted); font-size:13px; line-height:1.4; margin-top:2px; }
+.note { background:var(--raised); border:1px solid var(--line); border-radius:10px; padding:12px 16px; color:var(--muted); font-size:14px; }
+.tw { overflow-x:auto; margin:12px 0; border:1px solid var(--line); border-radius:10px; background:var(--surface); }
+table { border-collapse:collapse; width:100%; font-size:13.5px; }
+th { text-align:left; font:600 11px var(--mono); letter-spacing:.06em; text-transform:uppercase; color:var(--muted);
+      padding:9px 12px; border-bottom:1px solid var(--line); background:var(--raised); white-space:nowrap; }
+td { padding:8px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
+tbody tr:last-child td { border-bottom:0; }
+.num { text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.barcell { min-width:150px; width:22%; }
+.bar { display:flex; height:10px; border-radius:5px; overflow:hidden; background:var(--line); margin-top:5px; }
+.bm { background:var(--match); } .bn { background:var(--non); }
+.chip { display:inline-block; font:600 11px var(--mono); padding:2px 8px; border-radius:999px; white-space:nowrap; }
+.hot { color:var(--hot); background:var(--hot-soft); } .warm { color:var(--warm); background:var(--warm-soft); }
+.mild { color:var(--mild); background:var(--mild-soft); } .calm { color:var(--match); background:var(--match-soft); }
+.legend { display:flex; gap:16px; flex-wrap:wrap; font-size:13px; color:var(--muted); margin:6px 0 0; }
+.legend i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:6px; vertical-align:-1px; }
+.exg { margin:22px 0; }
+.exh { display:flex; flex-wrap:wrap; gap:4px 12px; align-items:baseline; margin-bottom:8px; }
+.pairs { display:grid; grid-template-columns:repeat(auto-fill, minmax(330px, 1fr)); gap:10px; }
+.pair { background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:13.5px; }
+.ph { display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-bottom:6px; }
+.lab { font:700 11px var(--mono); text-transform:uppercase; letter-spacing:.06em; padding:2px 8px; border-radius:4px; }
+.lm { color:var(--match); background:var(--match-soft); } .ln { color:var(--non); background:var(--non-soft); }
+.mp { margin-left:auto; font:12px var(--mono); color:var(--muted); }
+.pg { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.pid { font:12px var(--mono); color:var(--faint); }
+.pn { font-weight:600; line-height:1.35; overflow-wrap:anywhere; }
+.pa { font:12.5px/1.45 var(--mono); color:var(--muted); overflow-wrap:anywhere; }
+.pw { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; }
+.w { font:12px var(--mono); background:var(--raised); border:1px solid var(--line); border-radius:6px; padding:1px 6px; }
+.words { display:flex; flex-wrap:wrap; gap:5px; margin:6px 0 14px; }
+.fi { display:grid; grid-template-columns:minmax(120px, 220px) 1fr auto; gap:10px; align-items:center; font:13px var(--mono); padding:3px 0; }
+.fib { height:8px; background:var(--line); border-radius:4px; overflow:hidden; }
+.fib i { display:block; height:100%; background:var(--accent); }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+ul.files { padding-left:18px; } ul.files li { margin:4px 0; }
+ul.findings { padding-left:20px; margin:10px 0 0; max-width:80ch; } ul.findings li { margin:8px 0; }
+code { font:13px var(--mono); background:var(--raised); border:1px solid var(--line); border-radius:4px; padding:0 4px; }
+@media (max-width: 760px) { .tiles, .grid2 { grid-template-columns:1fr; } .pg { grid-template-columns:1fr; } }
+</style>
+<div class="wrap">
+  <p class="eyebrow">ML Challenge 2026 · training-set label audit</p>
+  <h1>Where the training labels contradict themselves</h1>
+  <p class="lede">Every S2/S3 record in the training set was paired with its ground-truth S1 business, or, if unmatched,
+  with the closest S1 lookalike. Each pair was then described only by what can be observed: how the name, the address
+  and the numbers differ. This report counts, across the whole training set, how often pairs that look the same way
+  carry opposite labels.</p>
+  <div class="tiles"><div class='tile'><div class='tv'>8,585,331</div><div class='tl'>pairs compared</div><div class='ts'>S2/S3 records each set against their S1 or closest S1 lookalike</div></div><div class='tile'><div class='tv'>3.49%</div><div class='tl'>labelled against their pattern</div><div class='ts'>299,356 pairs</div></div><div class='tile'><div class='tv'>1,575</div><div class='tl'>patterns carry both labels</div><div class='ts'>of 2,121 observed patterns</div></div><div class='tile'><div class='tv'>7,340</div><div class='tl'>identical-record conflicts</div><div class='ts'>groups after normalisation; 7,227 of them have no address</div></div><div class='tile'><div class='tv'>0.06%</div><div class='tl'>labels the model contradicts</div><div class='ts'>5,388 pairs, out-of-fold</div></div><div class='tile'><div class='tv'>0.9756</div><div class='tl'>F0.5 ceiling</div><div class='ts'>if every pattern takes its majority label</div></div></div>
+  <h2 style="margin-top:34px">Findings</h2>
+  <ul class='findings'><li><b>Exact duplicates never conflict.</b> 43,910 groups of records with identical raw text: 0 carry different labels or S1s.</li><li><b>Identical name and address.</b> 973,426 pairs, 100.00% matched; 1 against.</li><li><b>Only the house/plot number differs.</b> 2,653,711 pairs, 46.88% matched. With the name also identical: 437,860 pairs, 99.46% matched, 2,345 against.</li><li><b>Only the name differs, address fully identical.</b> 2,243,212 pairs, 98.70% matched, 29,120 against.</li><li><b>Only typo-like differences.</b> 430,937 pairs, 97.13% matched, 11,228 against.</li><li><b>Identical names with no address.</b> 7,227 groups of records whose normalised name is identical and whose address is empty carry different labels or different S1s.</li><li><b>Across all patterns.</b> 1,575 of 2,121 patterns carry both labels; 299,356 pairs (3.49%) go against their pattern's majority; 18.8% of pairs sit in patterns whose minority label exceeds 5%.</li><li><b>Model check.</b> Out-of-fold AUC 0.9992. 5,388 labels (0.06%) contradict the model at class-calibrated confidence; 1.2% of pairs stay between p = 0.2 and 0.8.</li><li><b>Matches with nothing in common.</b> 20,625 matched pairs share no name word and under a quarter of their address words.</li></ul>
+  <p class="note">This audit measures inconsistency: pairs described the same way, or identical records, that received
+  different labels. It cannot tell which of two conflicting labels is the wrong one. All counts are from the training
+  files; test has no labels.</p>
+
+  <section>
+    <p class="lens">Lens 1 · identical records</p>
+    <h2>Identical records with different labels</h2>
+    <p>Records grouped by fingerprint, with no similarity measure involved. A conflict is a group of identical records where
+    some copies are matched and others are not, or where copies are matched to different S1 businesses.</p>
+    <div class="grid2">
+      <div class='tw'><table><thead><tr><th>identical raw text</th><th class='num'>count</th></tr></thead><tbody><tr><td>duplicate groups</td><td class='num'>43,910</td></tr><tr><td>records in duplicate groups</td><td class='num'>89,114</td></tr><tr><td>groups some matched some unmatched</td><td class='num'>0</td></tr><tr><td>records in mixed groups</td><td class='num'>0</td></tr><tr><td>groups matched to different s1</td><td class='num'>0</td></tr><tr><td>records in multi s1 groups</td><td class='num'>0</td></tr></tbody></table></div>
+      <div class='tw'><table><thead><tr><th>identical after normalisation</th><th class='num'>count</th></tr></thead><tbody><tr><td>duplicate groups</td><td class='num'>535,100</td></tr><tr><td>records in duplicate groups</td><td class='num'>1,166,654</td></tr><tr><td>groups some matched some unmatched</td><td class='num'>303</td></tr><tr><td>records in mixed groups</td><td class='num'>757</td></tr><tr><td>groups matched to different s1</td><td class='num'>7,116</td></tr><tr><td>records in multi s1 groups</td><td class='num'>16,769</td></tr></tbody></table></div>
+    </div>
+    <h3>Conflicting groups, by whether the copies have an address</h3>
+    <p>Copies with an empty address are identical names with nothing else to tell them apart.</p>
+    <div class='tw'><table><thead><tr><th>conflict</th><th class='num'>groups, address present</th><th class='num'>groups, address empty</th></tr></thead><tbody><tr><td>matched to different S1s</td><td class='num'>102</td><td class='num'>6,935</td></tr><tr><td>matched to different S1s and unmatched</td><td class='num'>0</td><td class='num'>79</td></tr><tr><td>some copies matched, some unmatched</td><td class='num'>11</td><td class='num'>213</td></tr></tbody></table></div>
+    <h3>Duplicate S1 records (the reference is described as deduplicated)</h3>
+    <div class='tw'><table><thead><tr><th>S1 duplicates</th><th class='num'>count</th></tr></thead><tbody><tr><td>groups identical after normalisation</td><td class='num'>0</td></tr><tr><td>s1 records in them</td><td class='num'>0</td></tr><tr><td>groups with raw identical text</td><td class='num'>0</td></tr><tr><td>groups where one copy is a singleton and another has matches</td><td class='num'>0</td></tr><tr><td>groups where several copies have matches</td><td class='num'>0</td></tr></tbody></table></div>
+    <h3>Examples</h3>
+    <div class='tw'><table><thead><tr><th>fingerprint</th><th>conflict</th><th>group</th><th>record</th><th>assigned to</th><th>name</th><th>address</th></tr></thead><tbody><tr><td>identical after normalisation</td><td>matched to different S1s</td><td class='num'>25854</td><td class='mono'>S3-85872841</td><td class='mono'>S1-883478783</td><td>Guru Ímpex Private</td><td>B/02, Rajkot, GJ</td></tr><tr><td>identical after normalisation</td><td>matched to different S1s</td><td class='num'>90183</td><td class='mono'>S3-301575018</td><td class='mono'>S1-429639899</td><td>General Talent</td><td>6330 Alexander Street, Norfolk, Virginia</td></tr><tr><td>identical after normalisation</td><td>some copies matched, some unmatched</td><td class='num'>134320</td><td class='mono'>S2-327373061</td><td class='mono'>unmatched</td><td>Johnson Freight Keystone Inc</td><td>26 OVERHILL AVE, NEW BRITAIN, CT</td></tr><tr><td>identical after normalisation</td><td>some copies matched, some unmatched</td><td class='num'>134320</td><td class='mono'>S3-877957689</td><td class='mono'>S1-783920605</td><td>Johnson Keystone Freight Inc.</td><td>26 Overhill Ave, null, New Britain, Connecticut</td></tr><tr><td>identical after normalisation</td><td>matched to different S1s</td><td class='num'>211624</td><td class='mono'>S3-224916114</td><td class='mono'>S1-115876270</td><td>యూనిక్ హాస్పిటాలిటీ</td><td>Khairatabad, Andhra Pradesh, H.no:11-6-844</td></tr><tr><td>identical after normalisation</td><td>matched to different S1s</td><td class='num'>288382</td><td class='mono'>S2-161571016</td><td class='mono'>S1-698055903</td><td>Wilson Kcfhmaav Inc</td><td>831 GUNSMOKE ROAD, MCCONNELLS, SC</td></tr><tr><td>identical after normalisation</td><td>some copies matched, some unmatched</td><td class='num'>347418</td><td class='mono'>S2-846129294</td><td class='mono'>unmatched</td><td>NATH AIR CÉNTER LLP</td><td>HOUSE NO 1 MANGU PANNA LANDMARK NEAR TATESAR WALA RASTA VILLAGE JAUNTI DELHI, DELHI, दिल्ली</td></tr><tr><td>identical after normalisation</td><td>some copies matched, some unmatched</td><td class='num'>347418</td><td class='mono'>S2-996944103</td><td class='mono'>S1-876713311</td><td>Nath Air  Center LLP</td><td>HOUSE NO 1 MANGU PANNA LANDMARK NEAR TATESAR WALA RASTA VILLAGE JAUNTI DELHI, DELHI, Delhi</td></tr><tr><td>identical after normalisation</td><td>matched to different S1s</td><td class='num'>358315</td><td class='mono'>S3-183331981</td><td class='mono'>S1-230856114</td><td>Bridgett And Varnado Aluminum Co</td><td>1163 100, Salt Lake City, Utah</td></tr><tr><td>identical after normalisation</td><td>matched to different S1s</td><td class='num'>359225</td><td class='mono'>S2-574406430</td><td class='mono'>S1-87379011</td><td>ಜೈನ್ ಕೇರ್ ಪ್ರೈವೇಟ್ ಲಿಮಿಟೆಡ್</td><td>BANGALORE, Karnataka, NO. 2/1</td></tr><tr><td>identical after normalisation</td><td>matched to different S1s</td><td class='num'>359225</td><td class='mono'>S2-632870831</td><td class='mono'>S1-927085048</td><td>ಜೈನ್ ಕೇರ್ ಪ್ರೈವೇಟ್ ಲಿಮಿಟೆಡ್</td><td>H.NO 2/1, BANGALORE, Karnataka</td></tr><tr><td>identical after normalisation</td><td>matched to different S1s</td><td class='num'>434389</td><td class='mono'>S3-151027162</td><td class='mono'>S1-944799785</td><td>Widener Secure Direct L.L.C.</td><td>Kennesaw Ct, Columbus, Indiana</td></tr><tr><td>identical after normalisation</td><td>matched to different S1s</td><td class='num'>455561</td><td class='mono'>S2-755824286</td><td class='mono'>S1-40910655</td><td>साई बिजनेस प्राइवेट लिमिटेड</td><td>#11-A, DELHI, NORTH WEST DELHI, Delhi</td></tr><tr><td>identical after normalisation</td><td>matched to different S1s</td><td class='num'>455561</td><td class='mono'>S2-819893886</td><td class='mono'>S1-50056344</td><td>साई बिजनेस प्राइवेट लिमिटेड</td><td>11, DELHI, NORTH WEST, दिल्ली</td></tr><tr><td>identical after normalisation</td><td>matched to different S1s</td><td class='num'>463996</td><td class='mono'>S3-502069809</td><td class='mono'>S1-993026611</td><td>IPP Commercial</td><td>A/127, Ahmedabad, GJ</td></tr><tr><td>identical after normalisation</td><td>matched to different S1s</td><td class='num'>464134</td><td class='mono'>S2-32877217</td><td class='mono'>S1-166946378</td><td>சிவா ஐடி பிரைவேட் லிமிடெட்</td><td>11, CHENNAI, Tamil Nadu</td></tr><tr><td>identical after normalisation</td><td>matched to different S1s</td><td class='num'>464134</td><td class='mono'>S3-275790075</td><td class='mono'>S1-275572535</td><td>சிவா ஐடி பிரைவேட் லிமிடெட்</td><td>No ##11, Chennai, TN</td></tr><tr><td>identical after normalisation</td><td>matched to different S1s</td><td class='num'>6871</td><td class='mono'>S2-788265765</td><td class='mono'>S1-785447287</td><td>CORNER TÁVERN</td><td></td></tr><tr><td>identical after normalisation</td><td>matched to different S1s</td><td class='num'>6871</td><td class='mono'>S2-966810803</td><td class='mono'>S1-680869826</td><td>Corner Tavern</td><td></td></tr><tr><td>identical after normalisation</td><td>matched to different S1s</td><td class='num'>6871</td><td class='mono'>S2-611702757</td><td class='mono'>S1-201051321</td><td>Corner-Tavern!</td><td></td></tr><tr><td>identical after normalisation</td><td>matched to different S1s</td><td class='num'>6871</td><td class='mono'>S3-320721419</td><td class='mono'>S1-704149228</td><td>Corner  Tavern!</td><td></td></tr><tr><td>identical after normalisation</td><td>matched to different S1s</td><td class='num'>52467</td><td class='mono'>S2-953742509</td><td class='mono'>S1-846898171</td><td>Atlantic  Veterinary</td><td></td></tr><tr><td>identical after normalisation</td><td>matched to different S1s</td><td class='num'>52467</td><td class='mono'>S2-848437857</td><td class='mono'>S1-197764114</td><td>Atlantic-Veterinary</td><td></td></tr><tr><td>identical after normalisation</td><td>matched to different S1s</td><td class='num'>138485</td><td class='mono'>S2-363195807</td><td class='mono'>S1-524612687</td><td>The Regional (Ministries)</td><td></td></tr></tbody></table></div>
+  </section>
+
+  <section>
+    <p class="lens">Lens 2 · difference patterns</p>
+    <h2>The reported cases, measured on every pair</h2>
+    <p>Each row counts all comparable pairs of that kind. The bar shows the label mix: <b>green</b> matched, <b>clay</b> not matched.</p>
+    <div class="legend"><span><i style="background:var(--match)"></i>match</span><span><i style="background:var(--non)"></i>non-match</span></div>
+    <div class='tw'><table><thead><tr><th>reported case</th><th class='num'>pairs</th><th class='num'>match</th><th class='num'>non-match</th><th>label mix</th><th class='num'>match rate</th><th></th></tr></thead><tbody><tr><td>only the house/plot number differs</td><td class='num'>2,653,711</td><td class='num'>1,244,113</td><td class='num'>1,409,598</td><td class='barcell'><div class="bar" role="img" aria-label="46.9% match, 53.1% non-match"><span class="bm" style="width:46.88%"></span><span class="bn" style="width:53.12%"></span></div></td><td class='num'>46.9%</td><td><span class="chip hot">heavily mixed</span></td></tr><tr><td>...and the name is identical</td><td class='num'>437,860</td><td class='num'>435,515</td><td class='num'>2,345</td><td class='barcell'><div class="bar" role="img" aria-label="99.5% match, 0.5% non-match"><span class="bm" style="width:99.46%"></span><span class="bn" style="width:0.54%"></span></div></td><td class='num'>99.5%</td><td><span class="chip calm">consistent</span></td></tr><tr><td>only the name differs (address identical or a word typo)</td><td class='num'>2,358,535</td><td class='num'>2,324,461</td><td class='num'>34,074</td><td class='barcell'><div class="bar" role="img" aria-label="98.6% match, 1.4% non-match"><span class="bm" style="width:98.56%"></span><span class="bn" style="width:1.44%"></span></div></td><td class='num'>98.6%</td><td><span class="chip mild">some conflict</span></td></tr><tr><td>...and the address is fully identical</td><td class='num'>2,243,212</td><td class='num'>2,214,092</td><td class='num'>29,120</td><td class='barcell'><div class="bar" role="img" aria-label="98.7% match, 1.3% non-match"><span class="bm" style="width:98.70%"></span><span class="bn" style="width:1.30%"></span></div></td><td class='num'>98.7%</td><td><span class="chip mild">some conflict</span></td></tr><tr><td>only typo-like differences</td><td class='num'>430,937</td><td class='num'>418,588</td><td class='num'>12,349</td><td class='barcell'><div class="bar" role="img" aria-label="97.1% match, 2.9% non-match"><span class="bm" style="width:97.13%"></span><span class="bn" style="width:2.87%"></span></div></td><td class='num'>97.1%</td><td><span class="chip mild">some conflict</span></td></tr><tr><td>name and address identical</td><td class='num'>973,426</td><td class='num'>973,425</td><td class='num'>1</td><td class='barcell'><div class="bar" role="img" aria-label="100.0% match, 0.0% non-match"><span class="bm" style="width:100.00%"></span><span class="bn" style="width:0.00%"></span></div></td><td class='num'>100.0%</td><td><span class="chip calm">consistent</span></td></tr></tbody></table></div>
+    <h3>Name identical, only the numbers differ, by kind of number change</h3>
+    <div class='tw'><table><thead><tr><th>number change</th><th class='num'>pairs</th><th class='num'>match</th><th class='num'>non-match</th><th>label mix</th><th class='num'>match rate</th><th></th></tr></thead><tbody><tr><td>number added</td><td class='num'>114,262</td><td class='num'>114,257</td><td class='num'>5</td><td class='barcell'><div class="bar" role="img" aria-label="100.0% match, 0.0% non-match"><span class="bm" style="width:100.00%"></span><span class="bn" style="width:0.00%"></span></div></td><td class='num'>100.0%</td><td><span class="chip calm">consistent</span></td></tr><tr><td>number dropped</td><td class='num'>177,521</td><td class='num'>177,521</td><td class='num'>0</td><td class='barcell'><div class="bar" role="img" aria-label="100.0% match, 0.0% non-match"><span class="bm" style="width:100.00%"></span><span class="bn" style="width:0.00%"></span></div></td><td class='num'>100.0%</td><td><span class="chip calm">consistent</span></td></tr><tr><td>number cut short</td><td class='num'>89,334</td><td class='num'>89,247</td><td class='num'>87</td><td class='barcell'><div class="bar" role="img" aria-label="99.9% match, 0.1% non-match"><span class="bm" style="width:99.90%"></span><span class="bn" style="width:0.10%"></span></div></td><td class='num'>99.9%</td><td><span class="chip calm">consistent</span></td></tr><tr><td>number: one character changed</td><td class='num'>25,327</td><td class='num'>24,429</td><td class='num'>898</td><td class='barcell'><div class="bar" role="img" aria-label="96.5% match, 3.5% non-match"><span class="bm" style="width:96.45%"></span><span class="bn" style="width:3.55%"></span></div></td><td class='num'>96.5%</td><td><span class="chip mild">some conflict</span></td></tr><tr><td>number nearby (&lt;=50 apart)</td><td class='num'>9,943</td><td class='num'>8,707</td><td class='num'>1,236</td><td class='barcell'><div class="bar" role="img" aria-label="87.6% match, 12.4% non-match"><span class="bm" style="width:87.57%"></span><span class="bn" style="width:12.43%"></span></div></td><td class='num'>87.6%</td><td><span class="chip warm">mixed</span></td></tr><tr><td>number far-off</td><td class='num'>21,473</td><td class='num'>21,354</td><td class='num'>119</td><td class='barcell'><div class="bar" role="img" aria-label="99.4% match, 0.6% non-match"><span class="bm" style="width:99.45%"></span><span class="bn" style="width:0.55%"></span></div></td><td class='num'>99.4%</td><td><span class="chip calm">consistent</span></td></tr></tbody></table></div>
+    <h3>Only the numbers differ, by kind of name change</h3>
+    <div class='tw'><table><thead><tr><th>name change</th><th class='num'>pairs</th><th class='num'>match</th><th class='num'>non-match</th><th>label mix</th><th class='num'>match rate</th><th></th></tr></thead><tbody><tr><td>identical</td><td class='num'>437,860</td><td class='num'>435,515</td><td class='num'>2,345</td><td class='barcell'><div class="bar" role="img" aria-label="99.5% match, 0.5% non-match"><span class="bm" style="width:99.46%"></span><span class="bn" style="width:0.54%"></span></div></td><td class='num'>99.5%</td><td><span class="chip calm">consistent</span></td></tr><tr><td>legal form / filler only</td><td class='num'>582,408</td><td class='num'>291,370</td><td class='num'>291,038</td><td class='barcell'><div class="bar" role="img" aria-label="50.0% match, 50.0% non-match"><span class="bm" style="width:50.03%"></span><span class="bn" style="width:49.97%"></span></div></td><td class='num'>50.0%</td><td><span class="chip hot">heavily mixed</span></td></tr><tr><td>typo only</td><td class='num'>91,207</td><td class='num'>76,034</td><td class='num'>15,173</td><td class='barcell'><div class="bar" role="img" aria-label="83.4% match, 16.6% non-match"><span class="bm" style="width:83.36%"></span><span class="bn" style="width:16.64%"></span></div></td><td class='num'>83.4%</td><td><span class="chip warm">mixed</span></td></tr><tr><td>typo + legal form / filler</td><td class='num'>40,299</td><td class='num'>10,818</td><td class='num'>29,481</td><td class='barcell'><div class="bar" role="img" aria-label="26.8% match, 73.2% non-match"><span class="bm" style="width:26.84%"></span><span class="bn" style="width:73.16%"></span></div></td><td class='num'>26.8%</td><td><span class="chip hot">heavily mixed</span></td></tr><tr><td>one word added</td><td class='num'>621,720</td><td class='num'>51,552</td><td class='num'>570,168</td><td class='barcell'><div class="bar" role="img" aria-label="8.3% match, 91.7% non-match"><span class="bm" style="width:8.29%"></span><span class="bn" style="width:91.71%"></span></div></td><td class='num'>8.3%</td><td><span class="chip warm">mixed</span></td></tr><tr><td>2+ words added</td><td class='num'>30,310</td><td class='num'>7,531</td><td class='num'>22,779</td><td class='barcell'><div class="bar" role="img" aria-label="24.8% match, 75.2% non-match"><span class="bm" style="width:24.85%"></span><span class="bn" style="width:75.15%"></span></div></td><td class='num'>24.8%</td><td><span class="chip hot">heavily mixed</span></td></tr><tr><td>one word dropped</td><td class='num'>64,385</td><td class='num'>61,965</td><td class='num'>2,420</td><td class='barcell'><div class="bar" role="img" aria-label="96.2% match, 3.8% non-match"><span class="bm" style="width:96.24%"></span><span class="bn" style="width:3.76%"></span></div></td><td class='num'>96.2%</td><td><span class="chip mild">some conflict</span></td></tr><tr><td>2+ words dropped</td><td class='num'>5,367</td><td class='num'>5,294</td><td class='num'>73</td><td class='barcell'><div class="bar" role="img" aria-label="98.6% match, 1.4% non-match"><span class="bm" style="width:98.64%"></span><span class="bn" style="width:1.36%"></span></div></td><td class='num'>98.6%</td><td><span class="chip mild">some conflict</span></td></tr><tr><td>words replaced</td><td class='num'>444,388</td><td class='num'>159,486</td><td class='num'>284,902</td><td class='barcell'><div class="bar" role="img" aria-label="35.9% match, 64.1% non-match"><span class="bm" style="width:35.89%"></span><span class="bn" style="width:64.11%"></span></div></td><td class='num'>35.9%</td><td><span class="chip hot">heavily mixed</span></td></tr><tr><td>nothing in common</td><td class='num'>197,425</td><td class='num'>95,412</td><td class='num'>102,013</td><td class='barcell'><div class="bar" role="img" aria-label="48.3% match, 51.7% non-match"><span class="bm" style="width:48.33%"></span><span class="bn" style="width:51.67%"></span></div></td><td class='num'>48.3%</td><td><span class="chip hot">heavily mixed</span></td></tr><tr><td>other script: same words</td><td class='num'>33,600</td><td class='num'>33,418</td><td class='num'>182</td><td class='barcell'><div class="bar" role="img" aria-label="99.5% match, 0.5% non-match"><span class="bm" style="width:99.46%"></span><span class="bn" style="width:0.54%"></span></div></td><td class='num'>99.5%</td><td><span class="chip calm">consistent</span></td></tr><tr><td>other script: legal form / filler only</td><td class='num'>9,155</td><td class='num'>1,295</td><td class='num'>7,860</td><td class='barcell'><div class="bar" role="img" aria-label="14.1% match, 85.9% non-match"><span class="bm" style="width:14.15%"></span><span class="bn" style="width:85.85%"></span></div></td><td class='num'>14.1%</td><td><span class="chip warm">mixed</span></td></tr><tr><td>other script: words added</td><td class='num'>47,739</td><td class='num'>9,622</td><td class='num'>38,117</td><td class='barcell'><div class="bar" role="img" aria-label="20.2% match, 79.8% non-match"><span class="bm" style="width:20.16%"></span><span class="bn" style="width:79.84%"></span></div></td><td class='num'>20.2%</td><td><span class="chip hot">heavily mixed</span></td></tr><tr><td>other script: words dropped</td><td class='num'>403</td><td class='num'>24</td><td class='num'>379</td><td class='barcell'><div class="bar" role="img" aria-label="6.0% match, 94.0% non-match"><span class="bm" style="width:5.96%"></span><span class="bn" style="width:94.04%"></span></div></td><td class='num'>6.0%</td><td><span class="chip warm">mixed</span></td></tr><tr><td>other script: words replaced</td><td class='num'>28,965</td><td class='num'>4,386</td><td class='num'>24,579</td><td class='barcell'><div class="bar" role="img" aria-label="15.1% match, 84.9% non-match"><span class="bm" style="width:15.14%"></span><span class="bn" style="width:84.86%"></span></div></td><td class='num'>15.1%</td><td><span class="chip warm">mixed</span></td></tr><tr><td>other script: nothing in common</td><td class='num'>18,480</td><td class='num'>391</td><td class='num'>18,089</td><td class='barcell'><div class="bar" role="img" aria-label="2.1% match, 97.9% non-match"><span class="bm" style="width:2.12%"></span><span class="bn" style="width:97.88%"></span></div></td><td class='num'>2.1%</td><td><span class="chip mild">some conflict</span></td></tr></tbody></table></div>
+    <h3>Address fully identical, by kind of name change</h3>
+    <div class='tw'><table><thead><tr><th>name change</th><th class='num'>pairs</th><th class='num'>match</th><th class='num'>non-match</th><th>label mix</th><th class='num'>match rate</th><th></th></tr></thead><tbody><tr><td>identical</td><td class='num'>973,426</td><td class='num'>973,425</td><td class='num'>1</td><td class='barcell'><div class="bar" role="img" aria-label="100.0% match, 0.0% non-match"><span class="bm" style="width:100.00%"></span><span class="bn" style="width:0.00%"></span></div></td><td class='num'>100.0%</td><td><span class="chip calm">consistent</span></td></tr><tr><td>legal form / filler only</td><td class='num'>706,396</td><td class='num'>706,176</td><td class='num'>220</td><td class='barcell'><div class="bar" role="img" aria-label="100.0% match, 0.0% non-match"><span class="bm" style="width:99.97%"></span><span class="bn" style="width:0.03%"></span></div></td><td class='num'>100.0%</td><td><span class="chip calm">consistent</span></td></tr><tr><td>typo only</td><td class='num'>176,114</td><td class='num'>171,822</td><td class='num'>4,292</td><td class='barcell'><div class="bar" role="img" aria-label="97.6% match, 2.4% non-match"><span class="bm" style="width:97.56%"></span><span class="bn" style="width:2.44%"></span></div></td><td class='num'>97.6%</td><td><span class="chip mild">some conflict</span></td></tr><tr><td>typo + legal form / filler</td><td class='num'>29,523</td><td class='num'>27,439</td><td class='num'>2,084</td><td class='barcell'><div class="bar" role="img" aria-label="92.9% match, 7.1% non-match"><span class="bm" style="width:92.94%"></span><span class="bn" style="width:7.06%"></span></div></td><td class='num'>92.9%</td><td><span class="chip warm">mixed</span></td></tr><tr><td>one word added</td><td class='num'>176,023</td><td class='num'>175,265</td><td class='num'>758</td><td class='barcell'><div class="bar" role="img" aria-label="99.6% match, 0.4% non-match"><span class="bm" style="width:99.57%"></span><span class="bn" style="width:0.43%"></span></div></td><td class='num'>99.6%</td><td><span class="chip calm">consistent</span></td></tr><tr><td>2+ words added</td><td class='num'>131,582</td><td class='num'>131,515</td><td class='num'>67</td><td class='barcell'><div class="bar" role="img" aria-label="99.9% match, 0.1% non-match"><span class="bm" style="width:99.95%"></span><span class="bn" style="width:0.05%"></span></div></td><td class='num'>99.9%</td><td><span class="chip calm">consistent</span></td></tr><tr><td>one word dropped</td><td class='num'>149,191</td><td class='num'>149,079</td><td class='num'>112</td><td class='barcell'><div class="bar" role="img" aria-label="99.9% match, 0.1% non-match"><span class="bm" style="width:99.92%"></span><span class="bn" style="width:0.08%"></span></div></td><td class='num'>99.9%</td><td><span class="chip calm">consistent</span></td></tr><tr><td>2+ words dropped</td><td class='num'>27,733</td><td class='num'>27,727</td><td class='num'>6</td><td class='barcell'><div class="bar" role="img" aria-label="100.0% match, 0.0% non-match"><span class="bm" style="width:99.98%"></span><span class="bn" style="width:0.02%"></span></div></td><td class='num'>100.0%</td><td><span class="chip calm">consistent</span></td></tr><tr><td>words replaced</td><td class='num'>382,229</td><td class='num'>366,061</td><td class='num'>16,168</td><td class='barcell'><div class="bar" role="img" aria-label="95.8% match, 4.2% non-match"><span class="bm" style="width:95.77%"></span><span class="bn" style="width:4.23%"></span></div></td><td class='num'>95.8%</td><td><span class="chip mild">some conflict</span></td></tr><tr><td>nothing in common</td><td class='num'>258,005</td><td class='num'>253,254</td><td class='num'>4,751</td><td class='barcell'><div class="bar" role="img" aria-label="98.2% match, 1.8% non-match"><span class="bm" style="width:98.16%"></span><span class="bn" style="width:1.84%"></span></div></td><td class='num'>98.2%</td><td><span class="chip mild">some conflict</span></td></tr><tr><td>other script: same words</td><td class='num'>138,769</td><td class='num'>138,769</td><td class='num'>0</td><td class='barcell'><div class="bar" role="img" aria-label="100.0% match, 0.0% non-match"><span class="bm" style="width:100.00%"></span><span class="bn" style="width:0.00%"></span></div></td><td class='num'>100.0%</td><td><span class="chip calm">consistent</span></td></tr><tr><td>other script: legal form / filler only</td><td class='num'>5,672</td><td class='num'>5,658</td><td class='num'>14</td><td class='barcell'><div class="bar" role="img" aria-label="99.8% match, 0.2% non-match"><span class="bm" style="width:99.75%"></span><span class="bn" style="width:0.25%"></span></div></td><td class='num'>99.8%</td><td><span class="chip calm">consistent</span></td></tr><tr><td>other script: words added</td><td class='num'>41,097</td><td class='num'>41,021</td><td class='num'>76</td><td class='barcell'><div class="bar" role="img" aria-label="99.8% match, 0.2% non-match"><span class="bm" style="width:99.82%"></span><span class="bn" style="width:0.18%"></span></div></td><td class='num'>99.8%</td><td><span class="chip calm">consistent</span></td></tr><tr><td>other script: words dropped</td><td class='num'>106</td><td class='num'>104</td><td class='num'>2</td><td class='barcell'><div class="bar" role="img" aria-label="98.1% match, 1.9% non-match"><span class="bm" style="width:98.11%"></span><span class="bn" style="width:1.89%"></span></div></td><td class='num'>98.1%</td><td><span class="chip mild">some conflict</span></td></tr><tr><td>other script: words replaced</td><td class='num'>18,523</td><td class='num'>18,448</td><td class='num'>75</td><td class='barcell'><div class="bar" role="img" aria-label="99.6% match, 0.4% non-match"><span class="bm" style="width:99.60%"></span><span class="bn" style="width:0.40%"></span></div></td><td class='num'>99.6%</td><td><span class="chip calm">consistent</span></td></tr><tr><td>other script: nothing in common</td><td class='num'>2,249</td><td class='num'>1,754</td><td class='num'>495</td><td class='barcell'><div class="bar" role="img" aria-label="78.0% match, 22.0% non-match"><span class="bm" style="width:77.99%"></span><span class="bn" style="width:22.01%"></span></div></td><td class='num'>78.0%</td><td><span class="chip hot">heavily mixed</span></td></tr></tbody></table></div>
+  </section>
+
+  <section>
+    <p class="lens">Lens 2 · every pattern</p>
+    <h2>Beyond the reported cases: the most contradicted patterns</h2>
+    <p>2,121 distinct patterns (country × source × name change × address change × number change);
+    1,575 of them carry both labels. 18.8% of
+    comparable pairs sit in patterns where the minority label exceeds 5%, and 4.5%
+    where it exceeds 20%. Ranked by the number of pairs labelled against their pattern's majority, pooled over country and source:</p>
+    <div class='tw'><table><thead><tr><th>pattern (name · address · numbers)</th><th class='num'>pairs</th><th class='num'>match</th><th class='num'>non-match</th><th>label mix</th><th class='num'>match rate</th><th></th></tr></thead><tbody><tr><td>name: words replaced · address: only numbers differ · numbers: number added</td><td class='num'>61,930</td><td class='num'>44,181</td><td class='num'>17,749</td><td class='barcell'><div class="bar" role="img" aria-label="71.3% match, 28.7% non-match"><span class="bm" style="width:71.34%"></span><span class="bn" style="width:28.66%"></span></div></td><td class='num'>71.3%</td><td><span class="chip hot">heavily mixed</span></td></tr><tr><td>name: legal form / filler only · address: only numbers differ · numbers: number: one character changed</td><td class='num'>126,783</td><td class='num'>17,063</td><td class='num'>109,720</td><td class='barcell'><div class="bar" role="img" aria-label="13.5% match, 86.5% non-match"><span class="bm" style="width:13.46%"></span><span class="bn" style="width:86.54%"></span></div></td><td class='num'>13.5%</td><td><span class="chip warm">mixed</span></td></tr><tr><td>name: words replaced · address: identical · numbers: same numbers</td><td class='num'>382,229</td><td class='num'>366,061</td><td class='num'>16,168</td><td class='barcell'><div class="bar" role="img" aria-label="95.8% match, 4.2% non-match"><span class="bm" style="width:95.77%"></span><span class="bn" style="width:4.23%"></span></div></td><td class='num'>95.8%</td><td><span class="chip mild">some conflict</span></td></tr><tr><td>name: one word added · address: only numbers differ · numbers: number added</td><td class='num'>41,725</td><td class='num'>15,863</td><td class='num'>25,862</td><td class='barcell'><div class="bar" role="img" aria-label="38.0% match, 62.0% non-match"><span class="bm" style="width:38.02%"></span><span class="bn" style="width:61.98%"></span></div></td><td class='num'>38.0%</td><td><span class="chip hot">heavily mixed</span></td></tr><tr><td>name: words replaced · address: only numbers differ · numbers: number cut short</td><td class='num'>45,679</td><td class='num'>32,176</td><td class='num'>13,503</td><td class='barcell'><div class="bar" role="img" aria-label="70.4% match, 29.6% non-match"><span class="bm" style="width:70.44%"></span><span class="bn" style="width:29.56%"></span></div></td><td class='num'>70.4%</td><td><span class="chip hot">heavily mixed</span></td></tr><tr><td>name: legal form / filler only · address: only numbers differ · numbers: number far-off</td><td class='num'>27,328</td><td class='num'>13,470</td><td class='num'>13,858</td><td class='barcell'><div class="bar" role="img" aria-label="49.3% match, 50.7% non-match"><span class="bm" style="width:49.29%"></span><span class="bn" style="width:50.71%"></span></div></td><td class='num'>49.3%</td><td><span class="chip hot">heavily mixed</span></td></tr><tr><td>name: legal form / filler only · address: only numbers differ · numbers: number cut short</td><td class='num'>68,749</td><td class='num'>58,113</td><td class='num'>10,636</td><td class='barcell'><div class="bar" role="img" aria-label="84.5% match, 15.5% non-match"><span class="bm" style="width:84.53%"></span><span class="bn" style="width:15.47%"></span></div></td><td class='num'>84.5%</td><td><span class="chip warm">mixed</span></td></tr><tr><td>name: one word added · address: only numbers differ · numbers: number cut short</td><td class='num'>32,310</td><td class='num'>10,261</td><td class='num'>22,049</td><td class='barcell'><div class="bar" role="img" aria-label="31.8% match, 68.2% non-match"><span class="bm" style="width:31.76%"></span><span class="bn" style="width:68.24%"></span></div></td><td class='num'>31.8%</td><td><span class="chip hot">heavily mixed</span></td></tr><tr><td>name: words replaced · address: only numbers differ · numbers: number: one character changed</td><td class='num'>109,917</td><td class='num'>9,038</td><td class='num'>100,879</td><td class='barcell'><div class="bar" role="img" aria-label="8.2% match, 91.8% non-match"><span class="bm" style="width:8.22%"></span><span class="bn" style="width:91.78%"></span></div></td><td class='num'>8.2%</td><td><span class="chip warm">mixed</span></td></tr><tr><td>name: nothing in common · address: only numbers differ · numbers: number cut short</td><td class='num'>27,805</td><td class='num'>19,372</td><td class='num'>8,433</td><td class='barcell'><div class="bar" role="img" aria-label="69.7% match, 30.3% non-match"><span class="bm" style="width:69.67%"></span><span class="bn" style="width:30.33%"></span></div></td><td class='num'>69.7%</td><td><span class="chip hot">heavily mixed</span></td></tr><tr><td>name: words replaced · address: only numbers differ · numbers: number far-off</td><td class='num'>24,548</td><td class='num'>7,599</td><td class='num'>16,949</td><td class='barcell'><div class="bar" role="img" aria-label="31.0% match, 69.0% non-match"><span class="bm" style="width:30.96%"></span><span class="bn" style="width:69.04%"></span></div></td><td class='num'>31.0%</td><td><span class="chip hot">heavily mixed</span></td></tr><tr><td>name: legal form / filler only · address: words dropped · numbers: number: one character changed</td><td class='num'>20,399</td><td class='num'>6,197</td><td class='num'>14,202</td><td class='barcell'><div class="bar" role="img" aria-label="30.4% match, 69.6% non-match"><span class="bm" style="width:30.38%"></span><span class="bn" style="width:69.62%"></span></div></td><td class='num'>30.4%</td><td><span class="chip hot">heavily mixed</span></td></tr><tr><td>name: other script: words added · address: only numbers differ · numbers: number added</td><td class='num'>12,645</td><td class='num'>6,549</td><td class='num'>6,096</td><td class='barcell'><div class="bar" role="img" aria-label="51.8% match, 48.2% non-match"><span class="bm" style="width:51.79%"></span><span class="bn" style="width:48.21%"></span></div></td><td class='num'>51.8%</td><td><span class="chip hot">heavily mixed</span></td></tr><tr><td>name: legal form / filler only · address: only numbers differ · numbers: number nearby (&lt;=50 apart)</td><td class='num'>157,018</td><td class='num'>5,666</td><td class='num'>151,352</td><td class='barcell'><div class="bar" role="img" aria-label="3.6% match, 96.4% non-match"><span class="bm" style="width:3.61%"></span><span class="bn" style="width:96.39%"></span></div></td><td class='num'>3.6%</td><td><span class="chip mild">some conflict</span></td></tr><tr><td>name: nothing in common · address: only numbers differ · numbers: number: one character changed</td><td class='num'>18,511</td><td class='num'>5,486</td><td class='num'>13,025</td><td class='barcell'><div class="bar" role="img" aria-label="29.6% match, 70.4% non-match"><span class="bm" style="width:29.64%"></span><span class="bn" style="width:70.36%"></span></div></td><td class='num'>29.6%</td><td><span class="chip hot">heavily mixed</span></td></tr><tr><td>name: legal form / filler only · address: only numbers differ · numbers: number added</td><td class='num'>92,836</td><td class='num'>87,484</td><td class='num'>5,352</td><td class='barcell'><div class="bar" role="img" aria-label="94.2% match, 5.8% non-match"><span class="bm" style="width:94.23%"></span><span class="bn" style="width:5.77%"></span></div></td><td class='num'>94.2%</td><td><span class="chip warm">mixed</span></td></tr><tr><td>name: identical · address: words replaced · numbers: number far-off</td><td class='num'>9,855</td><td class='num'>5,080</td><td class='num'>4,775</td><td class='barcell'><div class="bar" role="img" aria-label="51.5% match, 48.5% non-match"><span class="bm" style="width:51.55%"></span><span class="bn" style="width:48.45%"></span></div></td><td class='num'>51.5%</td><td><span class="chip hot">heavily mixed</span></td></tr><tr><td>name: nothing in common · address: identical · numbers: same numbers</td><td class='num'>258,005</td><td class='num'>253,254</td><td class='num'>4,751</td><td class='barcell'><div class="bar" role="img" aria-label="98.2% match, 1.8% non-match"><span class="bm" style="width:98.16%"></span><span class="bn" style="width:1.84%"></span></div></td><td class='num'>98.2%</td><td><span class="chip mild">some conflict</span></td></tr><tr><td>name: nothing in common · address: only numbers differ · numbers: number far-off</td><td class='num'>57,219</td><td class='num'>4,541</td><td class='num'>52,678</td><td class='barcell'><div class="bar" role="img" aria-label="7.9% match, 92.1% non-match"><span class="bm" style="width:7.94%"></span><span class="bn" style="width:92.06%"></span></div></td><td class='num'>7.9%</td><td><span class="chip warm">mixed</span></td></tr><tr><td>name: typo only · address: only numbers differ · numbers: number: one character changed</td><td class='num'>9,521</td><td class='num'>4,333</td><td class='num'>5,188</td><td class='barcell'><div class="bar" role="img" aria-label="45.5% match, 54.5% non-match"><span class="bm" style="width:45.51%"></span><span class="bn" style="width:54.49%"></span></div></td><td class='num'>45.5%</td><td><span class="chip hot">heavily mixed</span></td></tr><tr><td>name: typo only · address: identical · numbers: same numbers</td><td class='num'>176,114</td><td class='num'>171,822</td><td class='num'>4,292</td><td class='barcell'><div class="bar" role="img" aria-label="97.6% match, 2.4% non-match"><span class="bm" style="width:97.56%"></span><span class="bn" style="width:2.44%"></span></div></td><td class='num'>97.6%</td><td><span class="chip mild">some conflict</span></td></tr><tr><td>name: legal form / filler only · address: words replaced · numbers: number far-off</td><td class='num'>15,282</td><td class='num'>3,989</td><td class='num'>11,293</td><td class='barcell'><div class="bar" role="img" aria-label="26.1% match, 73.9% non-match"><span class="bm" style="width:26.10%"></span><span class="bn" style="width:73.90%"></span></div></td><td class='num'>26.1%</td><td><span class="chip hot">heavily mixed</span></td></tr><tr><td>name: nothing in common · address: only numbers differ · numbers: number dropped</td><td class='num'>41,735</td><td class='num'>37,932</td><td class='num'>3,803</td><td class='barcell'><div class="bar" role="img" aria-label="90.9% match, 9.1% non-match"><span class="bm" style="width:90.89%"></span><span class="bn" style="width:9.11%"></span></div></td><td class='num'>90.9%</td><td><span class="chip warm">mixed</span></td></tr><tr><td>name: legal form / filler only · address: words replaced · numbers: number cut short</td><td class='num'>12,519</td><td class='num'>8,790</td><td class='num'>3,729</td><td class='barcell'><div class="bar" role="img" aria-label="70.2% match, 29.8% non-match"><span class="bm" style="width:70.21%"></span><span class="bn" style="width:29.79%"></span></div></td><td class='num'>70.2%</td><td><span class="chip hot">heavily mixed</span></td></tr><tr><td>name: words replaced · address: only numbers differ · numbers: number nearby (&lt;=50 apart)</td><td class='num'>137,283</td><td class='num'>3,094</td><td class='num'>134,189</td><td class='barcell'><div class="bar" role="img" aria-label="2.3% match, 97.7% non-match"><span class="bm" style="width:2.25%"></span><span class="bn" style="width:97.75%"></span></div></td><td class='num'>2.3%</td><td><span class="chip mild">some conflict</span></td></tr></tbody></table></div>
+  </section>
+
+  <section>
+    <p class="lens">Lens 3 · model</p>
+    <h2>Labels a model finds implausible</h2>
+    <p>A gradient-boosted model was trained on every pair feature: the difference pattern, similarity scores, number gaps,
+    and fold-wise evidence from which words were added or dropped. It was scored out-of-fold, grouped by S1. It separates the labels well
+    (AUC 0.9992), yet 1.2% of pairs stay between 0.2 and 0.8.</p>
+    <div class="tw"><table><tbody>
+      <tr><td>matches the model rejects (p &lt; 0.02)</td><td class="num">1,725</td></tr>
+      <tr><td>non-matches the model accepts (p &gt; 0.98)</td><td class="num">5,340</td></tr>
+      <tr><td>confident-learning label issues (class-calibrated thresholds)</td><td class="num">5,388</td></tr>
+      <tr><td>pairs with p between 0.05 and 0.95</td><td class="num">4.2%</td></tr>
+    </tbody></table></div>
+    <div class="grid2">
+      <div><h3>Where the rejected matches sit</h3><div class='tw'><table><thead><tr><th>pattern</th><th class='num'>pairs</th></tr></thead><tbody><tr><td>name: legal form / filler only | address: only numbers differ | numbers: number nearby (&lt;=50 apart)</td><td class='num'>548</td></tr><tr><td>name: legal form / filler only | address: only numbers differ | numbers: number: one character changed</td><td class='num'>294</td></tr><tr><td>name: legal form / filler only | address: words dropped | numbers: number nearby (&lt;=50 apart)</td><td class='num'>61</td></tr><tr><td>name: words replaced | address: only numbers differ | numbers: number: one character changed</td><td class='num'>51</td></tr><tr><td>name: legal form / filler only | address: words replaced | numbers: number nearby (&lt;=50 apart)</td><td class='num'>49</td></tr><tr><td>name: legal form / filler only | address: typo in words + numbers differ | numbers: number nearby (&lt;=50 apart)</td><td class='num'>47</td></tr><tr><td>name: one word added | address: only numbers differ | numbers: number: one character changed</td><td class='num'>46</td></tr><tr><td>name: words replaced | address: only numbers differ | numbers: number nearby (&lt;=50 apart)</td><td class='num'>44</td></tr><tr><td>name: legal form / filler only | address: words added | numbers: number nearby (&lt;=50 apart)</td><td class='num'>43</td></tr><tr><td>name: typo + legal form / filler | address: only numbers differ | numbers: number nearby (&lt;=50 apart)</td><td class='num'>40</td></tr><tr><td>name: legal form / filler only | address: words replaced | numbers: number: one character changed</td><td class='num'>39</td></tr><tr><td>name: words replaced | address: identical | numbers: same numbers</td><td class='num'>35</td></tr><tr><td>name: legal form / filler only | address: words dropped | numbers: number: one character changed</td><td class='num'>33</td></tr><tr><td>name: legal form / filler only | address: words added | numbers: number: one character changed</td><td class='num'>32</td></tr><tr><td>name: one word added | address: only numbers differ | numbers: number nearby (&lt;=50 apart)</td><td class='num'>29</td></tr></tbody></table></div></div>
+      <div><h3>Where the accepted non-matches sit</h3><div class='tw'><table><thead><tr><th>pattern</th><th class='num'>pairs</th></tr></thead><tbody><tr><td>name: legal form / filler only | address: record address empty | numbers: n/a</td><td class='num'>837</td></tr><tr><td>name: identical | address: record address empty | numbers: n/a</td><td class='num'>608</td></tr><tr><td>name: typo only | address: identical | numbers: same numbers</td><td class='num'>515</td></tr><tr><td>name: words replaced | address: identical | numbers: same numbers</td><td class='num'>312</td></tr><tr><td>name: legal form / filler only | address: identical | numbers: same numbers</td><td class='num'>220</td></tr><tr><td>name: nothing in common | address: identical | numbers: same numbers</td><td class='num'>199</td></tr><tr><td>name: legal form / filler only | address: only numbers differ | numbers: number added</td><td class='num'>110</td></tr><tr><td>name: typo + legal form / filler | address: identical | numbers: same numbers</td><td class='num'>100</td></tr><tr><td>name: one word added | address: identical | numbers: same numbers</td><td class='num'>96</td></tr><tr><td>name: legal form / filler only | address: words dropped | numbers: number added</td><td class='num'>96</td></tr><tr><td>name: legal form / filler only | address: words dropped | numbers: same numbers</td><td class='num'>88</td></tr><tr><td>name: identical | address: only numbers differ | numbers: number: one character changed</td><td class='num'>81</td></tr><tr><td>name: typo only | address: only numbers differ | numbers: number added</td><td class='num'>74</td></tr><tr><td>name: nothing in common | address: only numbers differ | numbers: number dropped</td><td class='num'>73</td></tr><tr><td>name: legal form / filler only | address: words replaced | numbers: same numbers</td><td class='num'>68</td></tr></tbody></table></div></div>
+    </div>
+    <h3>Words added to the name in flagged pairs</h3>
+    <p class="muted">Matches the model rejects</p><div class="words"><span class='w'>partners <b>79</b></span><span class='w'>center <b>18</b></span><span class='w'>services <b>17</b></span><span class='w'>service <b>10</b></span><span class='w'>technologies <b>9</b></span><span class='w'>holdings <b>9</b></span><span class='w'>com <b>9</b></span><span class='w'>group <b>6</b></span><span class='w'>id <b>6</b></span><span class='w'>limitet <b>6</b></span><span class='w'>highland <b>4</b></span><span class='w'>automotive <b>4</b></span><span class='w'>tech <b>3</b></span><span class='w'>lr <b>3</b></span><span class='w'>summit <b>3</b></span></div>
+    <p class="muted">Non-matches the model accepts</p><div class="words"><span class='w'>com <b>100</b></span><span class='w'>services <b>54</b></span><span class='w'>center <b>52</b></span><span class='w'>partners <b>47</b></span><span class='w'>www <b>37</b></span><span class='w'>id <b>34</b></span><span class='w'>service <b>14</b></span><span class='w'>limitet <b>10</b></span><span class='w'>trading <b>8</b></span><span class='w'>praibhet <b>8</b></span><span class='w'>pra <b>5</b></span><span class='w'>group <b>5</b></span><span class='w'>bi <b>4</b></span><span class='w'>zetaquo <b>4</b></span><span class='w'>limirrd <b>4</b></span></div>
+    <h3>What the model relies on (share of split gain)</h3>
+    <div class='fi'><span>num_logdiff</span><span class='fib'><i style='width:100.0%'></i></span><span class='num'>56.2%</span></div><div class='fi'><span>num_lev</span><span class='fib'><i style='width:23.1%'></i></span><span class='num'>11.6%</span></div><div class='fi'><span>name_added_lo_min</span><span class='fib'><i style='width:16.7%'></i></span><span class='num'>8.4%</span></div><div class='fi'><span>nd</span><span class='fib'><i style='width:12.8%'></i></span><span class='num'>6.4%</span></div><div class='fi'><span>rel</span><span class='fib'><i style='width:5.8%'></i></span><span class='num'>2.9%</span></div><div class='fi'><span>name_jac</span><span class='fib'><i style='width:3.8%'></i></span><span class='num'>1.9%</span></div><div class='fi'><span>n_num_add</span><span class='fib'><i style='width:3.3%'></i></span><span class='num'>1.6%</span></div><div class='fi'><span>addr_tsr</span><span class='fib'><i style='width:3.3%'></i></span><span class='num'>1.6%</span></div><div class='fi'><span>addr_added_lo_min</span><span class='fib'><i style='width:2.9%'></i></span><span class='num'>1.5%</span></div><div class='fi'><span>name_added_lo_mean</span><span class='fib'><i style='width:2.2%'></i></span><span class='num'>1.1%</span></div><div class='fi'><span>name_tsr</span><span class='fib'><i style='width:1.7%'></i></span><span class='num'>0.8%</span></div><div class='fi'><span>name_ratio</span><span class='fib'><i style='width:1.5%'></i></span><span class='num'>0.8%</span></div><div class='fi'><span>name_len_rec</span><span class='fib'><i style='width:1.5%'></i></span><span class='num'>0.8%</span></div><div class='fi'><span>name_minor</span><span class='fib'><i style='width:1.4%'></i></span><span class='num'>0.7%</span></div><div class='fi'><span>name_added_lo_max</span><span class='fib'><i style='width:0.9%'></i></span><span class='num'>0.4%</span></div>
+    <h3>Flagged pairs</h3>
+    <div class="pairs">
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-543521730</div><div class="pn">Duffy Business</div>
+         <div class="pa">722 Chickasaw Avenue, Claremore, OK</div></div>
+    <div><div class="pid">S2-611104711</div><div class="pn">DUFFY BUSINESS  LLC</div>
+         <div class="pa">OK, PO BOX 1836, 725 CHICKASAW AVENUE, CLAREMORE</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-245896083</div><div class="pn">Total Wholesale Collective L.L.C.</div>
+         <div class="pa">1441 Mayberry Road, Westminster, MD</div></div>
+    <div><div class="pid">S2-714578992</div><div class="pn">Total Wholesale Collective LLC</div>
+         <div class="pa">1428 MAYBERRY ROAD, WESTMINSTER, MD</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-166510561</div><div class="pn">Dehlia Threlkeld, O.D.</div>
+         <div class="pa">153 Bird Avenue, Buffalo, NY</div></div>
+    <div><div class="pid">S2-593011618</div><div class="pn">Deh1ia Threlkeld,  Partners</div>
+         <div class="pa">210 1/2 BIRD AVE, BUFFALO, NY</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + partners</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-251501608</div><div class="pn">Ingram, Kirkpatrick and Lawrence LLC</div>
+         <div class="pa">IN, Sheridan, 711 White Avenue</div></div>
+    <div><div class="pid">S2-744222839</div><div class="pn">INGRAM, KIRKPATRICK &amp; LAWRENCE LLC PARTNERS</div>
+         <div class="pa">709 WHITE AVE, SHERIDAN, IN</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + partners</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-264717729</div><div class="pn">Arechiga&#x27;s Cleaning Service</div>
+         <div class="pa">PA, 166 Locust Court, Frankstown Township</div></div>
+    <div><div class="pid">S2-88238267</div><div class="pn">Arechiga&#x27;s-Cleaning Service Ltd</div>
+         <div class="pa">157. LOCUST COURT, HOLLIDAYSBURG, PA</div></div>
+  </div>
+  <div class="pw"><span class='w'>address + hollidaysburg</span><span class='w'>address − frankstown township</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-377424135</div><div class="pn">Shellie&#x27;s Appliance</div>
+         <div class="pa">254 Park Way, Fox River Grove, IL</div></div>
+    <div><div class="pid">S2-267989395</div><div class="pn">-- SHELLIE&#x27;S  APPLIANCE CORPORATION</div>
+         <div class="pa">259 PARK WAY, FOX RIVER GROVE, IL</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-457417734</div><div class="pn">Delta Endocrinology LLC</div>
+         <div class="pa">3345 Guiding Light Drive, Dallas, TX</div></div>
+    <div><div class="pid">S2-103320919</div><div class="pn">Delta Éndocrinology</div>
+         <div class="pa"><i>empty</i></div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-151643261</div><div class="pn">Bright Data Services LLC</div>
+         <div class="pa">444 New Walter&#x27;s Mill Road, Providence, NC</div></div>
+    <div><div class="pid">S2-376012295</div><div class="pn">Bright  Data Inc Services</div>
+         <div class="pa"><i>empty</i></div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-970877331</div><div class="pn">Monteon Regency, Inc.</div>
+         <div class="pa">Somerville, Unit 2, MA, 10 Willow Avenue</div></div>
+    <div><div class="pid">S2-91165517</div><div class="pn">inc. m0nteon regency,</div>
+         <div class="pa">31D WILLOW AVE, SOMERVILLE, MA</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-6052715</div><div class="pn">Klein Pioneer Partners LLC</div>
+         <div class="pa">750 Flave Pierce Road, Unit 16, Mobile, AL</div></div>
+    <div><div class="pid">S2-235869642</div><div class="pn">Gloor Pioneer Partners LLC</div>
+         <div class="pa">MOBILE, AL, 750 FLAVE PIERCE RD</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + gloor</span><span class='w'>name − klein</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-757144769</div><div class="pn">Metropolitan Intelligence Services</div>
+         <div class="pa">3306 14th Avenue, Pine Bluff, AR</div></div>
+    <div><div class="pid">S2-80043299</div><div class="pn">METROPOLITAN ÍNTELLIGENCE SERVICES LLC</div>
+         <div class="pa"><i>empty</i></div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-744379354</div><div class="pn">Hope Andrews Colonial Mitsubishi Inc.</div>
+         <div class="pa">404 Mason Avenue, Alexandria City, VA</div></div>
+    <div><div class="pid">S3-717350655</div><div class="pn">Hope Andrews Colonial Mitsubishi Inc.</div>
+         <div class="pa"><i>empty</i></div></div>
+  </div>
+  
+</div></div>
+  </section>
+
+  <section>
+    <p class="lens">Lens 4 · assignment</p>
+    <h2>Records that look exactly like another business</h2>
+    <div class='tw'><table><thead><tr><th>anomaly</th><th class='num'>records</th></tr></thead><tbody><tr><td>matched_record_is_exact_copy_of_a_different_s1</td><td class='num'>0</td></tr><tr><td>unmatched_record_is_exact_copy_of_an_s1</td><td class='num'>1</td></tr><tr><td>...where_that_s1_is_a_singleton</td><td class='num'>1</td></tr><tr><td>...where_that_s1_has_other_matches</td><td class='num'>0</td></tr><tr><td>matches_sharing_no_name_word_and_little_address</td><td class='num'>20,625</td></tr></tbody></table></div>
+    <div class='tw'><table><thead><tr><th>anomaly</th><th>record</th><th>record text</th><th>assigned S1</th><th>exact lookalike S1</th></tr></thead><tbody><tr><td>unmatched record is an exact copy of an S1</td><td class='mono'>S3-79931700</td><td>Inc Family Blue Clinic<br><span class='muted'>1465 Sherman Ave, North Bend, Oregon</span></td><td><span class='mono'>nan</span><br>nan<br><span class='muted'>nan</span></td><td><span class='mono'>S1-362421543</span><br>Family Blue Clinic Inc.<br><span class='muted'>OR, North Bend, 1465 Sherman Avenue</span></td></tr></tbody></table></div>
+  </section>
+
+  <section>
+    <p class="lens">Effect on the metric</p>
+    <h2>What the contradictions cost</h2>
+    <p>Macro F0.5 on the training S1 entities if a matcher labelled every pair perfectly except these. Pairs outside the
+    comparison (unmatched records with no lookalike, matches sharing no key with their S1) are assumed correct, so these
+    are optimistic ceilings.</p>
+    <div class="tw"><table><thead><tr><th>rule</th><th class="num">macro F0.5, all S1</th><th class="num">S1 touched</th><th class="num">mean F0.5 on touched</th></tr></thead><tbody>
+      <tr><td>every pattern takes its majority label</td><td class="num">0.9756</td><td class="num">255,793</td><td class="num">0.7891</td></tr>
+      <tr><td>out-of-fold model, threshold 0.5</td><td class="num">0.9933</td><td class="num">71,938</td><td class="num">0.7955</td></tr>
+    </tbody></table></div>
+  </section>
+
+  
+  <section>
+    <p class="lens">Holdout experiment</p>
+    <h2>Does removing the contradictions from training help?</h2>
+    <p>Holdout: every pair of 20% of the S1 businesses (441,326 businesses, 1,917,135 pairs),
+    labels untouched, as in test. Each variant trains the same model on the remaining businesses with different pairs removed.</p>
+    <div class="tw"><table><thead><tr><th>training data</th><th class="num">training pairs</th><th class="num">removed</th>
+    <th class="num">holdout macro F0.5</th><th class="num">vs keep all (points)</th><th class="num">log loss</th></tr></thead>
+    <tbody><tr><td>keep everything</td><td class='num'>6,870,136</td><td class='num'>0</td><td class='num'>0.9928</td><td class='num'>+0.00</td><td class='num'>0.025</td></tr><tr><td>drop pairs against their pattern&#x27;s majority</td><td class='num'>6,630,591</td><td class='num'>239,545</td><td class='num'>0.9768</td><td class='num'>-1.59</td><td class='num'>0.290</td></tr><tr><td>drop every pattern with &gt;5% minority label</td><td class='num'>5,569,047</td><td class='num'>1,301,089</td><td class='num'>0.9881</td><td class='num'>-0.46</td><td class='num'>0.039</td></tr><tr><td>drop pairs the model contradicts</td><td class='num'>6,865,140</td><td class='num'>4,996</td><td class='num'>0.9927</td><td class='num'>-0.01</td><td class='num'>0.026</td></tr><tr><td>hard pairs + 10% of easy pairs, weighted x10</td><td class='num'>2,040,614</td><td class='num'>4,829,522</td><td class='num'>0.9923</td><td class='num'>-0.05</td><td class='num'>0.026</td></tr></tbody></table></div>
+  </section>
+
+  <section>
+    <p class="lens">Examples</p>
+    <h2>Same pattern, opposite labels</h2>
+    <p>For the most contradicted patterns: pairs that follow the pattern's majority label next to pairs that don't. Left: S1. Right: the S2/S3 record.</p>
+    <div class="exg"><div class="exh"><b>name: words replaced · address: only numbers differ · numbers: number added</b>
+      <span class="muted">India · S3 · 19,287 pairs · 53.0% match</span></div>
+      <div class="pairs">
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="mp">model p(match) 0.94</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-318764012</div><div class="pn">Bkc Common LLP</div>
+         <div class="pa">F-613, Riico Ind.Area, Bhiwadi, Alwar, Rajasthan</div></div>
+    <div><div class="pid">S3-614543814</div><div class="pn">&gt;&gt; Bkc Coamdeo LLP</div>
+         <div class="pa">F-b3/613, Riico Ind.area, Bhiwadi, Alwar, RJ</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + coamdeo</span><span class='w'>name − common</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="mp">model p(match) 1.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-330922809</div><div class="pn">Sutlej Bee Ltd</div>
+         <div class="pa">Secunderabad, Hyderabad, Telangana, Ravinder Nagar, Habsiguda, 1-8-46/3</div></div>
+    <div><div class="pid">S3-808919218</div><div class="pn">Sutlej Ltd Partners Partners</div>
+         <div class="pa">Plot 340 1-8-46/3, Ravinder Nagar, Habsiguda, Secunderabad, Hyderabad, TG</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + partners</span><span class='w'>name − bee</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="mp">model p(match) 0.99</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-975360478</div><div class="pn">Hsa Overseas Private Limited</div>
+         <div class="pa">Spl-2 Riico Area Sitapura, Sanganer, Jaipur, Rajasthan</div></div>
+    <div><div class="pid">S3-400120549</div><div class="pn">Hsa Private Límited Partners</div>
+         <div class="pa">#B3/44 Spl-2 Riico Area Sitapura, Sanganer, Jaipur, RJ</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + partners</span><span class='w'>name − overseas</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-97892301</div><div class="pn">Labour Colony Systems Private Limited</div>
+         <div class="pa">At: Rajabagicha, Labour Colony, Cuttack, Orissa</div></div>
+    <div><div class="pid">S3-242310102</div><div class="pn">Labour Colony Tech Private Limited</div>
+         <div class="pa">H.no 57 At: Rajabagicha, Labour Colony, Cuttack, OD</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + tech</span><span class='w'>name − systems</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-92351123</div><div class="pn">AT Tech Private Limited</div>
+         <div class="pa">Ground Floor, Dcm Building, 16, Barakhamba Road, New Delhi, Delhi</div></div>
+    <div><div class="pid">S3-283292566</div><div class="pn">AT Consultancy Private</div>
+         <div class="pa">No 48/9 Ground Floor, Dcm Building, 16, Barakhamba Road, New Delhi, दिल्ली</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + consultancy</span><span class='w'>name − tech</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.07</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-389131532</div><div class="pn">Madhushree Soft Private Limited</div>
+         <div class="pa">C/O Krishan Lal Mukhija Colony, Panipat, Haryana</div></div>
+    <div><div class="pid">S3-87934245</div><div class="pn">Madhushree Limited Private Fit</div>
+         <div class="pa">H.no 40 C/o Krishan Lal Mukhija Colony, Panipat, हरियाणा</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + fit</span><span class='w'>name − soft</span></div>
+</div></div></div><div class="exg"><div class="exh"><b>name: words replaced · address: identical · numbers: same numbers</b>
+      <span class="muted">US · S3 · 147,850 pairs · 94.6% match</span></div>
+      <div class="pairs">
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="mp">model p(match) 0.99</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-154596762</div><div class="pn">Capistran Cap Group</div>
+         <div class="pa">905 12th Street, Sebring, OH</div></div>
+    <div><div class="pid">S3-560391291</div><div class="pn">Caghptirn Cap Group</div>
+         <div class="pa">905 12th Street, Sebring, Ohio</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + caghptirn</span><span class='w'>name − capistran</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="mp">model p(match) 1.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-919324654</div><div class="pn">Clanton, Smith and Hopkins Super Corp</div>
+         <div class="pa">464 143, Unit A103, Brian Head City, UT</div></div>
+    <div><div class="pid">S3-861988736</div><div class="pn">Clanton, Smrgohd and Hopkins Super Corp</div>
+         <div class="pa">464 143, # A103, Brian Head City, Utah</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + smrgohd</span><span class='w'>name − smith</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="mp">model p(match) 1.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-834063163</div><div class="pn">Rucker Harbor LLC</div>
+         <div class="pa">WI, City Of Cedarburg, N72W8057 Harvest Lane</div></div>
+    <div><div class="pid">S3-190782005</div><div class="pn">Rucker Hfarro LLC</div>
+         <div class="pa">N72w8057 Harvest Ln, City Of Cedarburg, Wisconsin</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + hfarro</span><span class='w'>name − harbor</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.79</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-880565553</div><div class="pn">Glyphus Assets</div>
+         <div class="pa">Chesterfield, 336 Wild Horse Canyon Drive, MO</div></div>
+    <div><div class="pid">S3-821892354</div><div class="pn">Glyfus Center</div>
+         <div class="pa">Chesterfield, Missouri, 336 Wild Horse Canyon Drive</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + center</span><span class='w'>name − assets</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-180452197</div><div class="pn">Durst&#x27;s Atlantic Liquor</div>
+         <div class="pa">3223 Elam Street, Little Rock, AR</div></div>
+    <div><div class="pid">S3-505689342</div><div class="pn">Allen Liquor Partners</div>
+         <div class="pa">3223 Elam Street, Little Rock, Arkansas</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + allen partners</span><span class='w'>name − atlantic durst</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.12</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-17376781</div><div class="pn">Charita Boone Fisheries L.L.C.</div>
+         <div class="pa">1794 Lake Floyd Circle, Bristol, WV</div></div>
+    <div><div class="pid">S3-79093294</div><div class="pn">Ruiz Boone Boone Fisheries [L.L.C.]</div>
+         <div class="pa">1794 Lake Floyd Cir, Bristol, West Virginia</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + boone ruiz</span><span class='w'>name − charita</span></div>
+</div></div></div><div class="exg"><div class="exh"><b>name: words replaced · address: only numbers differ · numbers: number added</b>
+      <span class="muted">India · S2 · 14,721 pairs · 51.5% match</span></div>
+      <div class="pairs">
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="mp">model p(match) 0.70</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-212236169</div><div class="pn">Dakshin Consultants of Bareilly</div>
+         <div class="pa">Durga Nagar Near Gol Gate, Bareilly, Uttar Pradesh</div></div>
+    <div><div class="pid">S2-783845507</div><div class="pn">Dakshin Consultants of Partners</div>
+         <div class="pa">H.NO 803 DURGA NAGAR NEAR GOL GATE, BAREILLY, उत्तर प्रदेश</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + partners</span><span class='w'>name − bareilly</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="mp">model p(match) 1.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-280559773</div><div class="pn">Indore Engineers Private Limited</div>
+         <div class="pa">South Tukoganj, Indore, Madhya Pradesh, 2/12, Indore</div></div>
+    <div><div class="pid">S2-204884431</div><div class="pn">Indore Enegrs Private Limited</div>
+         <div class="pa">572 2/12, SOUTH TUKOGANJ, INDORE, Madhya Pradesh</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + enegrs</span><span class='w'>name − engineers</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="mp">model p(match) 0.99</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-225612552</div><div class="pn">Roto Sangh</div>
+         <div class="pa">Shreekar Appartment, Flat No. 101, Saru Section Road, Jamnagar, Gujarat</div></div>
+    <div><div class="pid">S2-752335625</div><div class="pn">Roto Saht</div>
+         <div class="pa">#848 SHREEKAR APPARTMENT, FLAT NO. 101, SARU SECTION ROAD, JAMNAGAR, ગુજરાત</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + saht</span><span class='w'>name − sangh</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-603282852</div><div class="pn">Pune Clubs Pvt Ltd</div>
+         <div class="pa">Pune, Windsor Residency, Pune, 2Nd Floor Office, Balewadi Phata Near Bus Stop, Behind Signet Corner, Ban, Er Road, Maharashtra</div></div>
+    <div><div class="pid">S2-729324970</div><div class="pn">Pune Realcon Pvt</div>
+         <div class="pa">DOOR NO 18 WINDSOR RESIDENCY, 2ND FLOOR OFFICE, BALEWADI PHATA NEAR BUS STOP, BEHIND SIGNET CORNER, BAN, ER ROAD, PUNE, महाराष्ट्र</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + realcon</span><span class='w'>name − clubs</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-56172046</div><div class="pn">Capri Institute Corp</div>
+         <div class="pa">Village Kambojmeera Kot Road Ajanala Road, Amritsar, Punjab</div></div>
+    <div><div class="pid">S2-766756342</div><div class="pn">Capri Marketing [Corp]</div>
+         <div class="pa">NO 10 VILLAGE KAMBOJMEERA KOT ROAD AJANALA ROAD, AMRITSAR, Punjab</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + marketing</span><span class='w'>name − institute</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-160256502</div><div class="pn">Green Entertainment (India) Private Limited</div>
+         <div class="pa">Sreedhar Prasad Building, Market Road, Sagar. Shimoga, Shimoga, Karnataka</div></div>
+    <div><div class="pid">S2-724408176</div><div class="pn">Green Lifestyles (India)  Private</div>
+         <div class="pa">Karnataka, NO 74 SREEDHAR PRASAD BUILDING, MARKET ROAD, SAGAR. SHIMOGA</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + lifestyles</span><span class='w'>name − entertainment</span></div>
+</div></div></div><div class="exg"><div class="exh"><b>name: words replaced · address: identical · numbers: same numbers</b>
+      <span class="muted">US · S2 · 124,021 pairs · 94.5% match</span></div>
+      <div class="pairs">
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="mp">model p(match) 1.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-187939538</div><div class="pn">Sarina Gentry Classic Enclave LP</div>
+         <div class="pa">Crystal Lake, 371 Harold Street, IL</div></div>
+    <div><div class="pid">S2-630915644</div><div class="pn">Sarina Gentry Classic LP Services</div>
+         <div class="pa">IL, 371 HAROLD ST, CRYSTAL LAKE</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + services</span><span class='w'>name − enclave</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="mp">model p(match) 1.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-772796568</div><div class="pn">Kestyx Stellar</div>
+         <div class="pa">830 Birney Lane, Cincinnati, OH</div></div>
+    <div><div class="pid">S2-779302426</div><div class="pn">Kestyx Center</div>
+         <div class="pa">830 BIRNEY LN, CINCINNATI, OH</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + center</span><span class='w'>name − stellar</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="mp">model p(match) 1.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-381112973</div><div class="pn">Primary Care Physicians LLC</div>
+         <div class="pa">33 Mathias Avenue, Amsterdam, NY</div></div>
+    <div><div class="pid">S2-763250396</div><div class="pn">... Primary Physicians LLC Center</div>
+         <div class="pa">##33 MATHIAS AVENUE, AMSTERDAM, NY</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + center</span><span class='w'>name − care</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.03</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-229486300</div><div class="pn">Housing Council</div>
+         <div class="pa">7712 Briardenn Drive, Summerfield, NC</div></div>
+    <div><div class="pid">S2-770771169</div><div class="pn">Nexnex Council</div>
+         <div class="pa">7712 BRIARDENN DRIVE, SUMMERFIELD, NC</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + nexnex</span><span class='w'>name − housing</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.02</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-511488184</div><div class="pn">Odell, Walter and Born Biracilik LLC</div>
+         <div class="pa">520 Magnolia Street, North Little Rock, AR</div></div>
+    <div><div class="pid">S2-48353434</div><div class="pn">Odell, Walter and Bn Bn Systems LLC</div>
+         <div class="pa">520 MAGNOLIA STREET, &lt;NULL&gt;, NORTH LITTLE ROCK, AR</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + bn systems</span><span class='w'>name − biracilik born</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.02</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-707646795</div><div class="pn">Holly-Anne Tran Signature Gold, Inc</div>
+         <div class="pa">1105 Stevenson Road, Roselle, IL</div></div>
+    <div><div class="pid">S2-701514257</div><div class="pn">Middleton Tran Signature Gold, Inc</div>
+         <div class="pa">1105 STEVENSON ROAD, ROSELLE, IL</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + middleton</span><span class='w'>name − anne holly</span></div>
+</div></div></div><div class="exg"><div class="exh"><b>name: legal form / filler only · address: only numbers differ · numbers: number far-off</b>
+      <span class="muted">US · S2 · 13,478 pairs · 53.4% match</span></div>
+      <div class="pairs">
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="mp">model p(match) 0.92</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-386718557</div><div class="pn">Buckley &amp; Richardson LLC</div>
+         <div class="pa">119 Haven Street, Hendersonville, TN</div></div>
+    <div><div class="pid">S2-711255076</div><div class="pn">BUCKLEY &amp;-RICHARDSON L.L.C.</div>
+         <div class="pa">HAVEN STREET, PMB 6771, HENDERSONVILLE, TN</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="mp">model p(match) 1.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-495365420</div><div class="pn">Gladney &amp; Borders Inc</div>
+         <div class="pa">3000 Overlook Drive, Unit #1722, Hillsboro, OR</div></div>
+    <div><div class="pid">S2-904233070</div><div class="pn">Gladney &amp; Borders</div>
+         <div class="pa">3000-3004 OVERLOOK DRIVE, HILLSBORO, OR</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="mp">model p(match) 0.98</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-687315212</div><div class="pn">ZP Willow LLC</div>
+         <div class="pa">4775 5700, UT, Bear River City</div></div>
+    <div><div class="pid">S2-773994431</div><div class="pn">ZP (Willow)</div>
+         <div class="pa">4976 5700, BEAR RIVER CITY, UT</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.01</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-82051305</div><div class="pn">Great Cardiology Inc.</div>
+         <div class="pa">508 Walden Park Drive, Fort Mill, SC</div></div>
+    <div><div class="pid">S2-819054104</div><div class="pn">Great  Cardiology LLC</div>
+         <div class="pa">51 WALDEN PARK DRIVE, FORT MILL, SC</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-13253927</div><div class="pn">Benjamin and Renderos LLC</div>
+         <div class="pa">1717 Courtland Circle, Clovis, NM</div></div>
+    <div><div class="pid">S2-684109092</div><div class="pn">Benjamin and Renderos Co</div>
+         <div class="pa">728 COURTLAND CIRCLE, CLOVIS, NM</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.06</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-647032416</div><div class="pn">East Marketing</div>
+         <div class="pa">133 Red Hickory Drive, Royse City, TX</div></div>
+    <div><div class="pid">S2-819245351</div><div class="pn">East Marketing Ltd</div>
+         <div class="pa">544 RED HICKORY DRIVE, ROYSE CITY, TX</div></div>
+  </div>
+  
+</div></div></div><div class="exg"><div class="exh"><b>name: legal form / filler only · address: only numbers differ · numbers: number: one character changed</b>
+      <span class="muted">US · S2 · 55,099 pairs · 11.4% match</span></div>
+      <div class="pairs">
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="mp">model p(match) 0.10</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-337483722</div><div class="pn">Trusted Photonics</div>
+         <div class="pa">55 Tara Terrace, Bourne, MA</div></div>
+    <div><div class="pid">S2-316668807</div><div class="pn">Trusted Photonics (Inc)</div>
+         <div class="pa">56 TARA TER, BOURNE, MA</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="mp">model p(match) 0.01</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-475533649</div><div class="pn">Physical Therapy Specialists Inc</div>
+         <div class="pa">210 Garfield Street, Middletown, OH</div></div>
+    <div><div class="pid">S2-656811815</div><div class="pn">Corp Physical Therapy Specialists</div>
+         <div class="pa">215 GARFIELD ST, OH, MIDDLETOWN</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="mp">model p(match) 0.03</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-658073661</div><div class="pn">Silver Chs LLC</div>
+         <div class="pa">560 Great Circle Road, Unit 121, Nashville, TN</div></div>
+    <div><div class="pid">S2-219351553</div><div class="pn">Silver Chs Ltd</div>
+         <div class="pa">561 GREAT CIRCLE ROAD, &lt;NULL&gt;, NASHVILLE, TN</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.97</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-857770415</div><div class="pn">Hollyanne Bolduc Industries</div>
+         <div class="pa">8463 Wescott Drive, Peoria, AZ</div></div>
+    <div><div class="pid">S2-204041554</div><div class="pn">Hollyanne Bolduc Industries  Inc</div>
+         <div class="pa">9463 WESCOTT DR, PEORIA, AZ, null</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.27</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-117024571</div><div class="pn">Falcon Quality Strategic</div>
+         <div class="pa">397 Sale Barn Road, Cassville, MO</div></div>
+    <div><div class="pid">S2-16132236</div><div class="pn">Falcon Quality Strategic Corporation</div>
+         <div class="pa">395 SALE BARN ROAD, CASSVILLE, MO</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.01</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-562955904</div><div class="pn">Biggs Siddhi PC</div>
+         <div class="pa">125 North Street, Unit Apartment 328, City Of New Castle, PA</div></div>
+    <div><div class="pid">S2-106003509</div><div class="pn">Biggs Siddhi LLC</div>
+         <div class="pa">127 NORTH ST, CITY OF NEW CASTLE, PA</div></div>
+  </div>
+  
+</div></div></div><div class="exg"><div class="exh"><b>name: legal form / filler only · address: only numbers differ · numbers: number far-off</b>
+      <span class="muted">US · S3 · 12,076 pairs · 45.5% match</span></div>
+      <div class="pairs">
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="mp">model p(match) 0.01</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-758191205</div><div class="pn">Western Veterinary Clinic Inc</div>
+         <div class="pa">971 Robinwood Street, Unit B, Columbus, OH</div></div>
+    <div><div class="pid">S3-185325989</div><div class="pn">Western Veterinary Clinic Co</div>
+         <div class="pa">482 Robinwood Street, # B, Columbus, Ohio</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="mp">model p(match) 0.16</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-171177369</div><div class="pn">Heritage Classic Cadenza</div>
+         <div class="pa">209 81st Street, Niagara Falls, NY</div></div>
+    <div><div class="pid">S3-56481716</div><div class="pn">HERITAGE CLASSIC CADENZA LTD</div>
+         <div class="pa">22 81st Street, Niagara Falls, New York</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="mp">model p(match) 0.01</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-427371329</div><div class="pn">@ Care 2 It Inc</div>
+         <div class="pa">549 Dove Lane, Copperas Cove, TX</div></div>
+    <div><div class="pid">S3-567825968</div><div class="pn">@ care 2 it llc</div>
+         <div class="pa">50 Dove Ln, Copperas Cove, Texas</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.97</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-948921477</div><div class="pn">Los Alamos Biotechnologies Inc.</div>
+         <div class="pa">3926 Alabama Avenue, Los Alamos, NM</div></div>
+    <div><div class="pid">S3-856267672</div><div class="pn">... Los-Alamos Biotechnologies</div>
+         <div class="pa">Alabama Ave, PO Box 9740, Los Alamos, New Mexico</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.09</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-235825464</div><div class="pn">Morris &amp; Williams Inc</div>
+         <div class="pa">9800 Overton Avenue, Kansas City, MO</div></div>
+    <div><div class="pid">S3-175462574</div><div class="pn">Morris  &amp; Williams Incorporated</div>
+         <div class="pa">9602 Overton Ave, Kansas City, Missouri</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 1.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-673399799</div><div class="pn">Tammi Palmer Home LLC</div>
+         <div class="pa">4307 Phyllis Drive, Northbrook, IL</div></div>
+    <div><div class="pid">S3-93075171</div><div class="pn">Tammi Palmer Home</div>
+         <div class="pa">4448-4450 Phyllis Dr, Northbrook, Illinois</div></div>
+  </div>
+  
+</div></div></div><div class="exg"><div class="exh"><b>name: legal form / filler only · address: only numbers differ · numbers: number: one character changed</b>
+      <span class="muted">US · S3 · 54,279 pairs · 9.6% match</span></div>
+      <div class="pairs">
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="mp">model p(match) 0.01</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-7103891</div><div class="pn">Othilie Cecil Integrated Harbor</div>
+         <div class="pa">OR, Coos Bay, 1320 Highland Avenue</div></div>
+    <div><div class="pid">S3-93290991</div><div class="pn">Othilie Cecil Integrated Harbor Inc</div>
+         <div class="pa">1323 Highland Ave, Coos Bay, Oregon</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="mp">model p(match) 0.02</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-217936050</div><div class="pn">Chiropractic Royal Partners Center</div>
+         <div class="pa">23 Glen Avon Drive, Greenwich, CT</div></div>
+    <div><div class="pid">S3-622771370</div><div class="pn">Chiropractic Royal-Partners Center Inc</div>
+         <div class="pa">27- Glen Avon Dr, Greenwich, Connecticut</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="mp">model p(match) 0.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-366224263</div><div class="pn">Star Construction Technologies LLC</div>
+         <div class="pa">TX, Italy, 901 Genoa Lane</div></div>
+    <div><div class="pid">S3-597137989</div><div class="pn">Star Construction Technologies Corp</div>
+         <div class="pa">#904 Genoa Lane, Italy, Texas</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.09</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-453795736</div><div class="pn">Harris Twp Wildlife Direct Initiative</div>
+         <div class="pa">607 Rosslyn Road, Harris Twp, PA</div></div>
+    <div><div class="pid">S3-136583279</div><div class="pn">Harris Twp Wildlife Direct Initiative LP</div>
+         <div class="pa">606 Rosslyn Rd, Harris Twp, Pennsylvania</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 1.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-68323208</div><div class="pn">Crestline Inc</div>
+         <div class="pa">1112 Pegasus Drive, Huntsville, AL</div></div>
+    <div><div class="pid">S3-92082328</div><div class="pn">Crestline</div>
+         <div class="pa">8112 Pegasus Dr, Huntsville, Alabama</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.11</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-965234722</div><div class="pn">Crystal Automobile Inc</div>
+         <div class="pa">14 Doncaster Road, Malverne, NY</div></div>
+    <div><div class="pid">S3-280221271</div><div class="pn">The Crystal  Automobile Inc</div>
+         <div class="pa">12 Doncaster Rd, Malverne, New York</div></div>
+  </div>
+  
+</div></div></div><div class="exg"><div class="exh"><b>name: legal form / filler only · address: only numbers differ · numbers: number cut short</b>
+      <span class="muted">US · S2 · 29,926 pairs · 82.8% match</span></div>
+      <div class="pairs">
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="mp">model p(match) 1.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-560070207</div><div class="pn">Galina Salgado Associates LLC</div>
+         <div class="pa">7792 Rt 10 Highway, Salt Rock, WV</div></div>
+    <div><div class="pid">S2-57962967</div><div class="pn">Galina Salgado Associates</div>
+         <div class="pa">779 RT 10 HWY, SALT ROCK, WV</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="mp">model p(match) 0.55</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-88828973</div><div class="pn">JW Green Immersion</div>
+         <div class="pa">1677 Main Street, Unit 3, Cedar City, UT</div></div>
+    <div><div class="pid">S2-106406182</div><div class="pn">JW Green Immersion Co</div>
+         <div class="pa">167 MAIN ST, PO BOX 9717, CEDAR CITY, UT</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="mp">model p(match) 1.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-682676582</div><div class="pn">Surgical Preferred Associates Inc.</div>
+         <div class="pa">2300 Mcdonald Street, Unit Unit 373, Mckinney, TX</div></div>
+    <div><div class="pid">S2-748498312</div><div class="pn">Surgical Preferred Associates</div>
+         <div class="pa">2300C MCDONALD STREET, MCKINNEY, TX</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.39</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-520527809</div><div class="pn">Palacio Classic Coca Inc</div>
+         <div class="pa">Jamestown, NY, 312 Van Buren Street, Unit Apartment 2</div></div>
+    <div><div class="pid">S2-176535208</div><div class="pn">[LTD] PALACIO CLASSIC COCA</div>
+         <div class="pa">31 VAN BUREN ST, JAMESTOWN, NY</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.03</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-625917773</div><div class="pn">Chiropractic Associates LLC</div>
+         <div class="pa">1 Tides End Lane, Topsham, ME</div></div>
+    <div><div class="pid">S2-189479240</div><div class="pn">Chiropractic Associates Corp</div>
+         <div class="pa">12 TIDES END LN, TOPSHAM, ME</div></div>
+  </div>
+  
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.57</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-835652814</div><div class="pn">Abrams, Alexandrina, O.D. Corp</div>
+         <div class="pa">2720 308 Addlestone Circle, High Point, NC</div></div>
+    <div><div class="pid">S2-953710266</div><div class="pn">Abrams, Alexandrina, O.D. LLC</div>
+         <div class="pa">NC, HIGH POINT, 720 313 ADDLESTONE CIR</div></div>
+  </div>
+  
+</div></div></div><div class="exg"><div class="exh"><b>name: one word added · address: only numbers differ · numbers: number added</b>
+      <span class="muted">India · S3 · 18,394 pairs · 24.1% match</span></div>
+      <div class="pairs">
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="mp">model p(match) 0.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-392520538</div><div class="pn">Blackdiamond (India) Solutions Ltd</div>
+         <div class="pa">C/O Radheshyam Babulal Patidar, Main Road Gogawa, Gogawan, Khargone, West Nimar, Madhya Pradesh</div></div>
+    <div><div class="pid">S3-317857973</div><div class="pn">Blackdiamond (India) Solutions Ventures</div>
+         <div class="pa">No 30 C/o Radheshyam Babulal Patidar, Main Road Gogawa, Gogawan, Khargone, West Nimar, मध्य प्रदेश</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + ventures</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="mp">model p(match) 0.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-367937257</div><div class="pn">Rayalaseema Technologies</div>
+         <div class="pa">Sy No., 269/2, Anekal, Bangalore, Karnataka</div></div>
+    <div><div class="pid">S3-269298410</div><div class="pn">Rayalaseema Technologies  Enterprises</div>
+         <div class="pa">No 99 Sy No., 269/2, Bangalore, Anekal, KA</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + enterprises</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab ln">non-match</span><span class="mp">model p(match) 0.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-158409968</div><div class="pn">Lenus College</div>
+         <div class="pa">Mohalla Adarsh Nagar Mohammadabad Gohna, Mau, Maunathbhanjan, Uttar Pradesh</div></div>
+    <div><div class="pid">S3-735742667</div><div class="pn">Lenus College Enterprises</div>
+         <div class="pa">No 52 Mohalla Adarsh Nagar Mohammadabad Gohna, Mau, Maunathbhanjan, UP</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + enterprises</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 1.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-836819979</div><div class="pn">Murlidhar Solutions (India) Private Limited</div>
+         <div class="pa">61- Jawahar Marg, Indore, Madhya Pradesh</div></div>
+    <div><div class="pid">S3-213493130</div><div class="pn">Murlidhar Solutions (India) Pitdreivte Limited</div>
+         <div class="pa">Plot 610 61- Jawahar Marg, Indore, MP</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + pitdreivte</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 0.99</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-271503998</div><div class="pn">Care &amp; Sons Company</div>
+         <div class="pa">No 30, Shiva Apartments, Flat No 104, 1St Main, Nagarbhavi Village, Bangalore North, Bangalore, Karnataka</div></div>
+    <div><div class="pid">S3-477021218</div><div class="pn">Sri Care Sons Company Center</div>
+         <div class="pa">Door No 30/3, Shiva Apartments, Flat No 104, 1St Main, Nagarbhavi Village, Bangalore North, Bangalore, KA</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + center</span></div>
+</div>
+<div class="pair">
+  <div class="ph"><span class="lab lm">match</span><span class="chip hot">against its pattern</span><span class="mp">model p(match) 1.00</span></div>
+  <div class="pg">
+    <div><div class="pid">S1-219518763</div><div class="pn">Apex Food Private Limited</div>
+         <div class="pa">C/O.Hematbhai Dangar, New, Kedarnath Soc. St. No.9, Rajkot, Gujarat</div></div>
+    <div><div class="pid">S3-52614543</div><div class="pn">Apex Food Limited Services</div>
+         <div class="pa">Door No ##631 C/o.hematbhai Dangar, New, Kedarnath Soc. St. No.9, Rajkot, ગુજરાત</div></div>
+  </div>
+  <div class="pw"><span class='w'>name + services</span></div>
+</div></div></div>
+  </section>
+
+  <section>
+    <p class="lens">Method and limits</p>
+    <h2>How the pairs were built</h2>
+    <p><b>Pairing.</b> Matched records are set against their ground-truth S1. Unmatched records are set against the most similar
+    S1 that shares one of six blocking keys: identical address words (house numbers ignored), identical core name, 4-letter-prefix
+    versions of both, address words of 4+ letters only, and sound-alike forms of the name words. A matched pair counts as comparable
+    only if it shares one of those keys too, so both labels are measured the same way. 726,041 unmatched
+    records have no lookalike and 1,008,847 matches share no key with their S1; both sit
+    outside the pattern and model lenses.</p>
+    <p><b>Normalisation.</b> Text is romanised (Indic scripts), lower-cased and split into words. In addresses, state names and codes,
+    unit words and Indic-script words are ignored, ordinals become street words, and street abbreviations are expanded; numbers are
+    compared separately, as a multiset. In names, legal forms, honorifics and fillers are counted as minor words, and repeated words
+    are kept. A name in an Indic script is compared with a Latin one through sound-alike forms of each word. A typo is a word 1–2
+    character edits from a word on the other side.</p>
+    <p><b>What this cannot tell.</b> Pairing an unmatched record with its most similar S1 favours lookalikes, which makes
+    contradictions easier to find, not harder. Blocking misses decoys whose name and address both changed. None of these counts
+    say which of two conflicting labels is correct.</p>
+    <h3>Files (eda_output/label_audit/)</h3>
+    <ul class="files">
+      <li><code>flagged_pairs.tsv</code>: 299,683 pairs labelled against their pattern and/or rejected by the model, with both texts</li>
+      <li><code>pattern_summary.tsv</code>: every pattern with match / non-match counts</li>
+      <li><code>duplicate_conflicts.tsv</code>: identical records with conflicting labels</li>
+      <li><code>s1_duplicates.tsv</code>: duplicate S1 records</li>
+      <li><code>assignment_anomalies.tsv</code>: records that are exact copies of a different S1</li>
+      <li><code>build_pairs.py</code>, <code>analyze.py</code>, <code>build_report.py</code>: the pipeline that produced all of the above</li>
+    </ul>
+  </section>
+</div>
