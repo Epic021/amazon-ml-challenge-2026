@@ -73,7 +73,7 @@ def main():
                                                                   num_threads=a.threads)).astype(np.float32)))
     ex = pl.from_pandas(soft_excl(te.select(["s1_id", "cand_id", "p"]).to_pandas())).rename({"p": "px"})
     te = te.join(ex, on=["s1_id", "cand_id"])
-    n_s1 = s1t.filter(SUB).group_by("country").len("n_s1")
+    n_s1 = s1t.rename({"entity_id": "s1_id"}).filter(SUB).group_by("country").len("n_s1")
     st = te.group_by("country").agg(pl.col("p").filter(SWAP).mean().round(3).alias("swap_p"),
                                     (pl.col("px") >= 0.55).sum().alias("n_pred"),
                                     pl.col("px").sum().alias("exp")).join(n_s1, on="country")
