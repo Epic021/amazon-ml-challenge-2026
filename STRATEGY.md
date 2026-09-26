@@ -8,7 +8,8 @@
 | **Where the LB is lost** | **France ≈ 0.94** (implied), unchanged since B2. India and the US are ≈ 0.983 / 0.986 |
 | **Target** | 0.98+ (top 10 ≈ 0.985). Each +0.01 on France is +0.0015 on the LB |
 | **Running** | B5 decode (B5 trained; features: sound key, address-word log-odds, twins); B5 + teammate blend on the holdout |
-| **Next** | 3g stacked blend → 3h France pseudo-labels (§6) |
+| **Next** | Neural pair scorers on a budgeted A100 (N1-N2), stacker over all members (3g), France pseudo-labels (3h) (§6) |
+| **GPU budget** | **$10 total, no refill** (A100 80 GB, $1.59/h ≈ 6.2 h). Only `scripts/gpu_session.sh` runs on it |
 | **Deadline** | around early Sep 28 IST (verify on the portal); freeze ~Sep 27 evening |
 
 The repo is private, so code reaches the VM only via `git archive HEAD src scripts requirements.txt | ssh vm tar -x`.
@@ -128,14 +129,24 @@ raw TSV → normalize → 4 retrievers → union + prune → features (~95) → 
 
 ## 6. Plan (in order)
 
-| # | Item | Why | Time | Keep if |
-|---|---|---|---|---|
-| 1 | ~~B5 + BLEND-B5~~ **done, no gain** | – | – | – |
-| 2 | **3g Stacked blend**: stage 2 with both models' p, relational features (does the record fit another S1 better?) and pair features (number relation, word swap) | The models disagree confidently on France swaps, and a fixed 0.5 average puts those at the threshold. The stacker learns when to trust which | 1 h | ≥ blend + 0.001 → submit |
-| 3 | **3h France co-training pseudo-labels**: French pairs where both models agree confidently → French added/dropped-word log-odds → recompute France features → re-predict (no retrain) | France's vocabulary is unseen. Two independent models agreeing limits confirmation bias | 2–3 h | **Gate:** on India, log-odds from pseudo-labels in place of true ones keep ≥ half the log-odds gain. Then one LB submission |
-| 4 | **G4 house-number roles** (locality cardinality, match levels) | France's dense streets | 2 h | ≥ +0.001 or France LB ↑ |
-| 5 | F1 synthetic French decoys | Measure France rejection directly | 1.5 h | Diagnostic |
-| 6 | G1 normalize v2 (structural rules, no hand maps) | Code audit / generality | 2 h | Holdout ≥ current − 0.001 |
+Why neural: every GBDT feature about *which word changed* is a token statistic learned from English/Indian
+labels, so French words carry no evidence, and two runs of feature work (B3, B5) moved the holdout by
+≤ +0.0005. A multilingual pretrained model knows that "groupe/développement" behave like "group/holdings"
+and that "amis" vs "club" are unrelated words, and it is a structurally different ensemble member.
+
+| # | Item | Where | Keep if |
+|---|---|---|---|
+| 1 | ~~B5 + BLEND-B5~~ **done, no gain** | – | – |
+| 2 | **3g Stacked blend** (`stage2.py --friend`, now also `--members`) | CPU | ≥ blend + 0.001 → submit |
+| 3 | **LB France direction probe**: `blend.py --france_dthr +0.1` and `-0.1` (diagnostic only) | CPU + 2 LB | – (tells whether France loses to false or missed matches) |
+| 4 | **N1 mDeBERTa-v3-base cross-encoder** on raw text, full shortlist (`export_pairs_text.py` → `gpu_session.sh s1`) | GPU ~2 h | stacker with it ≥ +0.001 on the holdout |
+| 5 | **N1 gate: transfer check** (`transfer_check.py`): US-only neural vs US-only LightGBM on India's swap class | CPU | neural > LightGBM without word log-odds → run N2 |
+| 6 | **N2 Qwen3-4B LoRA** on the hardest pairs, scores the llm-flagged shortlist, France first (`gpu_session.sh s2`) | GPU ~2.5 h | stacker with it ≥ +0.001, then LB |
+| 7 | **3h France co-training pseudo-labels** (members agree confidently) → French word log-odds; optional round 2 of N2 (`gpu_session.sh r`) | CPU (+GPU ~0.8 h) | India simulation keeps ≥ half the log-odds gain; then LB |
+| 8 | Word-knowledge features: swap-pair roles (label-free), embedding-projected word log-odds fitted across countries | CPU | pilot ≥ +0.002 |
+| 9 | Generator audit → synthetic French pairs | CPU | diagnostic, then N2 round 2 |
+
+If the N1 gate fails or the stacker gains < +0.001 with N1: skip N2, keep the money, ship the stacker over the GBDTs.
 
 **Final 12 h (from ~Sep 27 evening), no new features:**
 1. Freeze.
@@ -167,6 +178,20 @@ export PYTHONUNBUFFERED=1
 | 8 | Blend | `python scripts/blend.py --tag T --write` → `output_blend/` | ~15 min |
 | 9 | Checks | `validate_submission.py --check-ids`; `scripts/france_diag.py`; `scripts/france_gap.py` | ~10 min |
 
+**Neural members (N1/N2).** CPU VM exports, GPU box trains and scores, CPU VM collects and stacks.
+
+| # | Step | Where | Command |
+|---|---|---|---|
+| N0 | Pair text | CPU | `python scripts/export_pairs_text.py --tag b5 --feat_dir data/feat_b5` → `data/xenc/{train,score_train,score_test}.parquet` |
+| N1 | Copy to GPU box | – | repo (`git archive`) + `data/xenc/*.parquet` |
+| N2 | Setup (once per box) | GPU | `bash scripts/gpu_session.sh setup` |
+| N3 | Session | GPU | `STOP_CMD='…' SYNC_CMD='…' bash scripts/gpu_session.sh s1` (then `s2`, `r`). Hard-capped; stops the instance on exit |
+| N4 | Collect | CPU | `python src/xenc.py collect --parts data/xenc/p_mdeb --tag xmdeb` → `data/pred/{train,test}_xmdeb.parquet` |
+| N5 | Gate | CPU | `python scripts/transfer_check.py --feat_dir data/feat_b5` |
+| N6 | Stack | CPU | `python src/stage2.py --tag b5 --feat_dir data/feat_b5 --friend --members xmdeb[,xqwen]` → `decode.py --tag b5sbm --calib_folds 8,9` |
+
+**GPU rules:** nothing CPU-bound or any debugging on the GPU box (`smoke.sh` runs a tiny random model through the same code on CPU); every step has `--max_minutes`; scores are written in parts and resume; the session script stops the instance even on failure.
+
 ## 8. Rules
 
 - **Process:**
@@ -177,7 +202,8 @@ export PYTHONUNBUFFERED=1
   - Stop the VM when idle.
 - **Compliance:**
   - No external lookups.
-  - MIT/Apache models only (LightGBM, model2vec). Not allowed: jina-v3 (CC BY-NC), Unidecode (GPL).
+  - MIT/Apache models only, ≤ 8B total parameters: LightGBM, model2vec, mDeBERTa-v3-base (MIT), Qwen3-4B-Base (Apache-2.0, 4.0B). Not allowed: jina-v3 (CC BY-NC), Unidecode (GPL), Qwen3-8B (8.2B > 8B). Gemma 4 E4B is Apache-2.0 but "8B with embeddings": avoid unless the rule's count is confirmed.
+  - The neural models are shipped as weights (mDeBERTa fine-tune, Qwen LoRA adapter); the organizers' re-run needs about 40 min of A100 inference.
   - Per-country tables are recomputed from the input data at run time.
   - Anything learned from unlabeled test inputs (word roles, pseudo-labels) is disclosed in the methodology doc.
 - **Team:**

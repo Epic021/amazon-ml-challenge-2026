@@ -1,0 +1,13 @@
+# GPU pod for src/xenc.py + scripts/transfer_check.py. torch with CUDA comes from the pod image (RunPod PyTorch).
+# Versions tested on CPU smoke runs.
+transformers==5.17.0
+peft==0.21.0
+accelerate
+sentencepiece
+protobuf
+polars==1.44.2
+pyarrow
+numpy
+scikit-learn
+lightgbm==4.6.0
+huggingface_hub

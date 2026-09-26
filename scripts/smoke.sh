@@ -25,6 +25,20 @@ step "features test";      python src/features.py --split test
 step train;                python src/train.py --tag smoke --rounds 60
 step decode;               python src/decode.py --tag smoke
 
+# neural members (src/xenc.py) with a tiny random model on CPU: checks export -> train -> score -> collect ->
+# stacker end to end before any GPU time is bought. Needs: pip install torch --index-url
+# https://download.pytorch.org/whl/cpu && pip install -r requirements-gpu.txt
+if python -c "import torch, transformers, peft" 2>/dev/null; then
+  X="$BER_DATA/xenc"
+  step "export pairs text";  python scripts/export_pairs_text.py --tag smoke --feat_dir "$BER_DATA/feat" --n_train 20000 --n_llm 5000
+  step "xenc train (tiny)";  python src/xenc.py train --model mdeberta --tiny --data "$X/train.parquet" --out "$X/m_tiny" --limit 3000
+  step "xenc score (tiny)";  python src/xenc.py score --model_dir "$X/m_tiny" --data "$X/score_train.parquet,$X/score_test.parquet" --out "$X/p_tiny"
+  step "xenc collect";       python src/xenc.py collect --parts "$X/p_tiny" --tag xtiny
+  step "stage2 + member";    python src/stage2.py --tag smoke --feat_dir "$BER_DATA/feat" --members xtiny --rounds 30
+else
+  step "SKIP neural members (torch/transformers/peft not installed)"
+fi
+
 step "check outputs"
 python - <<'EOF'
 import os, pandas as pd, csv

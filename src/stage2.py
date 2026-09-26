@@ -17,7 +17,12 @@ Then:  python src/decode.py --tag b4s2 --calib_folds 8,9
 --friend: stacked blend. Adds the teammate's probability (data/friend/, OOF on train) as a second input,
 with the same relational features computed on it, so stage 2 learns when to trust which model. The
 pair set is the union of both candidate sets (missing p -> 0). Writes {tag}sb instead of {tag}s2.
+
+--members xmdeb,xqwen: more members from data/pred/{split}_{name}.parquet (e.g. the neural scorers of
+src/xenc.py, which score only a shortlist). Joined onto the pair set (they never add pairs); per member:
+p, a missing flag, its difference to our p and the same relational features. Adds "m" to the output tag.
 """
+import functools
 import argparse
 import os
 import time
@@ -47,12 +52,16 @@ REL = ["r_best", "r_sum", "r_n05", "s_rank", "s_best", "s_sum", "s_n05", "r_othe
        "p_share_r", "r_margin", "twin_p_num", "twin_p_name"]
 
 
+@functools.lru_cache(maxsize=2)
+def records(split: str) -> pl.DataFrame:
+    return pl.concat([pl.read_parquet(f"{NORM}/{split}_s{k}.parquet", columns=["id", "src", "nums", "name_core"])
+                      for k in (1, 2, 3)]).rename({"id": "cand_id"})
+
+
 def relational(df: pl.DataFrame, split: str, p: str = "p", pre: str = "") -> pl.DataFrame:
     """Competition features of probability column `p`, named with prefix `pre`."""
     df = df.rename({p: "_p"})
-    rec = pl.concat([pl.read_parquet(f"{NORM}/{split}_s{k}.parquet", columns=["id", "src", "nums", "name_core"])
-                     for k in (1, 2, 3)]).rename({"id": "cand_id"})
-    df = df.join(rec, on="cand_id", how="left")
+    df = df.join(records(split), on="cand_id", how="left")
     df = df.with_columns(
         # record side
         pl.col("_p").max().over("cand_id").alias("r_best"),
@@ -86,7 +95,17 @@ def relational(df: pl.DataFrame, split: str, p: str = "p", pre: str = "") -> pl.
     return df.rename({c: pre + c for c in REL}) if pre else df
 
 
-def load(split: str, tag: str, feat_dir: str, friend: bool = False) -> pl.DataFrame:
+def add_members(df: pl.DataFrame, split: str, members: list) -> pl.DataFrame:
+    for m in members:
+        t = pl.read_parquet(f"{PRED}/{split}_{m}.parquet", columns=KEY + ["p"]).rename({"p": f"p_{m}"})
+        df = df.join(t, on=KEY, how="left").with_columns(
+            pl.col(f"p_{m}").is_null().cast(pl.Int8).alias(f"{m}_missing"), pl.col(f"p_{m}").fill_null(0.0))
+        df = df.with_columns((pl.col(f"p_{m}") - pl.col("p")).alias(f"{m}_diff"))
+        df = relational(df, split, f"p_{m}", f"{m}_")
+    return df
+
+
+def load(split: str, tag: str, feat_dir: str, friend: bool = False, members: tuple = ()) -> pl.DataFrame:
     p = pl.read_parquet(f"{PRED}/{split}_{tag}.parquet", columns=KEY + ["p"])
     fold = (pl.col("s1_id").str.slice(3).cast(pl.Int64) % 10).cast(pl.Int8)
     if split == "train":
@@ -109,7 +128,7 @@ def load(split: str, tag: str, feat_dir: str, friend: bool = False) -> pl.DataFr
     df = relational(df, split)
     if friend:
         df = relational(relational(df, split, "p_t", "t_"), split, "p_m", "m_")
-    return df
+    return add_members(df, split, list(members))
 
 
 def main():
@@ -118,10 +137,12 @@ def main():
     ap.add_argument("--feat_dir", required=True)
     ap.add_argument("--rounds", type=int, default=2000)
     ap.add_argument("--friend", action="store_true", help="stacked blend with the teammate's probabilities")
+    ap.add_argument("--members", default="", help="comma-separated extra members: data/pred/{split}_{name}.parquet")
     a = ap.parse_args()
     t0 = time.time()
-    out_tag = a.tag + ("sb" if a.friend else "s2")
-    tr = load("train", a.tag, a.feat_dir, a.friend).to_pandas()
+    members = tuple(m for m in a.members.split(",") if m)
+    out_tag = a.tag + ("sb" if a.friend else "s2") + ("m" if members else "")
+    tr = load("train", a.tag, a.feat_dir, a.friend, members).to_pandas()
     feats = [c for c in tr.columns if c not in ("s1_id", "cand_id", "fold", "y")]
     print(f"stage 2: {len(feats)} features, {len(tr):,} train pairs ({time.time() - t0:.0f}s)", flush=True)
     m_tr, m_ho = tr.fold.isin(S2_TRAIN).values, (tr.fold == HOLD).values
@@ -137,7 +158,7 @@ def main():
     out["p"] = model.predict(tr[feats], num_threads=os.cpu_count()).astype(np.float32)
     out.to_parquet(f"{PRED}/train_{out_tag}.parquet", index=False)
     del tr
-    te = load("test", a.tag, a.feat_dir, a.friend).to_pandas()
+    te = load("test", a.tag, a.feat_dir, a.friend, members).to_pandas()
     te_out = te[["s1_id", "cand_id"]].copy()
     te_out["p"] = model.predict(te[feats], num_threads=os.cpu_count()).astype(np.float32)
     te_out.to_parquet(f"{PRED}/test_{out_tag}.parquet", index=False)

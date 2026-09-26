@@ -45,6 +45,9 @@ def main():
     ap.add_argument("--tag", required=True)
     ap.add_argument("--write", action="store_true", help="write the test TSVs")
     ap.add_argument("--out", default="output_blend", help="output dir (relative to repo root)")
+    ap.add_argument("--france_dthr", type=float, default=0.0,
+                    help="LB DIAGNOSTIC ONLY: shift France's threshold (+ stricter / - looser) to learn whether "
+                         "France loses to false or to missed matches. Never for the final submission.")
     a = ap.parse_args()
     truth = pd.read_parquet(f"{DATA}/parquet/train_pairs.parquet")
     s1 = pd.read_parquet(f"{DATA}/parquet/train_s1.parquet", columns=["entity_id", "country"])
@@ -102,8 +105,11 @@ def main():
         te["p_o"], te["p_t"] = te.p_o.fillna(0.0), te.p_t.fillna(0.0)
         te["p"] = best[0] * iso_o.predict(te.p_o) + (1 - best[0]) * iso_t.predict(te.p_t)
         ex = soft_excl(te[["s1_id", "cand_id", "p"]])
-        pred = ex[ex.p >= best[1]]
         s1t = pd.read_parquet(f"{DATA}/parquet/test_s1.parquet", columns=["entity_id", "country"])
+        fr = ex.s1_id.map(s1t.set_index("entity_id").country).eq("France").values
+        pred = ex[ex.p >= best[1] + a.france_dthr * fr]
+        if a.france_dthr:
+            print(f"!!! France threshold {best[1] + a.france_dthr:.2f} (others {best[1]}): LB diagnostic only")
         out = os.path.join(ROOT, a.out)
         os.makedirs(out, exist_ok=True)
         write(pred, s1t.entity_id, f"{out}/matching_results.tsv", "matched_entity_ids")
