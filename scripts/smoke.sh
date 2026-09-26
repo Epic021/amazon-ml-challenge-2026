@@ -16,6 +16,7 @@ for SPLIT in train test; do
     step "block $SPLIT $R";  python src/block.py --split $SPLIT --retriever $R
   done
   step "block $SPLIT emb";  python src/block_emb.py --split $SPLIT
+  step "block $SPLIT numaddr"; python src/block_numaddr.py --split $SPLIT
   step "union $SPLIT";       python src/union.py --split $SPLIT
 done
 step "mine train";         python src/mine_equiv.py --split train --min_n 5
