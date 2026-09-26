@@ -36,6 +36,7 @@ def main():
     ap.add_argument("--feat_dir", default=f"{DATA}/feat_b5")
     ap.add_argument("--threads", type=int, default=12)
     ap.add_argument("--rounds", type=int, default=400)
+    ap.add_argument("--thr_curve", action="store_true", help="also report F0.5 over thresholds")
     a = ap.parse_args()
     t0 = time.time()
     s1 = pl.read_parquet(f"{DATA}/parquet/train_s1.parquet", columns=["entity_id", "country"]).rename({"entity_id": "s1_id"})
@@ -54,14 +55,19 @@ def main():
     cal = ev[ev.fold.isin((8, 9)) & (ev.country == a.train_country)]          # labels of the TRAIN country only
     ev["p"] = IsotonicRegression(out_of_bounds="clip", y_min=0, y_max=1).fit(cal.p, cal.y).predict(ev.p)
     truth = pd.read_parquet(f"{DATA}/parquet/train_pairs.parquet")
-    res = {}
+    res, curve = {}, {}
     for c in ("India", "US"):
         ho = soft_excl(ev[(ev.fold == 5) & (ev.country == c)][["s1_id", "cand_id", "p"]])
         ids = s1.filter((pl.col("country") == c) & SUB & ((pl.col("s1_id").str.slice(3).cast(pl.Int64) % 10) == 5))["s1_id"].to_pandas()
         res[c] = per_entity_f05(ho[ho.p >= 0.55], truth, ids).mean()
+        if a.thr_curve:
+            curve[c] = {t: round(per_entity_f05(ho[ho.p >= t], truth, ids).mean(), 5)
+                        for t in (0.35, 0.45, 0.55, 0.65, 0.75, 0.85, 0.9, 0.95)}
     other = "India" if a.train_country == "US" else "US"
     print(f"LOCO {a.name or '-':12s} train={a.train_country:5s} drop={a.drop or '-'} features={len(cols)} "
           f"in-country={res[a.train_country]:.5f} CROSS({other})={res[other]:.5f} ({time.time() - t0:.0f}s)", flush=True)
+    for c, cv in curve.items():
+        print(f"  thr curve {'in-country' if c == a.train_country else 'CROSS':10s} {c:5s}: {cv}", flush=True)
 
 
 if __name__ == "__main__":
