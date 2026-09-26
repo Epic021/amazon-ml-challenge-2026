@@ -15,6 +15,7 @@ for SPLIT in train test; do
   for R in word namechar addr; do
     step "block $SPLIT $R";  python src/block.py --split $SPLIT --retriever $R
   done
+  step "block $SPLIT emb";  python src/block_emb.py --split $SPLIT
   step "union $SPLIT";       python src/union.py --split $SPLIT
 done
 step "mine train";         python src/mine_equiv.py --split train --min_n 5
