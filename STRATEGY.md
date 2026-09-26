@@ -91,7 +91,7 @@ raw TSV → normalize → 4 retrievers → union + prune → features (~95) → 
 | Change | Cheap evidence | Gate |
 |---|---|---|
 | Retriever | Realistic sample → train union ceiling | Ceiling ≥ +0.003 |
-| Features | 10% pilot, small LightGBM, with vs without | ≥ +0.001 |
+| Features | 10% pilot, small LightGBM, with vs without | **≥ +0.002** (B5: pilot +0.001 → full +0.0002; pilots overstate) |
 | More data | Learning curve on 1 / 2 / 3 folds | Still rising |
 | France-only change | Offline simulation on India (below) | Passes the gate, then an LB submission |
 
@@ -113,7 +113,7 @@ raw TSV → normalize → 4 retrievers → union + prune → features (~95) → 
 | B3 | + name uniqueness | 0.9777 (0.9664 / 0.9853) | 0.9867 | 0.970 | 0.94 | +0.0005, below the bar; invisible on the LB |
 | B4 | + numaddr retriever; polars pipeline | 0.98265 (0.9772 / 0.9863) | 0.9917 | not submitted | – | Best single model; 99.1% of the ceiling |
 | **BLEND-B4** | B4 + teammate (isotonic each, w = 0.5, thr 0.45) | **0.98487** (0.9833 / 0.9859) | – | **0.979** | **0.94** | **Current best.** +0.0029 vs B4, +0.0025 vs the teammate (CIs > 0) |
-| B5 | B4 + sound key + address-word log-odds + twins | ⏳ (holdout log loss 0.00316 vs B4's 0.00326) | 0.9917 | – | – | Decoding |
+| B5 | B4 + sound key + address-word log-odds + twins | 0.98288 (0.9776 / 0.9864) | 0.9917 | – | – | **+0.0002 only** (pilot said +0.001). Blend with teammate = BLEND-B4 (0.98434 vs 0.98433 at w=0.3); not submitted |
 
 **What we learned:**
 - **India and the US are near their ceiling; France is the gap.** Every LB gain since B2 came from India and the US. France has sat at ≈ 0.94 across B2, B3 and BLEND-B4.
@@ -130,7 +130,7 @@ raw TSV → normalize → 4 retrievers → union + prune → features (~95) → 
 
 | # | Item | Why | Time | Keep if |
 |---|---|---|---|---|
-| 1 | **B5 decode + BLEND-B5** (`blend.py --tag b5 --write`) | Features passed the pilot (+0.001) | now | Blend ≥ 0.98587 → submit |
+| 1 | ~~B5 + BLEND-B5~~ **done, no gain** | – | – | – |
 | 2 | **3g Stacked blend**: stage 2 with both models' p, relational features (does the record fit another S1 better?) and pair features (number relation, word swap) | The models disagree confidently on France swaps, and a fixed 0.5 average puts those at the threshold. The stacker learns when to trust which | 1 h | ≥ blend + 0.001 → submit |
 | 3 | **3h France co-training pseudo-labels**: French pairs where both models agree confidently → French added/dropped-word log-odds → recompute France features → re-predict (no retrain) | France's vocabulary is unseen. Two independent models agreeing limits confirmation bias | 2–3 h | **Gate:** on India, log-odds from pseudo-labels in place of true ones keep ≥ half the log-odds gain. Then one LB submission |
 | 4 | **G4 house-number roles** (locality cardinality, match levels) | France's dense streets | 2 h | ≥ +0.001 or France LB ↑ |
