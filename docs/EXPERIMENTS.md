@@ -1,6 +1,6 @@
 # Data-handling strategies: experiment tracker
 
-**Status: RUNNING.** The run is on GCP VM `ber-train` (`c2d-standard-56`, Mumbai). It started 2026-09-26 at 08:21 UTC.
+**Status: all 7 strategies scored; test TSVs for each strategy are being generated.** The run is on GCP VM `ber-train` (`c2d-standard-56`, Mumbai). It started 2026-09-26 at 08:21 UTC.
 
 | Milestone | ETA (UTC) |
 |---|---|
@@ -22,10 +22,10 @@ Each strategy changes only **which training rows the model learns from**, or the
 | **A** | nothing: keep every label (baseline, used for the first submission) | the label audit found cleaning hurts | DONE | 0.98217 | – |
 | **D** | drop pairs the first-stage model contradicts strongly (match with p < 0.02, no-match with p > 0.98) | audit: −0.01 (idealised) | DONE | 0.98231 | +0.00014 |
 | **E** | easy pairs (p < 0.002 or > 0.998): keep 10%, weight ×10 | audit: −0.05, with 30% of the rows | DONE | 0.98247 | +0.00030 |
-| **G** | down-weight (×0.2) the pairs in D instead of dropping them | soft version of D | RUNNING | – | – |
-| **B** | drop pairs labelled against their pattern's majority | audit: −1.59 (idealised) | queued | – | – |
-| **C** | drop whole patterns whose minority label exceeds 5% | audit: −0.46 | queued | – | – |
-| **F** | drop empty-address records whose identical name is labelled inconsistently | the one exact-duplicate conflict in the audit | queued | – | – |
+| **G** | down-weight (×0.2) the pairs in D instead of dropping them | soft version of D | DONE | 0.98251 | +0.00034 |
+| **B** | drop pairs labelled against their pattern's majority | audit: −1.59 (idealised) | DONE | **0.94760** | **−0.03457** |
+| **C** | drop whole patterns whose minority label exceeds 5% | audit: −0.46 | DONE | **0.98265** | **+0.00048** |
+| **F** | drop empty-address records whose identical name is labelled inconsistently | the one exact-duplicate conflict in the audit | DONE | 0.98222 | +0.00005 |
 
 **Pattern** = (country, source, name-change type, address-change type, number-change type).
 
@@ -37,6 +37,10 @@ Each strategy changes only **which training rows the model learns from**, or the
 
 **Decision rule:** submit the strategy with the highest untouched macro F0.5. A stays unless another beats it by more than noise, about 0.0005.
 
+## Reading the results
+- **B collapses (−3.5 points).** Making every pattern pure teaches the model that patterns decide the label outright, so it fails on the mixed cases.
+- **A, D, E, G, C and F are all within 0.0005 of each other**, which is about the noise level of one run. C (+0.00048) is the best, then G and E. Here C cleans only the second-stage model's training rows; the first stage still learns from every label.
+
 ## Pipeline progress
 
 | Stage | Status | Result |
@@ -46,7 +50,7 @@ Each strategy changes only **which training rows the model learns from**, or the
 | Train pair features | DONE | 116.1M pairs |
 | Test prep + retrieval | DONE | 108.8M candidate pairs; areas learned for France 24, India 223, US 186 |
 | Test pair features | DONE | 108.8M pairs |
-| Model training (A, then D, E, G, B, C, F) | RUNNING | A: stage 1 macro F0.5 0.98048, after self-correction (stage 2) **0.98217**; ceiling after pruning 0.99519 (9.96M pairs) |
+| Model training (A, then D, E, G, B, C, F) | DONE | A: stage 1 macro F0.5 0.98048, after self-correction (stage 2) **0.98217**; ceiling after pruning 0.99519 (9.96M pairs) |
 | Test predictions + `matching_results.tsv` (A) | DONE | validator PASS; predicted singletons ~5.3–5.8% and ~3.3 matches per S1 in every country (France included) |
 
 ## Reproduce
