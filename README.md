@@ -19,11 +19,20 @@ Scripts in `eda/` read from `student_resource/dataset`, or from `$DATA_DIR` if s
 - `eda4.py`: test distractor shift, sibling-vs-orphan negatives, number and name-difference patterns, France
 - `eda_test.py`: test-set sizes, country mix, train/test overlap
 
+## Fresh CPU VM (everything from scratch)
+Downloads the dataset from Google Drive, runs the full CPU pipeline (B5), writes a validated `output/` and the pod bundle. Resumable (re-run skips finished steps). ~7 h on 32 vCPU / 256 GB RAM / 200 GB disk.
+```
+git clone <repo> && cd amazon-ml-challenge-2026 && git checkout neural-members
+mkdir -p logs && nohup bash scripts/setup_cpu_vm.sh > logs/setup_cpu_vm.log 2>&1 &
+tail -f logs/setup_cpu_vm.log
+```
+Output: `output/` (B5 submission) and `data/xenc_for_pod.tar` (copy to the pod's repo root, `tar -xf data/xenc_for_pod.tar`).
+
 ## GPU pod (neural pair scorers)
 The pod needs no raw dataset, only 4 files the CPU VM exports (`python scripts/export_pairs_text.py --tag b5 --feat_dir data/feat_b5`):
 ```
 cd /workspace && git clone <repo> && cd amazon-ml-challenge-2026 && git checkout neural-members   # /workspace: kept when the pod stops; volume >= 50 GB
-mkdir -p data/xenc   # copy train.parquet, score_train.parquet, score_test.parquet, train_feats.parquet here
+tar -xf xenc_for_pod.tar   # the bundle from the CPU VM -> data/xenc/{train,score_train,score_test,train_feats}.parquet
 bash scripts/gpu_session.sh setup                          # installs, checks files/GPU, caches models; must print SETUP OK
 nohup bash scripts/gpu_session.sh auto > /dev/null 2>&1 &  # ~4.5 h cap, stops the pod itself (runpodctl)
 tail -f logs/gpu_auto.log
