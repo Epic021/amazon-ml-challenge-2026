@@ -156,10 +156,13 @@ Char 3-gram retrievers (name with spaces removed, name only, address only) targe
 - **Mistake, fixed:** the first B2-noLO run inherited the smoke-test data path (`BER_DATA`) from the launching shell, so its result was invalid. The script now clears these variables. Re-running on the real data.
 
 **Next, in this order (proposed Sep 26 morning):**
-1. Upload B2.
+1. **Upload B2** (`output_b2/matching_results.tsv`). *Status Sep 26 10:15 IST: B2-noLO lost, so B2 is the submission; B3 (G5) is training.*
 2. **G5, name-uniqueness features:** count of S1 in the country with the same name core, and the same for the candidate's name. Targets the empty-address rejections. Features + retrain.
 3. **India recall:** better transliteration (uroman, MIT) for Indian-script names and/or a model2vec retriever. Wider address candidates in crowded blocks (addr topq 5 → 10).
 4. B2-noLO vs B2: pick by holdout + France check.
+
+| B2-noLO | B2 without the label-based (English) word log-odds | 0.9762 (India 0.9648, US 0.9838) | 0.966 | – | **Dropped: −0.1 point.** France decoy share 0.10% vs B2's 0.16%, a negligible difference. Keep the log-odds |
+| B3 | B2 + G5 name-uniqueness features (count of S1 sharing the name core; `scripts/add_name_counts.py`) | ⏳ | 0.966 | – | Targets the empty-address rejections (74% of model rejections) |
 
 B1 details:
 - **Soft vs hard exclusivity:** soft beats hard by +0.0008.
