@@ -26,12 +26,13 @@ MODEL = "minishlab/potion-multilingual-128M"    # MIT licence
 
 
 def embed(model, texts: list) -> np.ndarray:
-    e = model.encode(texts, batch_size=4096, show_progress_bar=False).astype(np.float32)
+    e = model.encode(texts, batch_size=4096, show_progress_bar=False, use_multiprocessing=False).astype(np.float32)
     e /= np.linalg.norm(e, axis=1, keepdims=True).clip(min=1e-9)
     return e
 
 
-def topk_cosine(Q: np.ndarray, S: np.ndarray, k: int, chunk: int = 8192):
+def topk_cosine(Q: np.ndarray, S: np.ndarray, k: int, chunk: int = 512):
+    # chunk x |S| float32 scores: 512 x 0.9M = ~1.8 GB (8192 was ~29 GB + index copies -> OOM)
     idx = np.empty((len(Q), k), dtype=np.int64)
     sc = np.empty((len(Q), k), dtype=np.float32)
     for i in range(0, len(Q), chunk):
