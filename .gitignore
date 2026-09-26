@@ -19,3 +19,4 @@ venv/
 .claude/
 data/
 output_*/
+.hf/

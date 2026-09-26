@@ -24,6 +24,7 @@ cd "$(dirname "$0")/.."
 mkdir -p logs data/xenc
 exec > >(tee -a "logs/gpu_$S.log") 2>&1
 export PYTHONUNBUFFERED=1 HF_HUB_DISABLE_PROGRESS_BARS=1 TOKENIZERS_PARALLELISM=true
+export HF_HOME=${HF_HOME:-$PWD/.hf}   # model cache next to the repo (clone into /workspace: survives a stop)
 X=${X:-python src/xenc.py}
 E=${XENC_EXTRA:-}
 D=data/xenc

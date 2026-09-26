@@ -22,7 +22,7 @@ Scripts in `eda/` read from `student_resource/dataset`, or from `$DATA_DIR` if s
 ## GPU pod (neural pair scorers)
 The pod needs no raw dataset, only 4 files the CPU VM exports (`python scripts/export_pairs_text.py --tag b5 --feat_dir data/feat_b5`):
 ```
-git clone <repo> && cd amazon-ml-challenge-2026 && git checkout neural-members
+cd /workspace && git clone <repo> && cd amazon-ml-challenge-2026 && git checkout neural-members   # /workspace: kept when the pod stops; volume >= 50 GB
 mkdir -p data/xenc   # copy train.parquet, score_train.parquet, score_test.parquet, train_feats.parquet here
 bash scripts/gpu_session.sh setup                          # installs, checks files/GPU, caches models; must print SETUP OK
 nohup bash scripts/gpu_session.sh auto > /dev/null 2>&1 &  # ~4.5 h cap, stops the pod itself (runpodctl)
