@@ -360,17 +360,17 @@ def sample_rows(cand, y, w, rng, X):
     return rows, ww[rows]
 
 
-def fit(Xtr, ytr, wtr, Xva, yva, names):
+def fit(Xtr, ytr, wtr, Xva, yva, names, params=None, rounds=None, patience=50):
     cat = [names.index(c) for c in CATS]
     dtr = lgb.Dataset(Xtr, label=ytr, weight=wtr, feature_name=names, categorical_feature=cat, free_raw_data=True)
     dva = lgb.Dataset(Xva, label=yva, feature_name=names, categorical_feature=cat, reference=dtr)
-    booster = lgb.train(PARAMS, dtr, num_boost_round=ROUNDS, valid_sets=[dva],
-                        callbacks=[lgb.early_stopping(50, verbose=False), lgb.log_evaluation(100)])
+    booster = lgb.train(params or PARAMS, dtr, num_boost_round=rounds or ROUNDS, valid_sets=[dva],
+                        callbacks=[lgb.early_stopping(patience, verbose=False), lgb.log_evaluation(100)])
     log(f"  best iteration {booster.best_iteration}, valid logloss {booster.best_score['valid_0']['binary_logloss']:.5f}")
     return booster
 
 
-def train_stage(stage, meta, X, we, keep, w, prune_mask, ctx, rng):
+def train_stage(stage, meta, X, we, keep, w, prune_mask, ctx, rng, params=None, rounds=None, patience=50):
     """Two models (one per half); returns models and out-of-fold predictions for all pruned rows."""
     y = meta["y"]
     names = F1 if stage == 1 else F2
@@ -390,7 +390,7 @@ def train_stage(stage, meta, X, we, keep, w, prune_mask, ctx, rng):
         Xtr = np.hstack([X[rows], WFtr] + ([ctx[rows]] if stage == 2 else []))
         Xva = np.hstack([X[va], WFva] + ([ctx[va]] if stage == 2 else []))
         log(f"stage {stage} half {k}: training on {len(rows):,} rows ({int(y[rows].sum()):,} matches)")
-        models.append(fit(Xtr, y[rows], ww, Xva, y[va], names))
+        models.append(fit(Xtr, y[rows], ww, Xva, y[va], names, params, rounds, patience))
         del Xtr, WFtr
     oof[:] = predict(models, meta, X, we, prune_mask, ctx, stage, oof_mode=True)
     return models, oof
@@ -432,7 +432,7 @@ def evaluate(meta, p, tag):
     best = None
     pk = np.where(exclusive(rec, p), p, 0.0)
     for method, params in ([("threshold", dict(t=t)) for t in (0.3, 0.4, 0.5, 0.6, 0.7, 0.8)] +
-                           [("expected", dict(lam=l)) for l in (0.0, 0.05, 0.1, 0.2, 0.4)]):
+                           [("expected", dict(lam=l)) for l in (0.0, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0, 1.5, 2.0, 3.0)]):
         pred = decode_kept(s1, pk, n_s1, method=method, **params)
         f = macro_f05(s1, pred, y, ts, n_s1)
         key = f"{method} {params}"
@@ -525,6 +525,61 @@ def train_variant(variant, X, meta, base_ceiling, cache):
     log(f"variant {variant}{TAG} done: {json.dumps(report['stage2_decoded']['best'])}")
 
 
+S2_GRID = [   # stage-2 settings tried by "tune" (stage 1 is trained once, at full size)
+    dict(learning_rate=0.1, num_leaves=255, min_data_in_leaf=100),
+    dict(learning_rate=0.05, num_leaves=255, min_data_in_leaf=100),
+    dict(learning_rate=0.05, num_leaves=127, min_data_in_leaf=300),
+    dict(learning_rate=0.05, num_leaves=511, min_data_in_leaf=50),
+    dict(learning_rate=0.03, num_leaves=255, min_data_in_leaf=100, feature_fraction=0.6),
+    dict(learning_rate=0.05, num_leaves=255, min_data_in_leaf=100, lambda_l2=10.0),
+]
+
+
+def run_tune(variant):
+    """Stage 1 once (full-size settings from the environment), then every stage-2 setting in S2_GRID
+    for this variant's stage-2 rows. Each result goes to models/<variant>_tune<i>; the best index is
+    written to models/<variant>_tune_best.txt."""
+    X, meta = load_split("train")
+    y = meta["y"]
+    base_ceiling = ceiling(meta, np.ones(meta["n"], bool))
+    rng = np.random.default_rng(7)
+    s1key = "A" if variant in STAGE2_ONLY else variant
+    keep1, w1 = variant_rows(s1key, meta, X, stage=1)
+    we = WordEvidence().fit(meta, keep1)
+    log("word evidence fitted")
+    m1, p1 = train_stage(1, meta, X, we, keep1, w1, np.ones(meta["n"], bool), None, rng)
+    rep1 = {"stage1_max_rows": MAX_ROWS, "stage1_lr": LR,
+            "stage1_auc": round(float(roc_auc_score(y, p1)), 6),
+            "stage1_decoded": evaluate(meta, p1, f"{variant} full stage 1")[0]["best"]}
+    prune = p1 >= PRUNE
+    ctx = context(meta, p1)
+    keep2, w2 = variant_rows(variant, meta, X, stage=2, p1=p1)
+    results = []
+    for i, extra in enumerate(S2_GRID):
+        t0 = time.time()
+        mdir = WORK / "models" / f"{variant}_tune{i}"
+        mdir.mkdir(parents=True, exist_ok=True)
+        params = {**PARAMS, **extra}
+        m2, p2 = train_stage(2, meta, X, we, keep2, w2, prune, ctx, np.random.default_rng(7), params, 3000, 100)
+        p2[~prune] = 0.0
+        res2, best = evaluate(meta, p2, f"{variant} tune{i} {extra}")
+        report = {"variant": variant, "tag": f"_tune{i}", "stage2_params": extra, "retrieval_ceiling": base_ceiling,
+                  "prune_ceiling": ceiling(meta, prune), **rep1, "stage2_decoded": res2,
+                  "decoder": {"method": best[1], "params": best[2]}, "minutes": round((time.time() - t0) / 60, 1)}
+        we.save(str(mdir / "wordev.npz"))
+        for k, m in enumerate(m1):
+            m.save_model(str(mdir / f"stage1_{k}.txt"))
+        for k, m in enumerate(m2):
+            m.save_model(str(mdir / f"stage2_{k}.txt"))
+        np.save(mdir / "oof_p2.npy", p2)
+        (mdir / "report.json").write_text(json.dumps(report, indent=2, default=str))
+        results.append(best[0])
+        log(f"tune{i} {extra}: macro F0.5 = {best[0]:.5f}")
+    bi = int(np.argmax(results))
+    (WORK / "models" / f"{variant}_tune_best.txt").write_text(str(bi))
+    log(f"best stage-2 setting: tune{bi} {S2_GRID[bi]} = {results[bi]:.5f}")
+
+
 def run_test(variant):
     X, meta = load_split("test")
     mdir = WORK / "models" / f"{variant}{TAG}"
@@ -547,4 +602,4 @@ def run_test(variant):
 if __name__ == "__main__":
     mode = sys.argv[1]
     variant = sys.argv[2] if len(sys.argv) > 2 else "A"
-    (run_train if mode == "train" else run_test)(variant)
+    {"train": run_train, "test": run_test, "tune": run_tune}[mode](variant)
