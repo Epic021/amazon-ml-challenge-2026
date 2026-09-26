@@ -1,6 +1,6 @@
 # Data-handling strategies: experiment tracker
 
-**Status: all 7 strategies scored, and test TSVs exist for all of them (validator PASS). Strategy C is chosen; its tuning run is in progress (queue `queue_c.sh`).** The run is on GCP VM `ber-train` (`c2d-standard-56`, Mumbai). It started 2026-09-26 at 08:21 UTC.
+**Status: all 7 strategies scored, and test TSVs exist for all of them (validator PASS). Strategy C is chosen and tuned. **Best model: tuned C, 0.98331.** The run is on GCP VM `ber-train` (`c2d-standard-56`, Mumbai). It started 2026-09-26 at 08:21 UTC.
 
 | Milestone | ETA (UTC) |
 |---|---|
@@ -41,15 +41,15 @@ Each strategy changes only **which training rows the model learns from**, or the
 - **B collapses (−3.5 points).** Making every pattern pure teaches the model that patterns decide the label outright, so it fails on the mixed cases.
 - **A, D, E, G, C and F are all within 0.0005 of each other**, which is about the noise level of one run. C (+0.00048) is the best, then G and E. Here C cleans only the second-stage model's training rows; the first stage still learns from every label.
 
-## Strategy C improvements (running)
+## Strategy C improvements
 
 | Step | Status | Result |
 |---|---|---|
 | Wider decoder grid (λ up to 3.0) on C | DONE | λ = 0.4 is still the best: 0.98265, no change |
 | Full-size stage 1 (16M rows per half, learning rate 0.1) | DONE | stage-1 macro F0.5 0.98098 (fast mode: 0.98048) |
-| Stage-2 tuning grid (6 settings: learning rate 0.1 / 0.05 / 0.03, leaves 127–511, regularization) | RUNNING | – |
-| Tuned C test TSV + probability export for blending | queued | – |
-| Our own ensemble: C + G + E + tuned C | queued | – |
+| Stage-2 tuning grid (6 settings: learning rate 0.1 / 0.05 / 0.03, leaves 127–511, regularization) | DONE | 0.98316 / 0.98320 / 0.98327 / 0.98322 / 0.98330 / **0.98331** (best: learning rate 0.05, 255 leaves, L2 10) |
+| Tuned C test TSV + probability export for blending | DONE | **0.98331** (+0.00066 vs C fast, +0.00114 vs A); validator PASS |
+| Our own ensemble: C + G + E + tuned C | DONE | 0.98320, below tuned C alone, so the ensemble isn't used |
 
 Scripts: `model.py tune C`, `posthoc.py redecode|ensemble`, `export_probs.py`, and `queue_c.sh`, the unattended queue that stops the VM at the end.
 
