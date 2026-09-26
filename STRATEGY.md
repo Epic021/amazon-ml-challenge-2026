@@ -1,9 +1,9 @@
 # Amazon ML Challenge 2026: Business Entity Resolution. Strategy
 
-**Status (Sep 26, ~11:15 IST):**
-- **LB 0.970** (B2 and B3 both; B3's +0.0005 is invisible at 3 decimals).
-- **Target:** top 50 (≥ 0.979 on Sep 26), so we need **+0.009**.
-- **Running:** B4 (RET-BLOCK candidates; ceiling 0.9917), ETA ~3.5 h.
+**Status (Sep 26, ~18:10 IST):**
+- **LB 0.970** (B2/B3). B4 file (holdout 0.98265) and **BLEND file (holdout 0.98487)** ready; blend is the one to submit.
+- **Target:** top 50 (≥ 0.979), top 10 ~0.985. Holdout→LB gap ≈ 0.007 (France), so the LB needs holdout ≈ 0.986+ **or** a smaller France gap.
+- **Running:** B5 training (iter 550, hold logloss 0.00322 < B4's best 0.00326), ETA ~19:30 IST incl. decode.
 - **Repo is private:** code reaches the VM only via `git archive HEAD src scripts requirements.txt | ssh vm tar -x` (the team decided on no deploy key).
 - **Deadline:** around early Sep 28 IST. Verify on the portal.
 
@@ -111,6 +111,7 @@ Blocking always runs on the full universe.
 | **B2** | + namechar & addr retrievers + G3 label-free word roles | **0.9772** (0.966 / 0.9847) | 0.9867 | **0.970** | Implied France ≈ 0.94; France decoy share 2.08% → 0.16% |
 | B2-noLO | B2 without the English word log-odds | 0.9762 | 0.9867 | – | Dropped |
 | **B4** | + RET-BLOCK (number\|token address blocks) candidates; fast polars pipeline | **0.98265** (0.9772 / 0.9863) | 0.9917 | ⏳ | Best single model. Model efficiency 99.1%. France: 3.34 predictions/S1, decoy share 0.23%. Pipeline wall time 2 h 21 min |
+| **BLEND-B4** | B4 + teammate's OOF probs (isotonic each, w=0.5, soft excl, thr 0.45; tuned on folds 6–9) | **0.98487** (0.9833 / 0.9859) | – | ⏳ | **Submit.** +0.00293 vs B4 [CI +0.00266, +0.00319], +0.00248 vs teammate alone [+0.00224, +0.00273]. Test: France 3.45 pred/S1, empty 5.3% |
 | **B3** | B2 + G5 name uniqueness | **0.9777** (0.9664 / 0.9853) | 0.9867 | **0.970** | **No visible LB gain** (the LB shows 3 decimals, and +0.0005 is below that). Holdout +0.00051, CI [+0.00038, +0.00062]: real but below the +0.001 bar; it should not have been submitted as a separate run |
 
 **What we learned:**
@@ -137,7 +138,10 @@ Blocking always runs on the full universe.
 | 2c | **More training data: gate FAILED.** Pilot (small LightGBM): 10% 0.97472 → 30% 0.97551 → 50% 0.97574 (+0.0002). B3-big cancelled | – | done | ✗ |
 | 3 | **B4 = union with RET-BLOCK → features → retrain** (candidate change only; G5 built in). **Running** since Sep 26 ~15:00 IST, ETA ~3–3.5 h. Expected holdout ≈ 0.9917 × 0.99 ≈ **0.982**, LB ≈ **0.975** | India recall | running | Holdout ≥ +0.001 over B3 |
 | 3b | **EDA-driven feature pilot: PASSED (+0.00105).** 10% of S1, small LightGBM, 22k-S1 holdout: all 0.97782 vs none 0.97677. Leave-one-out: sound-alike key +0.00085, address-word log-odds +0.00079, twins +0.00030, finer number relations +0.00003 (**dropped**), evidence dropout −0.00044 (**dropped**; unmeasurable benefit for France) | Decoys, Indic names | done | ✓ |
-| 3c | **B5 = B4 + sound key + address-word log-odds + twins** (features built during B4 training; trains right after B4) | – | queued | Holdout ≥ B4 + 0.001 |
+| 3c | **B5 = B4 + sound key + address-word log-odds + twins** | – | **training**, ETA ~19:30 IST | Holdout ≥ B4 + 0.001 |
+| 3d | **Blend B5 + teammate** (`scripts/blend.py --tag b5 --write`, ~15 min) | Model diversity | after 3c | ≥ BLEND-B4 + 0.001 → submit |
+| 3e | **Stage 2 stacking** on best stage-1 (`src/stage2.py`; smoke passed) → then blend | Record/S1 competition | ~40 min | ≥ +0.001 over its input |
+| 3f | **France gap analysis**: ours vs teammate disagreements on France test; decoy share / pred-per-S1 vs India/US | The ~0.007 holdout→LB gap | 1 h | Drives 4/5 |
 | 4 | **G4 house-number roles** (locality cardinality; match levels) | France's dense streets, remaining decoys | 2 h | France proxy ↓, holdout ≥ +0.001 |
 | 5 | **F1 synthetic French decoys** (number ±1–2, added frequent word) | Measure France rejection directly | 1.5 h | Diagnostic |
 | 6 | **RET-B reranker**: wide union → top 40 | Recall at a fixed candidate budget | 3 h | Recall@40 ≥ union recall − 0.001 |
