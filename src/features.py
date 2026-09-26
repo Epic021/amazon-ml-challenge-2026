@@ -240,6 +240,29 @@ def context_feats(c: pd.DataFrame) -> pd.DataFrame:
     return c.drop(columns=["c_second"])
 
 
+def add_name_counts(rec: pd.DataFrame) -> pd.DataFrame:
+    """Name uniqueness within the country (G5), computed from the split's own records:
+    n_s1 = how many S1 records share this record's name core, n_q = how many S2/S3 records do.
+    A unique name makes an empty-address candidate a safe match; a common one does not."""
+    k = rec.country + "|" + rec.name_core
+    is_s1 = (rec.src == "S1").values
+    cs1, cq = k[is_s1].value_counts(), k[~is_s1].value_counts()
+    empty = (rec.name_core == "").values
+    rec["n_s1"] = np.where(empty, -1, k.map(cs1).fillna(0).values).astype(np.float32)
+    rec["n_q"] = np.where(empty, -1, k.map(cq).fillna(0).values).astype(np.float32)
+    return rec
+
+
+NAME_COUNT_COLS = ["s1_core_n_s1", "c_core_n_s1", "c_core_n_q"]
+
+
+def name_count_cols(c: pd.DataFrame, rec_indexed: pd.DataFrame) -> pd.DataFrame:
+    s1 = rec_indexed.reindex(c.s1_id.values)
+    cd = rec_indexed.reindex(c.cand_id.values)
+    return pd.DataFrame({"s1_core_n_s1": s1.n_s1.values, "c_core_n_s1": cd.n_s1.values,
+                         "c_core_n_q": cd.n_q.values}, index=c.index)
+
+
 def attach_records(c: pd.DataFrame, rec: pd.DataFrame) -> pd.DataFrame:
     r = rec.set_index("id")
     for side, key in (("s1", "s1_id"), ("c", "cand_id")):
@@ -255,6 +278,8 @@ def attach_records(c: pd.DataFrame, rec: pd.DataFrame) -> pd.DataFrame:
             c["c_src_s3"] = (sub.src.values == "S3").astype(np.int8)
             c["c_nonlatin"] = sub.nonlatin.values.astype(np.int8)
             c["c_addr_empty"] = sub.addr_empty.values.astype(np.int8)
+    if "n_s1" in r.columns:
+        c[NAME_COUNT_COLS] = name_count_cols(c, r).values
     return c
 
 
@@ -323,6 +348,7 @@ def main():
     cand = cand[(cand.rank_q <= a.max_rank_q) | (cand.rank_s <= a.max_rank_s)].reset_index(drop=True)
     rec = pd.concat([pd.read_parquet(f"{NORM}/{a.split}_s{k}.parquet") for k in (1, 2, 3)], ignore_index=True)
     rec["skel"] = [skel_str(s) for s in rec.name_core.values]
+    rec = add_name_counts(rec)
     print(f"[{a.split}] {len(cand):,} pairs; context done {time.time() - t0:.0f}s", flush=True)
 
     if a.split == "train":
