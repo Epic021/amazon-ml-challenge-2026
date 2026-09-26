@@ -4,8 +4,8 @@
 
 | | |
 |---|---|
-| **Best LB** | **0.979**, BLEND-B4 (our B4 + the teammate's model), holdout 0.98487 |
-| **Where the LB is lost** | **France ≈ 0.94** (implied), unchanged since B2. India and the US are ≈ 0.983 / 0.986 |
+| **Best LB** | **0.983**, STACK-B5 (stage 2 on B5 + teammate probabilities), holdout 0.98792 |
+| **Where the LB is lost** | **France ≈ 0.95** (implied; was 0.94 until STACK-B5). India / US ≈ 0.987 / 0.989 |
 | **Target** | 0.98+ (top 10 ≈ 0.985). Each +0.01 on France is +0.0015 on the LB |
 | **Running** | B5 decode (B5 trained; features: sound key, address-word log-odds, twins); B5 + teammate blend on the holdout |
 | **Next** | 3g stacked blend → 3h France pseudo-labels (§6) |
@@ -113,7 +113,7 @@ raw TSV → normalize → 4 retrievers → union + prune → features (~95) → 
 | B3 | + name uniqueness | 0.9777 (0.9664 / 0.9853) | 0.9867 | 0.970 | 0.94 | +0.0005, below the bar; invisible on the LB |
 | B4 | + numaddr retriever; polars pipeline | 0.98265 (0.9772 / 0.9863) | 0.9917 | not submitted | – | Best single model; 99.1% of the ceiling |
 | **BLEND-B4** | B4 + teammate (isotonic each, w = 0.5, thr 0.45) | **0.98487** (0.9833 / 0.9859) | – | **0.979** | **0.94** | **Current best.** +0.0029 vs B4, +0.0025 vs the teammate (CIs > 0) |
-| **STACK-B5** | Stage 2 on B5 + teammate p (both models' p, relational features on each and on their mean, pair features); trained folds 6–7, early stop 5, isotonic 8–9, soft excl, thr 0.65 | **0.98792** (0.9866 / 0.9888) | – | ⏳ | **+0.0031 vs BLEND-B4.** Top features: mean p 62%, teammate p 23%, margin vs record's other S1 12% |
+| **STACK-B5** | Stage 2 on B5 + teammate p (both models' p, relational features on each and on their mean, pair features); trained folds 6–7, early stop 5, isotonic 8–9, soft excl, thr 0.65 | **0.98792** (0.9866 / 0.9888) | – | **0.983** | **Implied France 0.950 (+0.009).** Stacker drops 0.135 France preds/S1 (6× India/US), 29k of 35k are same-number word swaps → those were mostly wrong: **France errs by over-accepting.** +0.0031 vs BLEND-B4. Top features: mean p 62%, teammate p 23%, margin vs record's other S1 12% |
 | B5 | B4 + sound key + address-word log-odds + twins | 0.98288 (0.9776 / 0.9864) | 0.9917 | – | – | **+0.0002 only** (pilot said +0.001). Blend with teammate = BLEND-B4 (0.98434 vs 0.98433 at w=0.3); not submitted |
 
 **What we learned:**
@@ -147,6 +147,7 @@ raw TSV → normalize → 4 retrievers → union + prune → features (~95) → 
 3. Validator with `--check-ids`.
 4. Zip: `output/` + `code/business_entity_resolution/{src,README.md,requirements.txt}` + methodology doc. Resolve the folder clash with the teammate.
 5. Upload ≥ 3 h before the deadline.
+6. **The stacked blend needs the teammate's probabilities: their model code + run command must be in the package so the organizers can regenerate them.**
 
 ## 7. How to run (VM, repo root)
 
