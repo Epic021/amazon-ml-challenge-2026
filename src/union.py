@@ -21,7 +21,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.environ.get("BER_DATA", os.path.join(ROOT, "data"))   # override for smoke runs
 CAND = os.path.join(DATA, "cand")
 PQ = os.path.join(DATA, "parquet")
-RETRIEVERS = ("word", "namechar", "addr", "emb", "numaddr")
+RETRIEVERS = ("word", "namechar", "addr", "numaddr", "theirs")
 
 
 def main():
@@ -29,10 +29,12 @@ def main():
     ap.add_argument("--split", required=True, choices=["train", "test"])
     ap.add_argument("--max_rank_q", type=int, default=10)
     ap.add_argument("--max_rank_s", type=int, default=15)
+    ap.add_argument("--retrievers", default=",".join(RETRIEVERS), help="comma-separated subset to merge")
+    ap.add_argument("--out", default=None, help="output path (default data/cand/{split}.parquet)")
     a = ap.parse_args()
 
     u, used = None, []
-    for r in RETRIEVERS:
+    for r in a.retrievers.split(","):
         path = f"{CAND}/{a.split}_{r}.parquet"
         if not os.path.isfile(path):
             continue
@@ -49,7 +51,7 @@ def main():
     u["rank_q"] = u[[f"rank_q_{r}" for r in used]].min(axis=1).astype(np.int16)
     u["rank_s"] = u[[f"rank_s_{r}" for r in used]].min(axis=1).astype(np.int16)
     u["n_retrievers"] = sum((u[f"score_{r}"] > 0).astype(np.int8) for r in used)
-    u.to_parquet(f"{CAND}/{a.split}.parquet", index=False)
+    u.to_parquet(a.out or f"{CAND}/{a.split}.parquet", index=False)
     keep = (u.rank_q <= a.max_rank_q) | (u.rank_s <= a.max_rank_s)
     print(f"[{a.split}] union of {used}: {len(u):,} pairs; after rank pruning {keep.sum():,}", flush=True)
 
