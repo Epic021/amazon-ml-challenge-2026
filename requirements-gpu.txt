@@ -11,3 +11,4 @@ numpy
 scikit-learn
 lightgbm==4.6.0
 huggingface_hub
+tqdm

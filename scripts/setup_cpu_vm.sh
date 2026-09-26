@@ -4,8 +4,9 @@
 # skips those. Step logs: logs/<step>.log.
 #
 #   git clone <repo> && cd amazon-ml-challenge-2026 && git checkout neural-members
-#   mkdir -p logs && nohup bash scripts/setup_cpu_vm.sh > logs/setup_cpu_vm.log 2>&1 &
-#   tail -f logs/setup_cpu_vm.log
+#   tmux new -s setup
+#   bash scripts/setup_cpu_vm.sh            (output live + logs/<step>.log; re-run after any failure)
+# Environment: uv (installed if missing) -> .venv with Python 3.12 (numpy 1.26.4 has no 3.13 wheels).
 #
 # VM: Ubuntu 22.04/24.04, >= 32 vCPU, >= 256 GB RAM, >= 200 GB disk (the previous VM's spec). ~7 h on 32 vCPU.
 # Result:
@@ -23,33 +24,41 @@ export PYTHONUNBUFFERED=1
 mkdir -p logs/done
 T0=$SECONDS
 
-run() {   # run <step> <command...>: skip if done, log to logs/<step>.log, stop the chain on failure
+N_STEPS=23; [ -z "${SKIP_SMOKE:-}" ] || N_STEPS=22
+K=0
+run() {   # run <step> <command...>: skip if done, output live + logs/<step>.log, stop the chain on failure
   local name=$1; shift
-  if [ -f "logs/done/$name" ]; then echo "=== skip $name (done)"; return 0; fi
-  echo "=== [$(( (SECONDS - T0) / 60 )) min] $name"
-  if "$@" > "logs/$name.log" 2>&1; then
-    touch "logs/done/$name"; tail -n 3 "logs/$name.log" | sed 's/^/    /'
+  K=$((K + 1))
+  if [ -f "logs/done/$name" ]; then echo "=== [$K/$N_STEPS] skip $name (done)"; return 0; fi
+  echo; echo "=== [$K/$N_STEPS] $name  ($(( (SECONDS - T0) / 60 )) min elapsed, $(date +%H:%M))"
+  "$@" 2>&1 | tee "logs/$name.log"
+  if [ "${PIPESTATUS[0]}" -eq 0 ]; then
+    touch "logs/done/$name"
   else
-    echo "!!! $name FAILED (logs/$name.log):"; tail -n 25 "logs/$name.log"; exit 1
+    echo "!!! [$K/$N_STEPS] $name FAILED (full log: logs/$name.log). Fix, then re-run this script."; exit 1
   fi
   [ "${STOP_AFTER:-}" != "$name" ] || { echo "=== STOP_AFTER=$name"; exit 0; }
 }
 
 env_setup() {
   if [ -z "${SKIP_APT:-}" ]; then
-    sudo apt-get update -y && sudo apt-get install -y python3-venv python3-dev build-essential git tmux htop unzip
+    sudo apt-get update -y && sudo apt-get install -y build-essential git tmux htop unzip curl
   fi
-  [ -d .venv ] || python3 -m venv .venv
-  .venv/bin/pip install -q --upgrade pip wheel
-  .venv/bin/pip install -q -r requirements.txt gdown
-  .venv/bin/pip install -q torch --index-url https://download.pytorch.org/whl/cpu   # xenc collect + smoke
-  .venv/bin/pip install -q -r requirements-gpu.txt
-  .venv/bin/python -c "import polars, lightgbm, torch, transformers, gdown; print('env ok')"
+  if ! command -v uv >/dev/null; then
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    export PATH="$HOME/.local/bin:$PATH"
+  fi
+  [ -d .venv ] || uv venv --python 3.12 .venv
+  source .venv/bin/activate
+  uv pip install -r requirements.txt gdown
+  uv pip install torch --index-url https://download.pytorch.org/whl/cpu      # xenc collect + smoke (CPU)
+  uv pip install -r requirements-gpu.txt
+  python -c "import polars, lightgbm, torch, transformers, gdown, tqdm; print('env ok')"
 }
 
 download() {
   mkdir -p student_resource
-  .venv/bin/gdown --folder "$DRIVE_URL" -O student_resource
+  gdown --folder "$DRIVE_URL" -O student_resource
   # gdown may nest the Drive folder: move dataset/ and utils/ to student_resource/ if so
   for d in dataset utils; do
     if [ ! -d "student_resource/$d" ]; then
@@ -77,6 +86,7 @@ bundle() {
   ls -la data/xenc_for_pod.tar
 }
 
+export PATH="$HOME/.local/bin:$PATH"          # uv's default install dir
 run env        env_setup
 source .venv/bin/activate
 run download   download

@@ -23,6 +23,7 @@ import pandas as pd
 from scipy import sparse
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sparse_dot_topn import sp_matmul_topn
+from tqdm import tqdm
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.environ.get("BER_DATA", os.path.join(ROOT, "data"))   # override for smoke runs
@@ -145,7 +146,7 @@ def main():
         q = q[q.doc.str.len() > 0]
 
     parts = []
-    for country in sorted(s1.country.unique()):      # open set: whatever countries the file has
+    for country in tqdm(sorted(s1.country.unique()), desc=f"{a.retriever} {a.split}", unit="country"):  # open set
         t0 = time.time()
         cs, cq = s1[s1.country == country], q[q.country == country]
         print(f"[{a.retriever}][{country}] S1={len(cs):,} S2/S3={len(cq):,}", flush=True)

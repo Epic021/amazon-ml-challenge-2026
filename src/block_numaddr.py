@@ -23,6 +23,7 @@ import pandas as pd
 from rapidfuzz import fuzz, process
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sparse_dot_topn import sp_matmul_topn
+from tqdm import tqdm
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from block import to_long  # noqa: E402
@@ -103,7 +104,7 @@ def main():
         return
 
     parts = []
-    for country in sorted(rec.country.unique()):
+    for country in tqdm(sorted(rec.country.unique()), desc=f"numaddr {a.split}", unit="country"):
         s1, q = s1_all[s1_all.country == country], q_all[q_all.country == country]
         if len(s1) == 0 or len(q) == 0:
             continue

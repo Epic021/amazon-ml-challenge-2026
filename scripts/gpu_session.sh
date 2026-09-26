@@ -6,7 +6,7 @@
 # On the pod, after cloning the repo and copying the 4 files from the CPU VM's data/xenc/ into data/xenc/
 # (train, score_train, score_test, train_feats .parquet; made by scripts/export_pairs_text.py):
 #   bash scripts/gpu_session.sh setup                                    (once, ~5 min, checks everything)
-#   nohup bash scripts/gpu_session.sh auto > /dev/null 2>&1 &            (then log out; tail -f logs/gpu_auto.log)
+#   bash scripts/gpu_session.sh auto                                     (in tmux; also logged to logs/gpu_auto.log)
 #
 # Sessions (minutes are caps):
 #   auto  s1, then s2 only if the transfer gate (run on the pod during s1) passed          ~4.5 h (~$7)
@@ -39,7 +39,7 @@ if [ "$S" = setup ]; then
   done
   hf download microsoft/mdeberta-v3-base >/dev/null && hf download Qwen/Qwen3-4B-Base >/dev/null && echo "models cached" || ok=0
   command -v runpodctl >/dev/null || [ -n "${STOP_CMD:-}" ] || echo "!!! runpodctl not found and STOP_CMD unset: the pod will NOT stop itself"
-  [ $ok = 1 ] && echo "=== SETUP OK: nohup bash scripts/gpu_session.sh auto > /dev/null 2>&1 &" || echo "=== SETUP FAILED (see above)"
+  [ $ok = 1 ] && echo "=== SETUP OK: bash scripts/gpu_session.sh auto   (in tmux)" || echo "=== SETUP FAILED (see above)"
   exit 0
 fi
 

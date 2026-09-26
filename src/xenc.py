@@ -28,6 +28,7 @@ import numpy as np
 import polars as pl
 import torch
 import torch.nn.functional as F
+from tqdm import tqdm
 from transformers import AutoConfig, AutoModelForSequenceClassification, AutoTokenizer
 
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "true")
@@ -209,6 +210,7 @@ def cmd_train(a):
 
     model.train()
     t_ck, t_log, seen, loss_ema = time.time(), time.time(), 0, None
+    bar = tqdm(total=total, initial=step, desc=f"train {a.model}", unit="step", mininterval=10)
     while step < total:
         if (time.time() - t0) / 60 > a.max_minutes:
             log(f"time cap {a.max_minutes} min reached at step {step}/{total}")
@@ -224,6 +226,8 @@ def cmd_train(a):
         step += 1
         seen += len(b)
         loss_ema = loss.item() if loss_ema is None else 0.98 * loss_ema + 0.02 * loss.item()
+        bar.update(1)
+        bar.set_postfix(loss=f"{loss_ema:.4f}", refresh=False)
         if time.time() - t_log > 60 or step == total:
             rate = seen / (time.time() - t_log)
             mem = torch.cuda.max_memory_allocated() / 2**30 if DEV == "cuda" else 0
@@ -233,6 +237,7 @@ def cmd_train(a):
         if time.time() - t_ck > a.ckpt_minutes * 60:
             checkpoint()
             t_ck = time.time()
+    bar.close()
     checkpoint()
     save_weights(model, f"{a.out}/weights.pt", full=a.tiny or a.model not in DECODER)
     json.dump({"model": a.model, "tiny": a.tiny, "lora_r": a.lora_r, "max_len": a.max_len, "steps": step,
@@ -263,7 +268,7 @@ def cmd_score(a):
     n_parts = math.ceil(df.height / a.chunk)
     log(f"score {meta['model']} ({a.model_dir}): {df.height:,} pairs in {n_parts} parts of {a.chunk:,}")
     done = 0
-    for k in range(n_parts):
+    for k in tqdm(range(n_parts), desc=f"score {meta['model']}", unit="part", mininterval=10):
         part = f"{a.out}/part-{k:05d}.parquet"
         if os.path.isfile(part):
             continue

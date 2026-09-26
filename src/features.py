@@ -21,6 +21,7 @@ from multiprocessing import Pool
 import numpy as np
 import pandas as pd
 import polars as pl
+from tqdm import tqdm
 from rapidfuzz import fuzz, process
 from rapidfuzz.distance import JaroWinkler, Levenshtein
 
@@ -495,7 +496,8 @@ def main():
     writer, n_rows, n_cols = None, 0, 0
     drop_cols = [f"{side}_{k}" for side in ("s1", "c") for k in ("name", "core", "addr", "nums", "skel", "snd")] + ["country"]
     with Pool(procs) as pool:                        # forked once, after all lookup tables are set
-        for part, i in enumerate(range(0, len(cand), a.chunk)):
+        starts = range(0, len(cand), a.chunk)
+        for part, i in enumerate(tqdm(starts, desc=f"features {a.split}", unit="chunk", mininterval=5)):
             t1 = time.time()
             c = attach_records(cand.slice(i, a.chunk).to_pandas(), store)
             c = pd.concat([c, string_feats(c), run_loop(c, pool, procs)], axis=1).drop(columns=drop_cols)
