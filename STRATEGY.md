@@ -135,7 +135,8 @@ Blocking always runs on the full universe.
 | 2b | **RET-BLOCK: gate PASSED.** Pair recall 0.9655 → **0.9769** (pruned). **Ceiling 0.9867 → 0.9917 (+0.0050); India 0.9749 → 0.9859 (+0.011)**, US 0.9946 → 0.9956. 1.1% of true pairs are found only by it | India + US blocking | done | ✓ |
 | 2c | **More training data: gate FAILED.** Pilot (small LightGBM): 10% 0.97472 → 30% 0.97551 → 50% 0.97574 (+0.0002). B3-big cancelled | – | done | ✗ |
 | 3 | **B4 = union with RET-BLOCK → features → retrain** (candidate change only; G5 built in). **Running** since Sep 26 ~15:00 IST, ETA ~3–3.5 h. Expected holdout ≈ 0.9917 × 0.99 ≈ **0.982**, LB ≈ **0.975** | India recall | running | Holdout ≥ +0.001 over B3 |
-| 3b | **EDA-driven feature pilot** (10% of S1, with vs without): twin agreement, finer number classes (cut-short at either end, concatenation, gap ≤ 10), address-word log-odds + evidence dropout, sound-alike skeleton | Decoys, France, Indic names | next | Pilot ≥ +0.001 |
+| 3b | **EDA-driven feature pilot: PASSED (+0.00105).** 10% of S1, small LightGBM, 22k-S1 holdout: all 0.97782 vs none 0.97677. Leave-one-out: sound-alike key +0.00085, address-word log-odds +0.00079, twins +0.00030, finer number relations +0.00003 (**dropped**), evidence dropout −0.00044 (**dropped**; unmeasurable benefit for France) | Decoys, Indic names | done | ✓ |
+| 3c | **B5 = B4 + sound key + address-word log-odds + twins** (features built during B4 training; trains right after B4) | – | queued | Holdout ≥ B4 + 0.001 |
 | 4 | **G4 house-number roles** (locality cardinality; match levels) | France's dense streets, remaining decoys | 2 h | France proxy ↓, holdout ≥ +0.001 |
 | 5 | **F1 synthetic French decoys** (number ±1–2, added frequent word) | Measure France rejection directly | 1.5 h | Diagnostic |
 | 6 | **RET-B reranker**: wide union → top 40 | Recall at a fixed candidate budget | 3 h | Recall@40 ≥ union recall − 0.001 |
