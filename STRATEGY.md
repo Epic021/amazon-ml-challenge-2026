@@ -1,7 +1,7 @@
 # Amazon ML Challenge 2026: Business Entity Resolution. Strategy
 
 **Status (Sep 26, ~11:15 IST):**
-- **Best on the holdout:** B3, 0.9777 (upload pending). **Best on the LB:** B2, holdout 0.9772, LB 0.970.
+- **LB 0.970** (B2 and B3 both; B3's +0.0005 is invisible at 3 decimals).
 - **Target:** top 50 (≥ 0.979 on Sep 26), so we need **+0.009**.
 - **Running:** B3 (name-uniqueness features): training, holdout log-loss 0.0043 at round 450.
 - **Also running:** the EMB retriever (Indian-script names), relaunched after an out-of-memory fix.
@@ -92,7 +92,7 @@ Blocking always runs on the full universe.
 
 **Reading the LB:** test is 46.8% India, 38.3% US, 15% France. So `LB ≈ 0.468·India + 0.383·US + 0.15·France`, with India and US taken from the holdout, which gives the implied France score.
 
-**Keep a change** only if the holdout macro F0.5 improves by **≥ +0.001** and the France proxy does not get worse.
+**Keep a change** only if the holdout macro F0.5 improves by **≥ +0.001** and the France proxy does not get worse. **Strict: no exceptions for gains that are real but tiny** (B3 lesson). **Prioritize changes that can plausibly give ≥ +0.003**, since the gap to the top 50 is 0.009.
 
 **Evidence gates: no full-scale run without a cheap measurement first.** Added Sep 26, after runs were launched on assumptions.
 
@@ -111,7 +111,7 @@ Blocking always runs on the full universe.
 | B1 | word retriever + 60 features + LightGBM + calibration + soft exclusivity + threshold 0.55 | 0.9662 (0.9546 / 0.9739) | 0.9768 | 0.952 | Implied France ≈ 0.88 |
 | **B2** | + namechar & addr retrievers + G3 label-free word roles | **0.9772** (0.966 / 0.9847) | 0.9867 | **0.970** | Implied France ≈ 0.94; France decoy share 2.08% → 0.16% |
 | B2-noLO | B2 without the English word log-odds | 0.9762 | 0.9867 | – | Dropped |
-| **B3** | B2 + G5 name uniqueness | **0.9777** (0.9664 / 0.9853) | 0.9867 | ⏳ upload | **Best.** +0.00051 over B2, bootstrap 95% CI [+0.00038, +0.00062]: small but real. Singletons 0.9857. France proxy 0.19% (≈ B2). File: `output_b3/` |
+| **B3** | B2 + G5 name uniqueness | **0.9777** (0.9664 / 0.9853) | 0.9867 | **0.970** | **No visible LB gain** (the LB shows 3 decimals, and +0.0005 is below that). Holdout +0.00051, CI [+0.00038, +0.00062]: real but below the +0.001 bar; it should not have been submitted as a separate run |
 
 **What we learned:**
 - **The model reaches ~99% of its ceiling. Blocking recall and France are the levers, not the model.**
