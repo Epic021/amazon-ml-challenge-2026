@@ -1,16 +1,22 @@
 # Amazon ML Challenge 2026: Business Entity Resolution. Strategy
 
-**Status (Sep 26, ~18:10 IST):**
-- **LB 0.979 (BLEND-B4)**. Implied France ≈ **0.94, unchanged since B2**: all LB gains so far came from India/US.
-- **Target:** top 50 (≥ 0.979), top 10 ~0.985. Holdout→LB gap ≈ 0.007 (France), so the LB needs holdout ≈ 0.986+ **or** a smaller France gap.
-- **Running:** B5 training (iter 550, hold logloss 0.00322 < B4's best 0.00326), ETA ~19:30 IST incl. decode.
-- **Repo is private:** code reaches the VM only via `git archive HEAD src scripts requirements.txt | ssh vm tar -x` (the team decided on no deploy key).
-- **Deadline:** around early Sep 28 IST. Verify on the portal.
+**Status (Sep 26, ~19:00 IST)**
+
+| | |
+|---|---|
+| **Best LB** | **0.979**, BLEND-B4 (our B4 + the teammate's model), holdout 0.98487 |
+| **Where the LB is lost** | **France ≈ 0.94** (implied), unchanged since B2. India and the US are ≈ 0.983 / 0.986 |
+| **Target** | 0.98+ (top 10 ≈ 0.985). Each +0.01 on France is +0.0015 on the LB |
+| **Running** | B5 decode (B5 trained; features: sound key, address-word log-odds, twins); B5 + teammate blend on the holdout |
+| **Next** | 3g stacked blend → 3h France pseudo-labels (§6) |
+| **Deadline** | around early Sep 28 IST (verify on the portal); freeze ~Sep 27 evening |
+
+The repo is private, so code reaches the VM only via `git archive HEAD src scripts requirements.txt | ssh vm tar -x`.
 
 Supporting docs:
 - [eda/report.html](eda/report.html): EDA.
 - [bottle_necks.md](bottle_necks.md): design options per stage.
-- [research_sota.md](research_sota.md): literature and sources per component.
+- [research_sota.md](research_sota.md): literature per component.
 
 ---
 
@@ -20,142 +26,123 @@ For each **Source-1 (S1)** business, output the set of **S2/S3** records that ar
 
 | | Train | Test |
 |---|---|---|
-| S1 | 2.21M (US 1.32M, India 0.88M) | 1.73M (India 47%, US 38%, **France 15%, unseen in train**) |
+| S1 | 2.21M (US 1.32M, India 0.88M) | 1.73M (India 47%, US 38%, **France 15%, no French labels in train**) |
 | S2 + S3 | 10.3M | 9.97M |
 
-**Metric:** F0.5 per S1, macro-averaged over all S1.
+**Metric:** F0.5 per S1, macro-averaged.
 - Per entity: `F = 1.25·TP / (|pred| + 0.25·|true|)`.
-- A singleton predicted empty scores 1.
+- An empty prediction for an S1 with no match scores 1.
 - **A wrong match costs ~2.7× a missed one.**
 
 **Rules that shape the solution:**
 - No external data or lookups.
-- The final model must be MIT or Apache-2.0 and ≤ 8B parameters.
-- `candidate_pairs.tsv` must be exactly the set the model scores; it is audited for recall and reduction ratio.
-- The code is re-run by the organizers, so nothing may be fitted to this particular test file.
+- Models must be MIT/Apache and ≤ 8B parameters.
+- `candidate_pairs.tsv` must be exactly the scored set; it is audited for recall and reduction.
+- The organizers re-run the code, so nothing may be fitted to this particular test file.
 
-## 2. What the data tells us (the facts the design is built on)
+## 2. Data facts the design rests on
 
-1. **The hard negatives were constructed: "neighbour businesses".**
-   - 44% of unmatched records copy an S1 address almost exactly.
-   - They change the house number and add a business-type or place word (Holdings, Group, North, Midtown; in French: Développement, Participations).
-   - Among near-identical-address negatives, the **house number differs 88%** of the time. In true matches it is **equal 65%** of the time, with typos in 10%.
-2. **Each S2/S3 record belongs to at most one S1.** Matches never cross countries. 5.6% of S1 have no match; S1 averages 3.46 matches.
-3. **The sources are noisy in systematic ways:**
+1. **Hard negatives are constructed "neighbour businesses".**
+   - They copy an S1 address, change the house number (88% of the time) and add a business-type or place word (Holdings, Midtown; in French Groupe, Développement).
+   - In true matches the house number is equal 65% of the time, with typos in 10%.
+2. **Each S2/S3 record belongs to at most one S1.**
+   - Matches never cross countries.
+   - An S1 has 3.46 matches on average; 5.6% have none.
+3. **Source noise:**
    - S2 is uppercase registry style, with 9% of names in Indian scripts.
-   - S3 has typos, full or native-script state names, and `NULL` tokens.
+   - S3 has typos, native-script state names and `NULL` tokens.
    - About 3% of addresses are empty.
-   - 3% of true matches are renamed ("Ectokor", "@1800").
-4. **France follows the same generator:**
-   - French words and legal forms;
-   - region ↔ department swaps;
-   - about 15 cities, so very dense streets.
-5. **There is no leakage.** IDs and row order carry no signal, and train and test share no entities.
-6. **There is no label shift.** Σp per S1 on test ≈ the holdout's.
+   - About 3% of matches are renamed ("Ectokor").
+4. **France follows the same generator**, with French words and legal forms, region ↔ department swaps, and about 15 cities (so very dense streets).
+5. **The hardest class is the same address and house number with one name word swapped** ("Horizon Amis SARL" vs "Horizon Club SARL").
+   - Train: only 43% (India) / 48% (US) of these are true matches.
+   - Test pairs per S1: France **4.3**, India 2.1, US 0.95.
+6. **No leakage** (IDs and row order carry no signal) and **no label shift** (Σp per S1 on test ≈ the holdout's).
 
-## 3. The approach (as built)
+## 3. Pipeline (as built)
 
 ```
-raw TSV → normalize → 4 retrievers (per country) → union + prune → features → LightGBM
-        → isotonic calibration → soft exclusivity → threshold → matching_results.tsv
+raw TSV → normalize → 4 retrievers → union + prune → features (~95) → LightGBM
+        → isotonic → [blend with teammate] → soft exclusivity → threshold → TSVs
 ```
 
-| Stage | What | Why |
-|---|---|---|
-| Normalize (`normalize.py`) | ftfy, NFKC, anyascii (Indian scripts → Latin), abbreviations, ordinals, number extraction, `name_core` (legal forms and honorifics removed) | Make variants comparable. *Still holds hand-written US/India maps; replacing them is G1* |
-| Retrievers (`block.py`, `block_emb.py`) | **word**: name + skeleton + address TF-IDF, both directions<br>**namechar**: char 3-grams of the name, S2/S3 → S1<br>**addr**: address only<br>**emb**: model2vec on raw non-Latin names | Each covers a different miss type: typos and domains, renamed businesses, empty addresses, Indian scripts |
-| Union + prune (`union.py`, `features.py`) | Per-retriever scores and ranks kept as features; keep pairs with rank_q ≤ 10 or rank_s ≤ 15 | Recall with a bounded candidate set |
-| Features (`features.py`, ~80) | **House-number relation** (equal / added / dropped / differs, edit distance, prefix); **added/dropped name words**: label log-odds + **per-country label-free roles** (G3) + name frequency; rapidfuzz similarities; **rank context** (gap to best, mutual best, competing S1); mined equivalences; **name uniqueness** (G5) | Separates decoys from typo-matches. The label-free roles carry the decoy vocabulary to France |
-| Model (`train.py`) | LightGBM binary, 255 leaves, early stopping on the holdout | GBDT is near-SOTA for short structured records |
-| Decode (`decode.py`) | Isotonic calibration (folds 6–9) → soft exclusivity p′ = o/(1+Σo) → threshold chosen on the holdout (the exact expected-F DP is also evaluated) | Enforces one S1 per record; optimizes set-level F0.5 |
-
-**Not doing:** LLMs, geocoding or libpostal (external data), uroman (no gain, licence unclear), 5-fold CV, big hyperparameter searches.
-
-## 4. How we validate and decide
-
-**Folds** (S1 split by `int(id[3:]) % 10`):
-
-| Folds | Use |
+| Stage | What |
 |---|---|
-| 0–1 | Word statistics and mined rules |
-| 2–4 | Training |
-| **5** | **Holdout: the score we trust** |
-| 6–9 | Calibration |
+| Normalize (`normalize.py`) | ftfy, NFKC, anyascii, abbreviations, numbers, `name_core` (legal forms removed). *Still has hand-written US/India maps (G1)* |
+| Retrievers (`block.py`, `block_numaddr.py`) | **word** (name + skeleton + address TF-IDF, both directions); **namechar** (char 3-grams); **addr**; **numaddr** (`number\|token` address keys, re-ranked by name) |
+| Union + prune (`union.py`) | Per-retriever scores and ranks kept as features; keep rank_q ≤ 10 or rank_s ≤ 15. **Ceiling 0.9917** |
+| Features (`features.py`) | House-number relation; added/dropped words (label log-odds, per-country label-free roles, name uniqueness); sound-alike key; address-word log-odds; twins; rapidfuzz similarities; rank context |
+| Model (`train.py`) | LightGBM binary, 255 leaves, early stopping on the holdout |
+| Decode (`decode.py`, `scripts/blend.py`) | Isotonic (folds 6–9) → blend w = 0.5 with the teammate → soft exclusivity p′ = o/(1+Σo) → threshold |
+| Stacking (`stage2.py`) | Re-score with competitors' probabilities (record/S1 competition, twins in probability space). Smoke passed |
 
-Blocking always runs on the full universe.
+**Not doing:** LLMs, geocoding or libpostal, uroman, 5-fold CV, big hyperparameter searches, running the teammate's code on our VM (we use only their probabilities and EDA).
 
-**Every run reports:**
-- **holdout macro F0.5** after decoding, split by country and singleton;
-- the **ceiling** (the F0.5 of a perfect model on our candidates);
-- the **France proxy** (`france_diag.py`): the share of predicted matches that look like decoys, plus predictions per S1.
+## 4. Validation and decision rules
 
-**Reading the LB:** test is 46.8% India, 38.3% US, 15% France. So `LB ≈ 0.468·India + 0.383·US + 0.15·France`, with India and US taken from the holdout, which gives the implied France score.
+**Folds** (`int(id[3:]) % 10`): 0–1 word statistics · 2–4 train · **5 holdout** · 6–9 calibration and blend tuning.
 
-**Keep a change** only if the holdout macro F0.5 improves by **≥ +0.001** and the France proxy does not get worse. **Strict: no exceptions for gains that are real but tiny** (B3 lesson). **Prioritize changes that can plausibly give ≥ +0.003**, since the gap to the top 50 is 0.009.
+**Reading the LB:** `LB ≈ 0.468·India + 0.383·US + 0.15·France`. India and the US come from the holdout, which gives the implied France score. The LB shows 3 decimals, so a change needs about +0.001 to be visible.
 
-**Evidence gates: no full-scale run without a cheap measurement first.** Added Sep 26, after runs were launched on assumptions.
+**Keep a change only if** the holdout improves by **≥ +0.001** (strict; B3 lesson). **Prioritize changes worth ≥ +0.003.** France can only be checked on the LB, so spend LB submissions on France-targeted changes.
 
-| Change | Cheap evidence first | Gate before the full run |
+**Evidence gates: nothing runs at full scale without a cheap measurement first.**
+
+| Change | Cheap evidence | Gate |
 |---|---|---|
-| New retriever | Realistic sample (real queries vs the full index), then the train union → ceiling (~20 min, no training) | Ceiling ≥ +0.003 |
-| New features | Pilot: features on 10% of S1 → quick LightGBM with vs without → pilot holdout | ≥ +0.001 |
-| More training data | Learning curve on 1 / 2 / 3 folds with a small model | Still rising from 2 → 3 folds |
-| Full retrain (B-run) | Only after the gates above pass | – | Submit whenever that holds and the validator passes.
+| Retriever | Realistic sample → train union ceiling | Ceiling ≥ +0.003 |
+| Features | 10% pilot, small LightGBM, with vs without | ≥ +0.001 |
+| More data | Learning curve on 1 / 2 / 3 folds | Still rising |
+| France-only change | Offline simulation on India (below) | Passes the gate, then an LB submission |
+
+**France tool:** `scripts/france_gap.py --tag T [--w W --thr T --only_a]`. It reports:
+- the model's own expected F0.5 per country (Monte Carlo from calibrated p; within 0.002 of the true score for the blend);
+- borderline-pair counts per country;
+- how often ours and the teammate's disagree, and which one is right on the holdout;
+- a feature profile of borderline pairs;
+- France examples written to `logs/france_examples.tsv`.
 
 ## 5. Results
 
-| Run | Change | Holdout (India / US) | Ceiling | LB | Decision |
-|---|---|---|---|---|---|
-| B0 | Exact key: name tokens + first number | 0.587 | – | – | Baseline |
-| B1 | word retriever + 60 features + LightGBM + calibration + soft exclusivity + threshold 0.55 | 0.9662 (0.9546 / 0.9739) | 0.9768 | 0.952 | Implied France ≈ 0.88 |
-| **B2** | + namechar & addr retrievers + G3 label-free word roles | **0.9772** (0.966 / 0.9847) | 0.9867 | **0.970** | Implied France ≈ 0.94; France decoy share 2.08% → 0.16% |
-| B2-noLO | B2 without the English word log-odds | 0.9762 | 0.9867 | – | Dropped |
-| **B4** | + RET-BLOCK (number\|token address blocks) candidates; fast polars pipeline | **0.98265** (0.9772 / 0.9863) | 0.9917 | ⏳ | Best single model. Model efficiency 99.1%. France: 3.34 predictions/S1, decoy share 0.23%. Pipeline wall time 2 h 21 min |
-| **BLEND-B4** | B4 + teammate's OOF probs (isotonic each, w=0.5, soft excl, thr 0.45; tuned on folds 6–9) | **0.98487** (0.9833 / 0.9859) | – | **0.979** | Implied France 0.94 (same as B2). +0.00293 vs B4 [CI +0.00266, +0.00319], +0.00248 vs teammate alone [+0.00224, +0.00273]. Test: France 3.45 pred/S1, empty 5.3% |
-| **B3** | B2 + G5 name uniqueness | **0.9777** (0.9664 / 0.9853) | 0.9867 | **0.970** | **No visible LB gain** (the LB shows 3 decimals, and +0.0005 is below that). Holdout +0.00051, CI [+0.00038, +0.00062]: real but below the +0.001 bar; it should not have been submitted as a separate run |
+| Run | Change | Holdout (India / US) | Ceiling | LB | Implied France | Decision |
+|---|---|---|---|---|---|---|
+| B0 | Exact key | 0.587 | – | – | – | Baseline |
+| B1 | word retriever + 60 features + LightGBM + calibration + soft exclusivity | 0.9662 (0.9546 / 0.9739) | 0.9768 | 0.952 | 0.88 | – |
+| B2 | + namechar, addr + label-free word roles | 0.9772 (0.966 / 0.9847) | 0.9867 | 0.970 | 0.94 | Kept |
+| B2-noLO | B2 without word log-odds | 0.9762 | 0.9867 | – | – | Dropped (log-odds worth +0.001) |
+| B3 | + name uniqueness | 0.9777 (0.9664 / 0.9853) | 0.9867 | 0.970 | 0.94 | +0.0005, below the bar; invisible on the LB |
+| B4 | + numaddr retriever; polars pipeline | 0.98265 (0.9772 / 0.9863) | 0.9917 | not submitted | – | Best single model; 99.1% of the ceiling |
+| **BLEND-B4** | B4 + teammate (isotonic each, w = 0.5, thr 0.45) | **0.98487** (0.9833 / 0.9859) | – | **0.979** | **0.94** | **Current best.** +0.0029 vs B4, +0.0025 vs the teammate (CIs > 0) |
+| B5 | B4 + sound key + address-word log-odds + twins | ⏳ (holdout log loss 0.00316 vs B4's 0.00326) | 0.9917 | – | – | Decoding |
 
 **What we learned:**
-- **The model reaches ~99% of its ceiling. Blocking recall and France are the levers, not the model.**
-- **Decoding:** soft exclusivity beats hard by +0.0008. The exact expected-F DP is correct (it matches brute force) but does not beat a threshold, because the candidates are not independent.
-- **G3 learned each country's decoy words without labels:**
-  - US: southside, midtown, holdings.
-  - France: participations, développement, groupe.
-- **Where B2 loses its 0.0228 on the holdout:**
+- **India and the US are near their ceiling; France is the gap.** Every LB gain since B2 came from India and the US. France has sat at ≈ 0.94 across B2, B3 and BLEND-B4.
+- **France errors are confident, not just uncertain.**
+  - The blend believes France ≈ 0.967 and the LB says ≈ 0.94.
+  - France has 3× the borderline pairs of India or the US, and 2× the disagreements between our model and the teammate's, which point in opposite directions (0.95 vs 0.001).
+  - The losses sit in the same-address word-swap class (fact 5). Our models learned which swapped words matter from English and Indian labels.
+- **Blending two different models is worth +0.0025–0.003** on the holdout and was visible on the LB (+0.009 incl. B4).
+- **Decoding:** soft exclusivity beats hard by +0.0008. The exact expected-F DP does not beat a threshold.
+- **Label-free word roles work:** US southside, midtown, holdings; France participations, développement, groupe. France's decoy-signature share is only 0.2%, so classic decoys are handled.
+- **Dead ends:** embedding retriever (India ceiling +0.002), more training data (+0.0002), evidence dropout (−0.0004), finer number relations (0).
 
-  | Source | Size |
-  |---|---|
-  | Blocking misses | 3.45% of true pairs (**India 6.1%**, US 1.7%), mostly Indian-script names |
-  | Model rejections | 2.0% of true pairs, **74% of them empty-address candidates** |
-  | Wrong accepts | 0.33% of predictions |
+## 6. Plan (in order)
 
-## 6. Plan to +0.009 (in order)
-
-| # | Item | Targets | Est | Keep if |
+| # | Item | Why | Time | Keep if |
 |---|---|---|---|---|
-| 1 | ~~**G5 name uniqueness**~~ **done (B3): +0.0005, CI > 0, kept** | Empty-address rejections | – | – |
-| 2 | ~~RET-EMB~~ **dropped.** Full run: 14% recall on its target pairs, only 0.16% of true pairs found only by it, India ceiling +0.0021 (< +0.003), and the test run would cost ~3 h. The 5-example test was misleading | – | – | – |
-| 2b | **RET-BLOCK: gate PASSED.** Pair recall 0.9655 → **0.9769** (pruned). **Ceiling 0.9867 → 0.9917 (+0.0050); India 0.9749 → 0.9859 (+0.011)**, US 0.9946 → 0.9956. 1.1% of true pairs are found only by it | India + US blocking | done | ✓ |
-| 2c | **More training data: gate FAILED.** Pilot (small LightGBM): 10% 0.97472 → 30% 0.97551 → 50% 0.97574 (+0.0002). B3-big cancelled | – | done | ✗ |
-| 3 | **B4 = union with RET-BLOCK → features → retrain** (candidate change only; G5 built in). **Running** since Sep 26 ~15:00 IST, ETA ~3–3.5 h. Expected holdout ≈ 0.9917 × 0.99 ≈ **0.982**, LB ≈ **0.975** | India recall | running | Holdout ≥ +0.001 over B3 |
-| 3b | **EDA-driven feature pilot: PASSED (+0.00105).** 10% of S1, small LightGBM, 22k-S1 holdout: all 0.97782 vs none 0.97677. Leave-one-out: sound-alike key +0.00085, address-word log-odds +0.00079, twins +0.00030, finer number relations +0.00003 (**dropped**), evidence dropout −0.00044 (**dropped**; unmeasurable benefit for France) | Decoys, Indic names | done | ✓ |
-| 3c | **B5 = B4 + sound key + address-word log-odds + twins** | – | **training**, ETA ~19:30 IST | Holdout ≥ B4 + 0.001 |
-| 3d | **Blend B5 + teammate** (`scripts/blend.py --tag b5 --write`, ~15 min) | Model diversity | after 3c | ≥ BLEND-B4 + 0.001 → submit |
-| 3e | **Stage 2 stacking** on best stage-1 (`src/stage2.py`; smoke passed) → then blend | Record/S1 competition | ~40 min | ≥ +0.001 over its input |
-| 3f | **France gap analysis: DONE** (`scripts/france_gap.py`). Model believes France ≈ 0.967 (belief is within 0.002 of actual for India/US), LB says 0.94 → **confident errors**. France has 3× the borderline pairs; the hard class is **same address + same house number + one name word swapped** (train: 43–48% true; France 4.3 such pairs/S1 vs US 0.95). Ours vs teammate disagree 2× more in France | The ~0.007 holdout→LB gap | done | → 3e first (relational), then 4 |
-| 3g | **Stacked blend** = stage 2 with BOTH models' p (ours B5 + teammate) + relational + pair features: learns *when* to trust which model (they disagree confidently on France word swaps; a fixed 0.5 average puts those at the threshold) | France disagreements, swap class | 1 h | ≥ BLEND-B5 + 0.001 |
-| 3h | **France co-training pseudo-labels**: pairs where both models agree confidently → French word log-odds (added/dropped words) → recompute France features → re-predict (no retrain). Offline gate: India with pseudo-label log-odds instead of true ones loses ≤ half the LO gain | France unseen vocabulary | 2–3 h | Gate, then LB |
-| 4 | **G4 house-number roles** (locality cardinality; match levels) | France's dense streets, remaining decoys | 2 h | France proxy ↓, holdout ≥ +0.001 |
-| 5 | **F1 synthetic French decoys** (number ±1–2, added frequent word) | Measure France rejection directly | 1.5 h | Diagnostic |
-| 6 | **RET-B reranker**: wide union → top 40 | Recall at a fixed candidate budget | 3 h | Recall@40 ≥ union recall − 0.001 |
-| 7 | **G1 normalize v2**: structural rules only, drop the hand-written maps | Generality, code audit | 2 h | Holdout ≥ B-current − 0.001 |
-| 8 | Stretch: S3 larger training set (60% of S1); S2 S2↔S3 twins; cross-encoder feature (laptop GPU → ONNX) | +0.001–0.003 each (est.) | 1–6 h | Holdout ≥ +0.001 |
+| 1 | **B5 decode + BLEND-B5** (`blend.py --tag b5 --write`) | Features passed the pilot (+0.001) | now | Blend ≥ 0.98587 → submit |
+| 2 | **3g Stacked blend**: stage 2 with both models' p, relational features (does the record fit another S1 better?) and pair features (number relation, word swap) | The models disagree confidently on France swaps, and a fixed 0.5 average puts those at the threshold. The stacker learns when to trust which | 1 h | ≥ blend + 0.001 → submit |
+| 3 | **3h France co-training pseudo-labels**: French pairs where both models agree confidently → French added/dropped-word log-odds → recompute France features → re-predict (no retrain) | France's vocabulary is unseen. Two independent models agreeing limits confirmation bias | 2–3 h | **Gate:** on India, log-odds from pseudo-labels in place of true ones keep ≥ half the log-odds gain. Then one LB submission |
+| 4 | **G4 house-number roles** (locality cardinality, match levels) | France's dense streets | 2 h | ≥ +0.001 or France LB ↑ |
+| 5 | F1 synthetic French decoys | Measure France rejection directly | 1.5 h | Diagnostic |
+| 6 | G1 normalize v2 (structural rules, no hand maps) | Code audit / generality | 2 h | Holdout ≥ current − 0.001 |
 
-**Final 12 h, no new features:**
+**Final 12 h (from ~Sep 27 evening), no new features:**
 1. Freeze.
 2. One-command regeneration from raw data (output must match the submitted file).
 3. Validator with `--check-ids`.
-4. Zip: `output/` + `code/business_entity_resolution/{src,README.md,requirements.txt}` + methodology doc.
-5. Final upload ≥ 3 h before the deadline.
+4. Zip: `output/` + `code/business_entity_resolution/{src,README.md,requirements.txt}` + methodology doc. Resolve the folder clash with the teammate.
+5. Upload ≥ 3 h before the deadline.
 
 ## 7. How to run (VM, repo root)
 
@@ -165,40 +152,43 @@ source /work/venv/bin/activate
 export PYTHONUNBUFFERED=1
 ```
 
-**Always `bash scripts/smoke.sh` first** (~6 min, ~1% of the data, isolated in `/tmp`). Full runs use `env -u BER_DATA -u BER_OUT`.
+**Always `bash scripts/smoke.sh` first** (~6 min, ~1% of the data, in `/tmp`). Full runs use `env -u BER_DATA -u BER_OUT`.
 
-| # | Step | Command | Output | Time (full) |
-|---|---|---|---|---|
-| 0 | TSV → Parquet | `python scripts/tsv_to_parquet.py` | `data/parquet/` | 2 min |
-| 1 | Normalize | `python src/normalize.py` | `data/norm/` | 3 min |
-| 2 | Retrievers (per split) | `python src/block.py --split S --retriever {word,namechar,addr}`; `python src/block_emb.py --split S` | `data/cand/{S}_{r}.parquet` | ~25 / 20 / 12 min, emb tbd |
-| 3 | Union (+ ceiling on train) | `python src/union.py --split S` | `data/cand/{S}.parquet` | ~20 min |
-| 4 | Equivalence mining | `python src/mine_equiv.py --split {train,test}` | `data/equiv/` | 2 min |
-| 5 | Features | `python src/features.py --split {train,test}` | `data/feat/` | ~60 / 50 min |
-| 6 | Train | `python src/train.py --tag T` | `data/models/`, `data/pred/` | ~1.5–2 h |
-| 7 | Decode | `BER_OUT=output_T python src/decode.py --tag T` | `output_T/*.tsv` | ~15 min |
-| 8 | Checks | `validate_submission.py --check-ids`; `scripts/france_diag.py <file>`; `scripts/error_analysis.py --tag T` | logs | ~10 min |
+| # | Step | Command | Time (full) |
+|---|---|---|---|
+| 0 | TSV → Parquet | `python scripts/tsv_to_parquet.py` | 2 min |
+| 1 | Normalize | `python src/normalize.py` | 3 min |
+| 2 | Retrievers | `python src/block.py --split S --retriever {word,namechar,addr}`; `python src/block_numaddr.py --split S` | ~25 / 20 / 12 / 15 min |
+| 3 | Union (+ ceiling on train) | `python src/union.py --split S` | ~5 min |
+| 4 | Equivalences | `python src/mine_equiv.py --split S` | 2 min |
+| 5 | Features | `python src/features.py --split S --out data/feat_T` | ~85 min train |
+| 6 | Train | `python src/train.py --tag T --feat_dir data/feat_T` | ~80 min |
+| 7 | Decode | `BER_OUT=output_T python src/decode.py --tag T` | ~15 min |
+| 8 | Blend | `python scripts/blend.py --tag T --write` → `output_blend/` | ~15 min |
+| 9 | Checks | `validate_submission.py --check-ids`; `scripts/france_diag.py`; `scripts/france_gap.py` | ~10 min |
 
 ## 8. Rules
 
 - **Process:**
-  - Smoke test before every full run.
+  - Smoke test before full runs.
+  - Pass the evidence gate before scaling up.
   - One change per run.
-  - Log every run in §5 and update §6.
-  - Unbuffered logs.
+  - Log every run in §5 and update §6 **before** reordering.
   - Stop the VM when idle.
 - **Compliance:**
   - No external lookups.
-  - Models MIT/Apache only: LightGBM, model2vec potion-multilingual-128M. Not allowed: jina-v3 (CC BY-NC), Unidecode (GPL).
-  - Every per-country table (IDF, word roles, name counts, equivalences) is **recomputed from the input data at run time**.
-  - Everything learned from unlabeled test inputs is disclosed in the methodology doc.
-- **Git:** no Claude attribution in commits.
+  - MIT/Apache models only (LightGBM, model2vec). Not allowed: jina-v3 (CC BY-NC), Unidecode (GPL).
+  - Per-country tables are recomputed from the input data at run time.
+  - Anything learned from unlabeled test inputs (word roles, pseudo-labels) is disclosed in the methodology doc.
+- **Team:**
+  - Don't run the teammate's pipeline on our VM.
+  - No Claude attribution in commits.
 
 ## 9. Team
 
 | Person | Owns |
 |---|---|
-| P1 | Validation, decoding, the experiment log, submission sign-off |
+| P1 | Validation, decoding, experiment log, submission sign-off |
 | P2 | VM, retrievers, full runs, final reproduction + zip |
-| P3 | Features (G4, G5), training-set size |
-| P4 | Normalization v2 (G1), France (F1), methodology doc; cross-encoder on the laptop GPU if time allows |
+| P3 | Features (G4), France pseudo-labels |
+| P4 | G1, F1, methodology doc; teammate model / probabilities for blending |
