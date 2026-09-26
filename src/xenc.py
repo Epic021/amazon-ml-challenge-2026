@@ -173,10 +173,13 @@ def cmd_train(a):
         load_weights(model, f"{a.init}/weights.pt")
     decoder = a.model in DECODER
     df = read(a.data, a.subset, a.country)
-    if a.fit_minutes:                                     # size the set so the full schedule fits the time
-        rate = json.load(open(a.rates))[a.model]["train"]
+    rates = json.load(open(a.rates)) if os.path.isfile(a.rates) else {}
+    if a.fit_minutes and a.model in rates:                # size the set so the full schedule fits the time
+        rate = rates[a.model]["train"]
         a.limit = min(a.limit or df.height, int(rate * a.fit_minutes * 60 / a.epochs))
         log(f"fit {a.fit_minutes} min at {rate:,.0f} pairs/s -> {a.limit:,} of {df.height:,} pairs")
+    elif a.fit_minutes:
+        log(f"no measured rate for {a.model} in {a.rates}: training on all pairs, --max_minutes caps it")
     if a.limit:
         df = df.head(a.limit)
     ids = encode(tok, df["a"].to_list(), df["b"].to_list(), decoder, a.max_len)
@@ -285,7 +288,8 @@ def cmd_probe(a):
     bs, sbs = a.batch or bs, a.score_batch or sbs
     model, tok = build(a.model, a.tiny, a.lora_r)
     decoder = a.model in DECODER
-    df = read(a.data, a.subset).sample(min(a.n, pl.scan_parquet(a.data).select(pl.len()).collect().item()), seed=0)
+    df = read(a.data, a.subset)
+    df = df.sample(min(a.n, df.height), seed=0)
     ids = encode(tok, df["a"].to_list(), df["b"].to_list(), decoder, a.max_len)
     y = torch.tensor(df["y"].to_numpy(), dtype=torch.float32)
     lengths = np.array([len(s) for s in ids])

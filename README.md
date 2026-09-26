@@ -18,3 +18,15 @@ Scripts in `eda/` read from `student_resource/dataset`, or from `$DATA_DIR` if s
 - `eda3.py`: blocking-recall probe (IDF inverted index), hard-negative examples
 - `eda4.py`: test distractor shift, sibling-vs-orphan negatives, number and name-difference patterns, France
 - `eda_test.py`: test-set sizes, country mix, train/test overlap
+
+## GPU pod (neural pair scorers)
+The pod needs no raw dataset, only 4 files the CPU VM exports (`python scripts/export_pairs_text.py --tag b5 --feat_dir data/feat_b5`):
+```
+git clone <repo> && cd amazon-ml-challenge-2026 && git checkout neural-members
+mkdir -p data/xenc   # copy train.parquet, score_train.parquet, score_test.parquet, train_feats.parquet here
+bash scripts/gpu_session.sh setup                          # installs, checks files/GPU, caches models; must print SETUP OK
+nohup bash scripts/gpu_session.sh auto > /dev/null 2>&1 &  # ~4.5 h cap, stops the pod itself (runpodctl)
+tail -f logs/gpu_auto.log
+```
+Results for the CPU VM: `data/xenc/p_mdeb/`, `data/xenc/p_qwen/` (scores), `data/xenc/m_*/{weights.pt,meta.json}` (models), `logs/`.
+Then on the CPU VM: `python src/xenc.py collect --parts data/xenc/p_mdeb --tag xmdeb` (and `p_qwen` → `xqwen`) and STRATEGY.md §7 N6.
