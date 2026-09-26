@@ -31,15 +31,19 @@ def main():
     ap.add_argument("--lr", type=float, default=0.05)
     ap.add_argument("--leaves", type=int, default=255)
     ap.add_argument("--drop", default="", help="comma-separated feature-name prefixes to exclude")
+    ap.add_argument("--train_folds", default="2,3,4", help="S1 folds used for training (holdout is fold 5)")
+    ap.add_argument("--feat_dir", default=FEAT, help="directory with train.parquet / test.parquet")
     a = ap.parse_args()
     os.makedirs(PRED, exist_ok=True)
     os.makedirs(MODELS, exist_ok=True)
     t0 = time.time()
 
-    tr = pd.read_parquet(f"{FEAT}/train.parquet")
+    train_folds = tuple(int(x) for x in a.train_folds.split(","))
+    assert HOLD_FOLD not in train_folds, "fold 5 is the holdout"
+    tr = pd.read_parquet(f"{a.feat_dir}/train.parquet")
     drop = tuple(x for x in a.drop.split(",") if x)
     cols = [c for c in feature_cols(tr) if not (drop and c.startswith(drop))]
-    m_tr, m_ho = tr.fold.isin(TRAIN_FOLDS).values, (tr.fold == HOLD_FOLD).values
+    m_tr, m_ho = tr.fold.isin(train_folds).values, (tr.fold == HOLD_FOLD).values
     print(f"{len(cols)} features; train pairs {m_tr.sum():,} (pos {tr.y[m_tr].mean():.3f}), "
           f"holdout pairs {m_ho.sum():,}", flush=True)
 
@@ -57,8 +61,8 @@ def main():
     tr["p"] = model.predict(tr[cols], num_threads=os.cpu_count()).astype(np.float32)
     tr[["s1_id", "cand_id", "fold", "y", "p"]].to_parquet(f"{PRED}/train_{a.tag}.parquet", index=False)
     del tr
-    if os.path.isfile(f"{FEAT}/test.parquet"):
-        te = pd.read_parquet(f"{FEAT}/test.parquet")
+    if os.path.isfile(f"{a.feat_dir}/test.parquet"):
+        te = pd.read_parquet(f"{a.feat_dir}/test.parquet")
         te["p"] = model.predict(te[cols], num_threads=os.cpu_count()).astype(np.float32)
         te[["s1_id", "cand_id", "p"]].to_parquet(f"{PRED}/test_{a.tag}.parquet", index=False)
     print(f"done in {time.time() - t0:.0f}s", flush=True)

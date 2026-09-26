@@ -87,10 +87,12 @@ def bootstrap_gain(f_a: pd.Series, f_b: pd.Series, n: int = 1000) -> tuple:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", default="v1")
+    ap.add_argument("--calib_folds", default="6,7,8,9", help="folds for isotonic calibration (never trained on)")
     a = ap.parse_args()
+    calib_folds = tuple(int(x) for x in a.calib_folds.split(","))
 
     tr = pd.read_parquet(f"{PRED}/train_{a.tag}.parquet")
-    cal = tr[tr.fold.isin(CALIB_FOLDS)]
+    cal = tr[tr.fold.isin(calib_folds)]
     iso = IsotonicRegression(out_of_bounds="clip", y_min=0.0, y_max=1.0).fit(cal.p.values, cal.y.values)
     tr["p"] = iso.predict(tr.p.values).astype(np.float32)
     truth = pd.read_parquet(f"{PQ}/train_pairs.parquet")
