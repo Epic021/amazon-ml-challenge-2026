@@ -235,6 +235,19 @@ raw TSV ─ tsv_to_parquet ─ normalize ─┬─ block.py word ─────
 - **1,512-decoder grid:** best is mean(v3, v4), a=0.8, thr 0.625 → +0.00007 [CI +0.00001, +0.00013]. Not adopted (too small for the added complexity).
 - **XGBoost third model alone:** holdout 0.98249.
 
+**Post-deadline research (Sep 27–28):**
+- **E1, fine-tuned multilingual bi-encoder retrieval (India).** `scripts/e1_biencoder.py`; model saved to `data/models/e1_biencoder_india`.
+  - Setup: paraphrase-multilingual-MiniLM-L12-v2 (Apache-2.0), in-batch contrastive loss (MNRL), 40k India pairs from folds 2–4, 312 steps, ~20 min on CPU. Retrieval is record → S1 over all 0.88M India S1.
+  - India holdout true pairs missed by every retriever: 4,664 (1.52%).
+
+  | Model | Missed recall @1 / @20 / @50 | Control recall @20 |
+  |---|---|---|
+  | Pretrained | 3.9% / 14.9% / 21.1% | 74.1% |
+  | **Fine-tuned** | **18.7% / 41.5% / 52.1%** | **97.0%** |
+
+  - It recovers cross-script names that TF-IDF can't: Devanagari, Telugu, Kannada → English.
+  - Next: add it as a 5th retriever (non-Latin / weak-candidate records), compute features, retrain the stacker, measure the holdout. Estimated overall gain ≈ +0.001 from India alone.
+
 **Leakage:** none. Row/ID correlation 0.0001, record adjacency 0%, and the ID/row tie-break is at chance.
 
 ## 7. Files
