@@ -142,6 +142,14 @@ def main():
     ap.add_argument("--context_folds", default="5,6,7,8,9",
                     help="train folds whose pairs enter the competition features (all S1 are present on test). "
                          "Stage-1 p is out-of-fold on 0,1,5-9; 2-4 are stage-1 training folds")
+    ap.add_argument("--threads", type=int, default=os.cpu_count())
+    ap.add_argument("--pseudo_from", default="", help="tag of test predictions used as pseudo-labels (transductive "
+                    "self-training on an unlabelled country)")
+    ap.add_argument("--pseudo_country", default="France")
+    ap.add_argument("--pseudo_hi", type=float, default=0.99)
+    ap.add_argument("--pseudo_lo", type=float, default=0.01)
+    ap.add_argument("--pseudo_neg_ratio", type=float, default=3.0, help="negatives sampled per pseudo-positive")
+    ap.add_argument("--pseudo_weight", type=float, default=0.5)
     a = ap.parse_args()
     t0 = time.time()
     out_tag = a.out_tag or a.tag + ("sb" if a.friend else "s2")
@@ -155,19 +163,41 @@ def main():
     m_tr, m_ho = tr.fold.isin(train_folds).values, (tr.fold == HOLD).values
     params = dict(objective="binary", learning_rate=0.05, num_leaves=127, min_data_in_leaf=200,
                   feature_fraction=0.9, bagging_fraction=0.8, bagging_freq=1, lambda_l2=1.0,
-                  num_threads=os.cpu_count(), verbose=-1, seed=7)
-    model = lgb.train(params, lgb.Dataset(tr.loc[m_tr, feats], tr.y[m_tr]), a.rounds,
+                  num_threads=a.threads, verbose=-1, seed=7)
+    X_tr, y_tr = tr.loc[m_tr, feats], tr.y[m_tr].values
+    w_tr = np.ones(len(y_tr), dtype=np.float32)
+    te = None
+    if a.pseudo_from:                                     # confident test pairs of the unlabelled country as labels
+        te = load("test", a.tag, a.feat_dir, **kw)
+        ps = pl.read_parquet(f"{PRED}/test_{a.pseudo_from}.parquet", columns=KEY + ["p"]).rename({"p": "p_ps"})
+        s1t = pl.read_parquet(f"{DATA}/parquet/test_s1.parquet", columns=["entity_id", "country"]).rename({"entity_id": "s1_id"})
+        c = te.join(ps, on=KEY, how="inner").join(s1t, on="s1_id").filter(pl.col("country") == a.pseudo_country)
+        pos = c.filter(pl.col("p_ps") >= a.pseudo_hi)
+        neg = c.filter(pl.col("p_ps") <= a.pseudo_lo)
+        neg = neg.sample(n=min(neg.height, int(a.pseudo_neg_ratio * pos.height)), seed=5)
+        cp = pl.concat([pos, neg])
+        X_tr = pd.concat([X_tr, cp.select(feats).to_pandas()], ignore_index=True)
+        y_tr = np.concatenate([y_tr, (cp["p_ps"] >= a.pseudo_hi).cast(pl.Int8).to_numpy()])
+        w_tr = np.concatenate([w_tr, np.full(cp.height, a.pseudo_weight, dtype=np.float32)])
+        print(f"pseudo-labels ({a.pseudo_country}, from {a.pseudo_from}): {pos.height:,} pos + {neg.height:,} neg "
+              f"at weight {a.pseudo_weight} ({time.time() - t0:.0f}s)", flush=True)
+        del c, pos, neg, cp
+    model = lgb.train(params, lgb.Dataset(X_tr, y_tr, weight=w_tr), a.rounds,
                       valid_sets=[lgb.Dataset(tr.loc[m_ho, feats], tr.y[m_ho])], valid_names=["hold"],
                       callbacks=[lgb.early_stopping(100), lgb.log_evaluation(100)])
+    os.makedirs(os.path.join(DATA, "models"), exist_ok=True)
+    model.save_model(os.path.join(DATA, "models", f"stage2_{out_tag}.txt"))
     imp = pd.Series(model.feature_importance("gain"), index=feats).sort_values(ascending=False)
     print("stage-2 top features:\n", (imp / imp.sum()).head(15).round(4).to_string(), flush=True)
     out = tr[["s1_id", "cand_id", "fold", "y"]].copy()
-    out["p"] = model.predict(tr[feats], num_threads=os.cpu_count()).astype(np.float32)
+    del X_tr
+    out["p"] = model.predict(tr[feats], num_threads=a.threads).astype(np.float32)
     out.to_parquet(f"{PRED}/train_{out_tag}.parquet", index=False)
     del tr
-    te = load("test", a.tag, a.feat_dir, **kw)
+    if te is None:
+        te = load("test", a.tag, a.feat_dir, **kw)
     step = 10_000_000                                     # predict in slices to bound pandas memory
-    ps = [model.predict(te.slice(i, step).select(feats).to_pandas(), num_threads=os.cpu_count())
+    ps = [model.predict(te.slice(i, step).select(feats).to_pandas(), num_threads=a.threads)
           for i in range(0, te.height, step)]
     te_out = te.select(["s1_id", "cand_id"]).to_pandas()
     te_out["p"] = np.concatenate(ps).astype(np.float32)

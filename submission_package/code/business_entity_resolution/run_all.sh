@@ -45,4 +45,11 @@ python train.py --tag b5 --feat_dir "$BER_DATA/feat_b5" --drop numx_
 python stage2.py --tag b5 --feat_dir "$BER_DATA/feat_b5" --friend --friend_dir friend \
     --train_folds 6,7,8 --all_feats --context_folds 0,1,5,6,7,8,9 --out_tag b5sb3
 BER_OUT="$HERE/output" python decode.py --tag b5sb3 --calib_folds 9
+
+# ---- 4. (optional, PSEUDO=1) transductive self-training for the unlabelled country (France): second stacker pass
+#         with confident France test predictions of pass 3 as half-weight pseudo-labels -------------------------
+if [ "${PSEUDO:-0}" = "1" ]; then
+  python stage2.py --tag b5 --feat_dir "$BER_DATA/feat_b5" --friend --friend_dir friend       --train_folds 6,7,8 --all_feats --context_folds 0,1,5,6,7,8,9 --pseudo_from b5sb3 --out_tag b5sb3ps
+  BER_OUT="$HERE/output" python decode.py --tag b5sb3ps --calib_folds 9
+fi
 echo "done: $HERE/output/matching_results.tsv, $HERE/output/candidate_pairs.tsv"
