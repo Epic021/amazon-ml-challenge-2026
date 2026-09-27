@@ -52,6 +52,7 @@ def main():
     ap.add_argument("--drop", default="", help="comma-separated feature-name prefixes to exclude")
     ap.add_argument("--train_folds", default="2,3,4", help="S1 folds used for training (holdout is fold 5)")
     ap.add_argument("--feat_dir", default=FEAT, help="directory with train.parquet / test.parquet")
+    ap.add_argument("--threads", type=int, default=os.cpu_count(), help="LightGBM threads (two trainings at once)")
     ap.add_argument("--evidence_dropout", type=float, default=0.0, help="fraction of training rows (see evidence_dropout)")
     a = ap.parse_args()
     os.makedirs(PRED, exist_ok=True)
@@ -69,7 +70,7 @@ def main():
 
     params = dict(objective="binary", learning_rate=a.lr, num_leaves=a.leaves, min_data_in_leaf=200,
                   feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1, lambda_l2=1.0,
-                  num_threads=os.cpu_count(), verbose=-1, seed=42)
+                  num_threads=a.threads, verbose=-1, seed=42)
     dtr = lgb.Dataset(evidence_dropout(tr.loc[m_tr, cols].copy(), a.evidence_dropout), tr.y[m_tr], free_raw_data=True)
     dho = lgb.Dataset(tr.loc[m_ho, cols], tr.y[m_ho], reference=dtr)
     model = lgb.train(params, dtr, a.rounds, valid_sets=[dho], valid_names=["hold"],
@@ -78,12 +79,12 @@ def main():
     imp = pd.Series(model.feature_importance("gain"), index=cols).sort_values(ascending=False)
     print("top features by gain:\n", (imp / imp.sum()).head(25).round(4).to_string(), flush=True)
 
-    tr["p"] = model.predict(tr[cols], num_threads=os.cpu_count()).astype(np.float32)
+    tr["p"] = model.predict(tr[cols], num_threads=a.threads).astype(np.float32)
     tr[["s1_id", "cand_id", "fold", "y", "p"]].to_parquet(f"{PRED}/train_{a.tag}.parquet", index=False)
     del tr
     if os.path.exists(f"{a.feat_dir}/test.parquet"):      # file or directory of part files
         te = pd.read_parquet(f"{a.feat_dir}/test.parquet")
-        te["p"] = model.predict(te[cols], num_threads=os.cpu_count()).astype(np.float32)
+        te["p"] = model.predict(te[cols], num_threads=a.threads).astype(np.float32)
         te[["s1_id", "cand_id", "p"]].to_parquet(f"{PRED}/test_{a.tag}.parquet", index=False)
     print(f"done in {time.time() - t0:.0f}s", flush=True)
 

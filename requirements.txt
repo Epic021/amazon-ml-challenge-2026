@@ -10,3 +10,4 @@ sparse_dot_topn>=1.1
 jupyterlab
 model2vec==0.9.0
 polars==1.44.2
+tqdm

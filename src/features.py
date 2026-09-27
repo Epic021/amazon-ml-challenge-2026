@@ -21,6 +21,7 @@ from multiprocessing import Pool
 import numpy as np
 import pandas as pd
 import polars as pl
+from tqdm import tqdm
 from rapidfuzz import fuzz, process
 from rapidfuzz.distance import JaroWinkler, Levenshtein
 
@@ -423,7 +424,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--split", required=True, choices=["train", "test"])
     ap.add_argument("--chunk", type=int, default=6_000_000)
-    ap.add_argument("--sample", type=float, default=1.0, help="fraction of S1 ids (smoke tests)")
+    ap.add_argument("--sample", type=float, default=1.0,
+                    help="fraction of S1 ids to compute features for (context/twins still use every candidate)")
     ap.add_argument("--out", default=None)
     ap.add_argument("--max_rank_q", type=int, default=10)
     ap.add_argument("--max_rank_s", type=int, default=15)
@@ -437,8 +439,6 @@ def main():
     print(f"equivalence rules: addr={len(EQ_ADDR)} name={len(EQ_NAME)}", flush=True)
 
     cand = pl.read_parquet(f"{CAND}/{a.split}.parquet")
-    if a.sample < 1.0:
-        cand = cand.filter(pl.col("s1_id").str.slice(3).cast(pl.Int64) % 1000 < a.sample * 1000)
     cand = context_feats(cand)                       # context over the full candidate list
     cand = cand.filter((pl.col("rank_q") <= a.max_rank_q) | (pl.col("rank_s") <= a.max_rank_s))
     rec = pd.concat([pd.read_parquet(f"{NORM}/{a.split}_s{k}.parquet") for k in (1, 2, 3)], ignore_index=True)
@@ -451,6 +451,8 @@ def main():
     rec = add_name_counts(rec)
     store = RecStore(rec)
     cand = twin_feats(cand, rec)
+    if a.sample < 1.0:                               # after context/twins: competition stays as on test
+        cand = cand.filter(pl.col("s1_id").str.slice(3).cast(pl.Int64) % 1000 < a.sample * 1000)
     print(f"[{a.split}] {len(cand):,} pairs; context done {time.time() - t0:.0f}s", flush=True)
 
     if a.split == "train":
@@ -495,7 +497,8 @@ def main():
     writer, n_rows, n_cols = None, 0, 0
     drop_cols = [f"{side}_{k}" for side in ("s1", "c") for k in ("name", "core", "addr", "nums", "skel", "snd")] + ["country"]
     with Pool(procs) as pool:                        # forked once, after all lookup tables are set
-        for part, i in enumerate(range(0, len(cand), a.chunk)):
+        starts = range(0, len(cand), a.chunk)
+        for part, i in enumerate(tqdm(starts, desc=f"features {a.split}", unit="chunk", mininterval=5)):
             t1 = time.time()
             c = attach_records(cand.slice(i, a.chunk).to_pandas(), store)
             c = pd.concat([c, string_feats(c), run_loop(c, pool, procs)], axis=1).drop(columns=drop_cols)

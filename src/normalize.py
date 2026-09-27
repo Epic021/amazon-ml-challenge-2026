@@ -10,6 +10,8 @@ Produces, per record:
   python src/normalize.py        # writes data/norm/{train,test}_s{1,2,3}.parquet
 """
 import os
+
+from tqdm import tqdm
 import re
 import time
 import unicodedata
@@ -175,7 +177,9 @@ def main():
             t0 = time.time()
             df = pd.read_parquet(f"{PQ}/{split}_s{k}.parquet")
             with Pool(procs) as p:
-                out = pd.concat(p.map(normalize_frame, _chunks(df)), ignore_index=True)
+                ch = _chunks(df)
+                out = pd.concat(list(tqdm(p.imap(normalize_frame, ch), total=len(ch), desc=f"{split}_s{k}",
+                                          mininterval=5)), ignore_index=True)
             out.to_parquet(f"{NORM}/{split}_s{k}.parquet", index=False)
             print(f"{split}_s{k}: {len(out):,} rows in {time.time() - t0:.0f}s", flush=True)
 
