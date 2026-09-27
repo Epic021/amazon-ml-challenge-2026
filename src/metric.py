@@ -12,6 +12,14 @@ def macro_f05(pred: pd.DataFrame, truth: pd.DataFrame, s1_ids) -> float:
     return per_entity_f05(pred, truth, s1_ids).mean()
 
 
+def s1_universe(s1_ids: pd.Series, pred_s1: pd.Series) -> pd.Series:
+    """The S1 ids a prediction file covers. Train features may be computed for a sample of S1 ids
+    (features.py --sample keeps id % 1000 < sample * 1000); S1s outside the sample have no predictions
+    and must not be scored as empty sets. Full coverage returns s1_ids unchanged."""
+    m = int(pd.Series(pd.unique(np.asarray(pred_s1))).str[3:].astype(np.int64).mod(1000).max()) + 1
+    return s1_ids if m >= 1000 else s1_ids[(s1_ids.str[3:].astype(np.int64) % 1000 < m).values]
+
+
 def per_entity_f05(pred: pd.DataFrame, truth: pd.DataFrame, s1_ids) -> pd.Series:
     idx = pd.Index(pd.unique(np.asarray(s1_ids)), name="s1_id")
     pred = pred[pred.s1_id.isin(idx)].drop_duplicates(["s1_id", "cand_id"])

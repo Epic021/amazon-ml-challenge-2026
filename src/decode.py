@@ -22,7 +22,7 @@ import pandas as pd
 from sklearn.isotonic import IsotonicRegression
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from metric import per_entity_f05  # noqa: E402
+from metric import per_entity_f05, s1_universe  # noqa: E402
 from efdp import best_k  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -99,6 +99,7 @@ def main():
     truth = pd.read_parquet(f"{PQ}/train_pairs.parquet")
     s1 = pd.read_parquet(f"{PQ}/train_s1.parquet", columns=["entity_id", "country"])
     hold_ids = s1.entity_id[(s1.entity_id.str[3:].astype(np.int64) % 10) == HOLD_FOLD]
+    hold_ids = s1_universe(hold_ids, tr.s1_id)       # sampled train features: score only covered S1s
     hold_set = set(hold_ids)
     t_ho = truth[truth.s1_id.isin(hold_set)]
     ho_all = tr[tr.s1_id.isin(hold_set)]
