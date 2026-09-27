@@ -7,7 +7,7 @@
 | **Best LB** | **0.983**: STACK-B5 (stage-2 stacker over our B5 model + the teammate's model). Holdout 0.98792 |
 | **LB history** | B1 0.952 → B2 0.970 → B3 0.970 → BLEND-B4 0.979 → **STACK-B5 0.983** (teammate alone: 0.975) |
 | **Where the LB is lost** | **France ≈ 0.950** (implied). India ≈ 0.987, US ≈ 0.989 |
-| **Running** | Stacker v2: teammate v2 probabilities, 3 training folds, all 131 features. Gate: holdout ≥ 0.98892 |
+| **Awaiting LB** | Stacker v2 (holdout 0.98830) + two France probes (`submissions/`) |
 | **Deadline** | around early Sep 28 IST (verify on the portal). Freeze ~Sep 27 evening (§7) |
 
 **Where things live:**
@@ -128,7 +128,7 @@ teammate's model probabilities (OOF on train, full-fit on test) ─┤
 | B5 in the fixed blend | Same, with B5 | Identical to B4 (0.98434 vs 0.98433 at w = 0.3) | ✗ |
 | **Stacked blend (stage 2)** | Learn *when* to trust which model: both p, competition features on each, pair features | Holdout **0.98792** (+0.0031); **LB 0.983**; implied France 0.94 → **0.950** | ✓ **current best** |
 | Teammate v2 probabilities | Refreshed teammate model: corr 0.99 with v1, 1.5% France flips | Fixed blend with B4: 0.98519 vs 0.98487 (+0.0003) | Used in stacker v2 |
-| Stacker v2 | Teammate v2 + 3 training folds + all 131 features, calibrated on fold 9 | ⏳ running | Gate ≥ 0.98892 |
+| Stacker v2 | Teammate v2 + 3 training folds + all 131 features, calibrated on fold 9 | Holdout **0.98830** (India 0.9870, US 0.9892), +0.0004 vs v1 | Below the bar; the stacker is saturated. Submitted anyway (unlimited submissions) |
 
 ### 4.4 France investigations (no French labels; the LB is the only oracle)
 
@@ -143,6 +143,14 @@ teammate's model probabilities (OOF on train, full-fit on test) ─┤
 | SHAP (`france_shap.py`) | Mean SHAP France vs India/US on that class | Blamed retrieval-rank features (rank_q_word France 53 vs 15/10: crowded French streets) |
 | Pilot without rank features (`france_pilot.py`) | V0 all / V1 − per-retriever ranks / V2 − absolute scores | **Failed:** −0.001 holdout, France swap p unchanged (0.335 → 0.331); the model rejects via name similarity instead |
 | French pseudo-label word log-odds (3h) | Word statistics from pairs both models agree on | **Not built:** in train the log-odds barely matter even on the swap class (AUC 0.9998 vs 0.9997 without them) |
+| Error analysis of STACK-B5 (holdout) | Where the 0.0121 goes | True pairs: 1.0% never retrieved (India 1.5%), 1.9% rejected; 0.31% of predictions wrong. **Two-thirds of the loss is recall.** 63–74% of rejected true pairs have an EMPTY address |
+| Empty-address records | Train: 97.7% of empty-address records are matched (vs 73%) | Never decoys; only *which* S1 is uncertain. Name unique among S1 → 0.978 true (model 0.979); shared by 2–3 S1 → 0.407 (model 0.396): **calibrated coin flips, irreducible** |
+| Source-quota tie-break | Does the S1 already have a confident match from the same source? | Weak (0.52 vs 0.37); the stacker already has most of it |
+| Shared name differences (`diff_support.py`) | Same added/dropped words in an independent other-source record | US swap class 0.10 vs 0.58 true, India no signal; overlaps with twins |
+| Consensus (`consensus_test.py`) | Do the S1's confident matches contain the candidate's added words? | 0.995 true when yes, but the models already know (0.995); France almost never fires |
+| **Leave-one-country-out (`loco_pilot.py`)** | Train on one country, score the other: an offline France proxy (US→India loses 0.04, like France) | **No feature group hurts transfer**: removing ranks, name counts, unknown-word counts or roles is neutral or worse (roles −0.014). Retrain without features cancelled |
+| Unseen-country threshold (LOCO curves) | Best threshold in-country vs cross-country | No consistent shift (US-model: 0.75 → 0.65–0.75; India-model: 0.65 → 0.55): **no principled stricter threshold for unseen countries** |
+| LB probes (`country_thr.py`, diagnostic only) | The 0.983 file with only France re-thresholded at 0.75 / 0.85 (control at 0.65 is byte-identical) | ⏳ LB. LB change ÷ 0.15 = France change. Not to be shipped as a tuned knob |
 | **Direction test via STACK-B5** | Stacker drops 0.135 France preds/S1 (6× India/US), 29k of 35k are same-number word swaps | LB 0.983 → France +0.009: **France errs by over-accepting** those swaps |
 
 ### 4.5 Infrastructure and process
