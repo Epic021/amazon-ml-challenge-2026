@@ -17,6 +17,27 @@
 
 ---
 
+## 0. CLUTCH PLAN: Sep 27, 19:30 → 23:59 IST (2 submissions left)
+
+**Facts:**
+- Best LB is 0.983 (STACK-B5). Stacker v2 has holdout 0.98830 (≈ LB 0.983–0.984).
+- The top 50 is at ≥ 0.9896.
+- India/US lose ~0.0035 of holdout to **ambiguous empty-address records** (name shared by 2–3 S1; calibrated coin flips).
+- France loses ~0.0075 of LB.
+- **Only a holdout jump to ≥ 0.990 earns a submission.**
+
+| Time | Step | Gate / decision |
+|---|---|---|
+| 19:30 | Old VM up (it has all features, B5, stackers, teammate probabilities) | – |
+| +0:10 | **S1: tie-break signal check** on train: do a business's records sit together in the files (row order) or have nearby IDs? Tie-break accuracy on the ambiguous empty-address records vs chance (~0.45) | ≥ 0.8 → Path A; else Path B |
+| +0:15 | (parallel) **S2: stacker ensemble**: average of calibrated v1 + v2 on the holdout | Keep if ≥ v2 + 0.0003 |
+| Path A, +1:30 | Add `row/id distance rank among the record's candidate S1s` (+ raw distances) to stage 2 → `run_stack.sh` (v2 settings) | Holdout ≥ 0.9895 → **submission 1** |
+| Path B | Submission 1 = best of v2 / ensemble (safe). Submission 2 reserved for the teammate's neural pair scores if they arrive by 21:30 (stacker + xenc feature, ~1.5 h) | – |
+| 22:30 | **Freeze.** Package: our `src/` + `scripts/` + teammate model code + README (one-command run) + methodology doc + final TSVs | – |
+| 23:15 | Upload final (≥ 45 min buffer) | – |
+
+**Not doing any more:** feature-group retrains (LOCO: no group hurts transfer), French word statistics, threshold changes for unseen countries (LOCO: no consistent shift), France LB probes (no submissions to spare).
+
 ## 1. The problem
 
 For each **Source-1 (S1)** business, output the set of **S2/S3** records that are the same business. The set may be empty.
