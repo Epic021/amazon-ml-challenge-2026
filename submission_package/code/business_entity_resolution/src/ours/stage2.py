@@ -88,11 +88,12 @@ def relational(df: pl.DataFrame, split: str, p: str = "p", pre: str = "") -> pl.
 
 
 def load(split: str, tag: str, feat_dir: str, friend: bool = False, friend_dir: str = "friend",
-         all_feats: bool = False, extra: tuple = ()) -> pl.DataFrame:
+         all_feats: bool = False, extra: tuple = (), context_folds: tuple = (5, 6, 7, 8, 9),
+         third: str = "") -> pl.DataFrame:
     p = pl.read_parquet(f"{PRED}/{split}_{tag}.parquet", columns=KEY + ["p"])
     fold = (pl.col("s1_id").str.slice(3).cast(pl.Int64) % 10).cast(pl.Int8)
     if split == "train":
-        p = p.filter(fold >= HOLD)                        # stage 2 uses folds 5-9 only
+        p = p.filter(fold.is_in(context_folds))           # rows that give competition context (and predictions)
     if all_feats:                                         # every stage-1 feature (minus the dropped numx_)
         first = sorted(glob.glob(f"{feat_dir}/{split}.parquet/*.parquet"))[0]
         cols = KEY + [c for c in pl.read_parquet_schema(first)
@@ -103,7 +104,7 @@ def load(split: str, tag: str, feat_dir: str, friend: bool = False, friend_dir: 
         t = pl.read_parquet(f"{DATA}/{friend_dir}/{'train_oof_probs' if split == 'train' else 'test_probs'}.parquet",
                             columns=KEY + ["p"]).rename({"p": "p_t"})
         if split == "train":
-            t = t.filter(fold >= HOLD)
+            t = t.filter(fold.is_in(context_folds))
         p = p.join(t, on=KEY, how="full", coalesce=True).with_columns(
             pl.col("p").is_null().cast(pl.Int8).alias("o_missing"), pl.col("p_t").is_null().cast(pl.Int8).alias("t_missing"))
         p = p.with_columns(pl.col("p").fill_null(0.0), pl.col("p_t").fill_null(0.0))
@@ -113,11 +114,16 @@ def load(split: str, tag: str, feat_dir: str, friend: bool = False, friend_dir: 
     if split == "train":
         tr = pl.read_parquet(f"{DATA}/parquet/train_pairs.parquet").with_columns(pl.lit(1, pl.Int8).alias("y"))
         df = df.join(tr, on=KEY, how="left").with_columns(pl.col("y").fill_null(0), fold.alias("fold"))
+    if third:                                             # a third base model's probability (e.g. XGBoost)
+        x = pl.read_parquet(f"{PRED}/{split}_{third}.parquet", columns=KEY + ["p"]).rename({"p": "p_x"})
+        df = df.join(x, on=KEY, how="left").with_columns(pl.col("p_x").fill_null(0.0))
     for name in extra:                                    # extra pair features, e.g. data/extra/{split}_diffsup.parquet
         df = df.join(pl.read_parquet(f"{DATA}/extra/{split}_{name}.parquet"), on=KEY, how="left")
     df = relational(df, split)
     if friend:
         df = relational(relational(df, split, "p_t", "t_"), split, "p_m", "m_")
+    if third:
+        df = relational(df, split, "p_x", "x_")
     return df
 
 
@@ -132,12 +138,17 @@ def main():
     ap.add_argument("--all_feats", action="store_true", help="carry every stage-1 feature, not just BASE/PAIR")
     ap.add_argument("--out_tag", default=None, help="output tag (default {tag}sb / {tag}s2)")
     ap.add_argument("--extra", default="", help="comma-separated extra feature sets under data/extra/{split}_<name>.parquet")
+    ap.add_argument("--third", default="", help="tag of a third base model's predictions (data/pred/{split}_<tag>.parquet)")
+    ap.add_argument("--context_folds", default="5,6,7,8,9",
+                    help="train folds whose pairs enter the competition features (all S1 are present on test). "
+                         "Stage-1 p is out-of-fold on 0,1,5-9; 2-4 are stage-1 training folds")
     a = ap.parse_args()
     t0 = time.time()
     out_tag = a.out_tag or a.tag + ("sb" if a.friend else "s2")
     train_folds = tuple(int(x) for x in a.train_folds.split(","))
     kw = dict(friend=a.friend, friend_dir=a.friend_dir, all_feats=a.all_feats,
-              extra=tuple(x for x in a.extra.split(",") if x))
+              extra=tuple(x for x in a.extra.split(",") if x),
+              context_folds=tuple(int(x) for x in a.context_folds.split(",")), third=a.third)
     tr = load("train", a.tag, a.feat_dir, **kw).to_pandas()
     feats = [c for c in tr.columns if c not in ("s1_id", "cand_id", "fold", "y")]
     print(f"stage 2: {len(feats)} features, {len(tr):,} train pairs ({time.time() - t0:.0f}s)", flush=True)
