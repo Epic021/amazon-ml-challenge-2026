@@ -89,23 +89,34 @@ run download   download
 run parquet    python scripts/tsv_to_parquet.py
 [ -z "${RUN_SMOKE:-}" ] || run smoke bash scripts/smoke.sh
 run normalize  python src/normalize.py
-retrievers() {   # one split's chain: 4 retrievers, union, equivalences
-  local S=$1
+# all 8 retrievers at once (4 per split): most of their time is single-threaded pandas, cores and RAM sit idle
+TH=$(( $(nproc) / 4 ))
+PIDS=()
+for S in train test; do
   for R in word namechar addr; do
-    run "block_${S}_$R" python src/block.py --split "$S" --retriever "$R"
+    ( run "block_${S}_$R" python src/block.py --split "$S" --retriever "$R" --threads "$TH" ) & PIDS+=($!)
   done
-  run "block_${S}_numaddr" python src/block_numaddr.py --split "$S"
-  run "union_$S"           python src/union.py --split "$S"
-  run "equiv_$S"           python src/mine_equiv.py --split "$S"
-}
-# train and test chains at the same time: most retriever time is single-threaded pandas, cores sit idle
-( retrievers train ) & P_TR=$!
-( retrievers test ) & P_TE=$!
-RC=0; wait $P_TR || RC=1; wait $P_TE || RC=1
-[ $RC -eq 0 ] || { echo "!!! a retriever chain failed: see the FAILED line above"; exit 1; }
+  ( run "block_${S}_numaddr" python src/block_numaddr.py --split "$S" --threads "$TH" ) & PIDS+=($!)
+done
+RC=0; for p in "${PIDS[@]}"; do wait "$p" || RC=1; done
+[ $RC -eq 0 ] || { echo "!!! a retriever failed: see the FAILED line above, fix, re-run"; exit 1; }
+PIDS=()
+for S in train test; do
+  ( run "union_$S" python src/union.py --split "$S" && run "equiv_$S" python src/mine_equiv.py --split "$S" ) & PIDS+=($!)
+done
+RC=0; for p in "${PIDS[@]}"; do wait "$p" || RC=1; done
+[ $RC -eq 0 ] || { echo "!!! union/equivalences failed: see above"; exit 1; }
 K=$((K + 12))
-run features_train python src/features.py --split train --sample "$SAMPLE" --out "$FEAT/train.parquet"
-run features_test  python src/features.py --split test --out "$FEAT/test.parquet"
+# test features need only the word tables that train features write in their first minutes: start test then
+( run features_train python src/features.py --split train --sample "$SAMPLE" --out "$FEAT/train.parquet" ) & P_FT=$!
+if [ ! -f logs/done/features_test ]; then
+  until [ -f data/feat/alo_drop.parquet ] || ! kill -0 $P_FT 2>/dev/null; do sleep 10; done
+  sleep 30                                      # let the last table finish writing
+fi
+( run features_test python src/features.py --split test --out "$FEAT/test.parquet" ) & P_FE=$!
+RC=0; wait $P_FT || RC=1; wait $P_FE || RC=1
+[ $RC -eq 0 ] || { echo "!!! features failed: see above"; exit 1; }
+K=$((K + 2))
 run train_both     train_both
 run decode_b5      python src/decode.py --tag b5
 echo "=== ALL DONE in $(( (SECONDS - T0) / 60 )) min. Next: README 'France routing'."
