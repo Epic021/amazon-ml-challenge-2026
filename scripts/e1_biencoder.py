@@ -9,6 +9,7 @@ Search: record -> S1 over ALL India S1 (cosine, FAISS flat). Reports recall@k, p
   /work/venv_nn/bin/python scripts/e1_biencoder.py --n_train 150000
 """
 import argparse
+import multiprocessing as mp
 import os
 import time
 
@@ -30,10 +31,28 @@ def texts(df):
     return (df["business_name"].fill_null("") + " | " + df["business_address"].fill_null("")).to_list()
 
 
-def recall(model, s1_txt, s1_ids, q_txt, q_true, tag):
+def _enc_worker(args):
+    path, chunk, threads = args
+    torch.set_num_threads(threads)
+    m = SentenceTransformer(path, device="cpu")
+    m.max_seq_length = 64
+    with torch.no_grad():
+        return m.encode(chunk, batch_size=256, normalize_embeddings=True, convert_to_numpy=True).astype(np.float32)
+
+
+def encode_parallel(path, txt, n_proc=8, threads=8):
+    """Encode with n_proc spawned processes x threads (one process cannot use 64 cores on a small model)."""
+    step = len(txt) // n_proc + 1
+    chunks = [(path, txt[i:i + step], threads) for i in range(0, len(txt), step)]
+    with mp.get_context("spawn").Pool(n_proc) as pool:
+        return np.vstack(pool.map(_enc_worker, chunks))
+
+
+def recall(path, s1_txt, s1_ids, q_txt, q_true, tag, e_s1=None):
     t0 = time.time()
-    e_s1 = model.encode(s1_txt, batch_size=512, normalize_embeddings=True, convert_to_numpy=True).astype(np.float32)
-    e_q = model.encode(q_txt, batch_size=512, normalize_embeddings=True, convert_to_numpy=True).astype(np.float32)
+    if e_s1 is None:
+        e_s1 = encode_parallel(path, s1_txt)
+    e_q = encode_parallel(path, q_txt, n_proc=4, threads=16)
     index = faiss.IndexFlatIP(e_s1.shape[1])
     index.add(e_s1)
     _, nn = index.search(e_q, max(KS))
@@ -41,13 +60,13 @@ def recall(model, s1_txt, s1_ids, q_txt, q_true, tag):
     tgt = np.array([pos.get(s, -1) for s in q_true])
     hit = {k: float(np.mean([(tgt[i] in nn[i, :k]) for i in range(len(tgt))])) for k in KS}
     print(f"  [{tag}] recall@k {hit}  ({time.time() - t0:.0f}s)", flush=True)
-    return nn, tgt
+    return nn, tgt, e_s1
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--n_train", type=int, default=150000)
-    ap.add_argument("--batch", type=int, default=64)
+    ap.add_argument("--n_train", type=int, default=100000)
+    ap.add_argument("--batch", type=int, default=128)
     ap.add_argument("--lr", type=float, default=3e-5)
     ap.add_argument("--threads", type=int, default=64)
     ap.add_argument("--n_control", type=int, default=5000)
@@ -75,8 +94,9 @@ def main():
     model = SentenceTransformer(NAME, device="cpu")
     model.max_seq_length = 64
     print("PRETRAINED:", flush=True)
-    recall(model, s1_txt, s1_ids, texts(missed), missed["s1_id"].to_list(), "missed")
-    recall(model, s1_txt, s1_ids, texts(control), control["s1_id"].to_list(), "control")
+    _, _, e_pre = recall(NAME, s1_txt, s1_ids, texts(missed), missed["s1_id"].to_list(), "missed")
+    recall(NAME, s1_txt, s1_ids, texts(control), control["s1_id"].to_list(), "control", e_s1=e_pre)
+    del e_pre
 
     tr = truth.filter(fold.is_in([2, 3, 4])).sample(a.n_train, seed=2, shuffle=True).join(rec, on="cand_id") \
               .join(s1.select("s1_id", pl.col("business_name").alias("n1"), pl.col("business_address").alias("a1")), on="s1_id")
@@ -96,14 +116,14 @@ def main():
         opt.step()
         sched.step()
         opt.zero_grad()
-        if s % 200 == 0:
+        if s % 50 == 0:
             print(f"  step {s}/{steps} loss {loss.item():.4f} ({time.time() - t1:.0f}s)", flush=True)
     model.eval()
-    model.save(f"{DATA}/models/e1_biencoder_india")
+    ft = f"{DATA}/models/e1_biencoder_india"
+    model.save(ft)
     print("FINE-TUNED:", flush=True)
-    with torch.no_grad():
-        nn, tgt = recall(model, s1_txt, s1_ids, texts(missed), missed["s1_id"].to_list(), "missed")
-        recall(model, s1_txt, s1_ids, texts(control), control["s1_id"].to_list(), "control")
+    nn, tgt, e_ft = recall(ft, s1_txt, s1_ids, texts(missed), missed["s1_id"].to_list(), "missed")
+    recall(ft, s1_txt, s1_ids, texts(control), control["s1_id"].to_list(), "control", e_s1=e_ft)
     got = [i for i in range(len(tgt)) if tgt[i] in nn[i, :20]]
     print(f"recovered@20 examples ({len(got):,} of {len(tgt):,}):", flush=True)
     for i in got[:8]:
