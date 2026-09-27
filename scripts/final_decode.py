@@ -26,6 +26,17 @@ CAL, HOLD = 9, 5
 THRS = np.round(np.arange(0.40, 0.951, 0.025), 3)
 
 
+def select(ex: pd.DataFrame, thr, t2: float) -> pd.DataFrame:
+    """Pairs with p >= thr (thr: scalar or per-row array); S1s left empty get their best pair if p >= t2."""
+    t = np.broadcast_to(np.asarray(thr, dtype=np.float64), (len(ex),))
+    sel = ex[ex.p.values >= t]
+    if t2 >= 1.0:
+        return sel
+    rest = ex[~ex.s1_id.isin(set(sel.s1_id))]
+    top = rest.sort_values("p", ascending=False).drop_duplicates("s1_id")
+    return pd.concat([sel, top[top.p >= t2]])
+
+
 def fold(ids: pd.Series) -> np.ndarray:
     return (ids.str[3:].astype(np.int64) % 10).values
 
@@ -35,6 +46,7 @@ def main():
     ap.add_argument("--tags", default="b5sb3,b5sb4")
     ap.add_argument("--out", default="output_final")
     ap.add_argument("--france_thr", type=float, default=0.0, help="France-only threshold (0 = same as the others)")
+    ap.add_argument("--no_fallback", action="store_true", help="disable the empty-S1 fallback")
     ap.add_argument("--force", default="", help="use this candidate (a tag or 'avg') instead of the best")
     a = ap.parse_args()
     tags = [t for t in a.tags.split(",") if os.path.isfile(f"{DATA}/pred/train_{t}.parquet")]
@@ -67,26 +79,36 @@ def main():
     res = {}
     for name, members in cands.items():
         ex = soft_excl(tr[KEY].assign(p=tr[members].mean(axis=1).values))
-        ex = ex[ex.p >= THRS.min()]
+        ex = ex[ex.p >= 0.05]
         cal_ex = ex[ex.s1_id.isin(set(cal_ids))]
         thr = max(THRS, key=lambda t: per_entity_f05(cal_ex[cal_ex.p >= t], truth, cal_ids).mean())
-        f = per_entity_f05(ex[ex.p >= thr], truth, hold_ids)
-        res[name] = (thr, f)
-        print(f"HOLDOUT fold 5 {name:6s} thr {thr}: {f.mean():.5f} "
-              f"{f.groupby(ctry.reindex(f.index).values).mean().round(4).to_dict()}", flush=True)
+        f0 = per_entity_f05(ex[ex.p >= thr], truth, hold_ids)
+        print(f"HOLDOUT fold 5 {name:6s} thr {thr}: {f0.mean():.5f} "
+              f"{f0.groupby(ctry.reindex(f0.index).values).mean().round(4).to_dict()}", flush=True)
+        # empty-S1 fallback: tuned on fold 9, scored on fold 5
+        t2s = [1.0] + [round(x, 3) for x in np.arange(0.10, thr, 0.05)]
+        sc = {t2: per_entity_f05(select(cal_ex, thr, t2), truth, cal_ids).mean() for t2 in t2s}
+        print(f"  fallback on fold 9: {({k: round(v, 5) for k, v in sc.items()})}", flush=True)
+        t2 = max(sc, key=sc.get) if not a.no_fallback else 1.0
+        f = per_entity_f05(select(ex, thr, t2), truth, hold_ids)
+        g, lo, hi = bootstrap_gain(f, f0)
+        print(f"HOLDOUT fold 5 {name:6s} thr {thr} + fallback {t2}: {f.mean():.5f} "
+              f"{f.groupby(ctry.reindex(f.index).values).mean().round(4).to_dict()}  gain {g:+.5f} [{lo:+.5f}, {hi:+.5f}]",
+              flush=True)
+        res[name] = ((thr, t2), f)
     best = a.force or max(res, key=lambda k: res[k][1].mean())
     for k in res:
         if k != best:
             g, lo, hi = bootstrap_gain(res[best][1], res[k][1])
             print(f"  {best} - {k}: {g:+.5f} [95% CI {lo:+.5f}, {hi:+.5f}]")
-    thr = res[best][0]
-    print(f"CHOSEN: {best} (threshold {thr})", flush=True)
+    thr, t2 = res[best][0]
+    print(f"CHOSEN: {best} (threshold {thr}, empty-S1 fallback {t2})", flush=True)
 
     s1t = pd.read_parquet(f"{DATA}/parquet/test_s1.parquet", columns=["entity_id", "country"])
     ex = soft_excl(te[KEY].assign(p=te[cands[best]].mean(axis=1).values))
     fr = ex.s1_id.map(s1t.set_index("entity_id").country).eq("France").values
     t_row = np.where(fr, a.france_thr if a.france_thr else thr, thr)
-    pred = ex[ex.p.values >= t_row]
+    pred = select(ex, t_row, t2)
     out = os.path.join(ROOT, a.out)
     os.makedirs(out, exist_ok=True)
     write(pred, s1t.entity_id, f"{out}/matching_results.tsv", "matched_entity_ids")
