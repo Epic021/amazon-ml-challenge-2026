@@ -159,6 +159,8 @@ def main():
     model = lgb.train(params, lgb.Dataset(tr.loc[m_tr, feats], tr.y[m_tr]), a.rounds,
                       valid_sets=[lgb.Dataset(tr.loc[m_ho, feats], tr.y[m_ho])], valid_names=["hold"],
                       callbacks=[lgb.early_stopping(100), lgb.log_evaluation(100)])
+    os.makedirs(os.path.join(DATA, "models"), exist_ok=True)
+    model.save_model(os.path.join(DATA, "models", f"stage2_{out_tag}.txt"))
     imp = pd.Series(model.feature_importance("gain"), index=feats).sort_values(ascending=False)
     print("stage-2 top features:\n", (imp / imp.sum()).head(15).round(4).to_string(), flush=True)
     out = tr[["s1_id", "cand_id", "fold", "y"]].copy()
