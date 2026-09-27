@@ -87,9 +87,26 @@ def relational(df: pl.DataFrame, split: str, p: str = "p", pre: str = "") -> pl.
     return df.rename({c: pre + c for c in REL}) if pre else df
 
 
+def mini_feats(pairs: pl.DataFrame, split: str) -> pl.DataFrame:
+    """Key stage-1 features, recomputed for pairs that have no stage-1 row (bi-encoder-only pairs), under the
+    same column names: name/core/address token-set similarity, house-number relation, candidate flags."""
+    from rapidfuzz import fuzz
+    from rapidfuzz.process import cpdist
+    from features import _num_feats
+    cols = ["id", "name_norm", "name_core", "addr_norm", "nums", "nonlatin", "addr_empty"]
+    rec = pl.concat([pl.read_parquet(f"{NORM}/{split}_s{k}.parquet", columns=cols) for k in (1, 2, 3)])
+    d = pairs.join(rec.rename({c: "s_" + c for c in cols}).rename({"s_id": "s1_id"}), on="s1_id", how="left")              .join(rec.rename({c: "c_" + c for c in cols}).rename({"c_id": "cand_id"}), on="cand_id", how="left").fill_null("")
+    ts = lambda a, b: cpdist(d[a].to_list(), d[b].to_list(), scorer=fuzz.token_set_ratio, workers=-1).astype(np.float32)
+    rel = np.array([_num_feats(x, y)[0] for x, y in zip(d["s_nums"].to_list(), d["c_nums"].to_list())], dtype=np.float32)
+    return d.select(KEY).with_columns(
+        pl.Series("name_tset", ts("s_name_norm", "c_name_norm")), pl.Series("core_tset", ts("s_name_core", "c_name_core")),
+        pl.Series("addr_tset", ts("s_addr_norm", "c_addr_norm")), pl.Series("num_rel", rel),
+        d["c_addr_empty"].cast(pl.Int8, strict=False).alias("c_addr_empty"), d["c_nonlatin"].cast(pl.Int8, strict=False).alias("c_nonlatin"))
+
+
 def load(split: str, tag: str, feat_dir: str, friend: bool = False, friend_dir: str = "friend",
          all_feats: bool = False, extra: tuple = (), context_folds: tuple = (5, 6, 7, 8, 9),
-         third: str = "") -> pl.DataFrame:
+         third: str = "", bienc: bool = False) -> pl.DataFrame:
     p = pl.read_parquet(f"{PRED}/{split}_{tag}.parquet", columns=KEY + ["p"])
     fold = (pl.col("s1_id").str.slice(3).cast(pl.Int64) % 10).cast(pl.Int8)
     if split == "train":
@@ -109,11 +126,28 @@ def load(split: str, tag: str, feat_dir: str, friend: bool = False, friend_dir: 
             pl.col("p").is_null().cast(pl.Int8).alias("o_missing"), pl.col("p_t").is_null().cast(pl.Int8).alias("t_missing"))
         p = p.with_columns(pl.col("p").fill_null(0.0), pl.col("p_t").fill_null(0.0))
         p = p.with_columns(((pl.col("p") + pl.col("p_t")) / 2).alias("p_m"), (pl.col("p") - pl.col("p_t")).alias("p_diff"))
+    if bienc:                                             # bi-encoder retriever: its pairs + similarity (5th retriever)
+        bn = pl.concat([pl.read_parquet(x, columns=KEY + ["bienc_sim", "bienc_rank"])
+                        for x in sorted(glob.glob(f"{DATA}/cand_bienc/{split}_*.parquet"))]).unique(KEY)
+        if split == "train":
+            bn = bn.filter(fold.is_in(context_folds))
+        newp = bn.select(KEY).join(p.select(KEY), on=KEY, how="anti")
+        fill = {"p": 0.0, "p_t": 0.0, "o_missing": 1, "t_missing": 1, "p_m": 0.0, "p_diff": 0.0}
+        newrows = newp.with_columns([pl.lit(v).cast(p.schema[c]).alias(c) for c, v in fill.items() if c in p.columns])
+        p = pl.concat([p, newrows], how="diagonal_relaxed")
+        print(f"[{split}] bi-encoder: {bn.height:,} pairs, {newp.height:,} new", flush=True)
     f = pl.scan_parquet(f"{feat_dir}/{split}.parquet/*.parquet").select(cols)
     df = p.join(f.collect(), on=KEY, how="left")
     if split == "train":
         tr = pl.read_parquet(f"{DATA}/parquet/train_pairs.parquet").with_columns(pl.lit(1, pl.Int8).alias("y"))
         df = df.join(tr, on=KEY, how="left").with_columns(pl.col("y").fill_null(0), fold.alias("fold"))
+    if bienc:
+        mini = mini_feats(newp, split)
+        keep = [c for c in mini.columns if c in df.columns and c not in KEY]
+        df = df.update(mini.select(KEY + keep).with_columns([pl.col(c).cast(df.schema[c]) for c in keep]), on=KEY)
+        df = df.join(bn, on=KEY, how="left").join(newp.with_columns(pl.lit(1, pl.Int8).alias("is_bienc_new")), on=KEY, how="left")
+        df = df.with_columns(pl.col("bienc_sim").fill_null(-1.0), pl.col("bienc_rank").fill_null(99),
+                             pl.col("is_bienc_new").fill_null(0))
     if third:                                             # a third base model's probability (e.g. XGBoost)
         x = pl.read_parquet(f"{PRED}/{split}_{third}.parquet", columns=KEY + ["p"]).rename({"p": "p_x"})
         df = df.join(x, on=KEY, how="left").with_columns(pl.col("p_x").fill_null(0.0))
@@ -143,6 +177,7 @@ def main():
                     help="train folds whose pairs enter the competition features (all S1 are present on test). "
                          "Stage-1 p is out-of-fold on 0,1,5-9; 2-4 are stage-1 training folds")
     ap.add_argument("--threads", type=int, default=os.cpu_count())
+    ap.add_argument("--bienc", action="store_true", help="add bi-encoder retriever pairs + similarity (data/cand_bienc/)")
     ap.add_argument("--pseudo_from", default="", help="tag of test predictions used as pseudo-labels (transductive "
                     "self-training on an unlabelled country)")
     ap.add_argument("--pseudo_country", default="France")
@@ -156,7 +191,7 @@ def main():
     train_folds = tuple(int(x) for x in a.train_folds.split(","))
     kw = dict(friend=a.friend, friend_dir=a.friend_dir, all_feats=a.all_feats,
               extra=tuple(x for x in a.extra.split(",") if x),
-              context_folds=tuple(int(x) for x in a.context_folds.split(",")), third=a.third)
+              context_folds=tuple(int(x) for x in a.context_folds.split(",")), third=a.third, bienc=a.bienc)
     tr = load("train", a.tag, a.feat_dir, **kw).to_pandas()
     feats = [c for c in tr.columns if c not in ("s1_id", "cand_id", "fold", "y")]
     print(f"stage 2: {len(feats)} features, {len(tr):,} train pairs ({time.time() - t0:.0f}s)", flush=True)
