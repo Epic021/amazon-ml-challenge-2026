@@ -89,14 +89,21 @@ run download   download
 run parquet    python scripts/tsv_to_parquet.py
 [ -z "${RUN_SMOKE:-}" ] || run smoke bash scripts/smoke.sh
 run normalize  python src/normalize.py
-for S in train test; do
+retrievers() {   # one split's chain: 4 retrievers, union, equivalences
+  local S=$1
   for R in word namechar addr; do
     run "block_${S}_$R" python src/block.py --split "$S" --retriever "$R"
   done
   run "block_${S}_numaddr" python src/block_numaddr.py --split "$S"
   run "union_$S"           python src/union.py --split "$S"
   run "equiv_$S"           python src/mine_equiv.py --split "$S"
-done
+}
+# train and test chains at the same time: most retriever time is single-threaded pandas, cores sit idle
+( retrievers train ) & P_TR=$!
+( retrievers test ) & P_TE=$!
+RC=0; wait $P_TR || RC=1; wait $P_TE || RC=1
+[ $RC -eq 0 ] || { echo "!!! a retriever chain failed: see the FAILED line above"; exit 1; }
+K=$((K + 12))
 run features_train python src/features.py --split train --sample "$SAMPLE" --out "$FEAT/train.parquet"
 run features_test  python src/features.py --split test --out "$FEAT/test.parquet"
 run train_both     train_both
