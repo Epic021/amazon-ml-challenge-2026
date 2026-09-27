@@ -47,6 +47,7 @@ def main():
     ap.add_argument("--out", default="output_final")
     ap.add_argument("--france_thr", type=float, default=0.0, help="France-only threshold (0 = same as the others)")
     ap.add_argument("--no_fallback", action="store_true", help="disable the empty-S1 fallback")
+    ap.add_argument("--france_t2", type=float, default=0.0, help="France-only fallback bar (e.g. t2 + France shift)")
     ap.add_argument("--force", default="", help="use this candidate (a tag or 'avg') instead of the best")
     a = ap.parse_args()
     tags = [t for t in a.tags.split(",") if os.path.isfile(f"{DATA}/pred/train_{t}.parquet")]
@@ -109,6 +110,14 @@ def main():
     fr = ex.s1_id.map(s1t.set_index("entity_id").country).eq("France").values
     t_row = np.where(fr, a.france_thr if a.france_thr else thr, thr)
     pred = select(ex, t_row, t2)
+    if a.france_t2:                                  # French fallback pairs must also clear the France bar
+        pfr = pred.s1_id.map(s1t.set_index("entity_id").country).eq("France").values
+        n0 = len(pred)
+        pred = pred[~(pfr & (pred.p.values < a.france_thr) & (pred.p.values < a.france_t2))]
+        print(f"France fallback bar {a.france_t2}: removed {n0 - len(pred):,} French fallback pairs")
+    fb = (pred.p.values < pred.s1_id.map(s1t.set_index("entity_id").country).eq("France").map(
+        {True: a.france_thr or thr, False: thr}).values).sum()
+    print(f"[test] fallback pairs added (below the threshold): {fb:,}")
     out = os.path.join(ROOT, a.out)
     os.makedirs(out, exist_ok=True)
     write(pred, s1t.entity_id, f"{out}/matching_results.tsv", "matched_entity_ids")
