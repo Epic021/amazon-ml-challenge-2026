@@ -36,6 +36,16 @@
 | 22:30 | **Freeze.** Package: our `src/` + `scripts/` + teammate model code + README (one-command run) + methodology doc + final TSVs | – |
 | 23:15 | Upload final (≥ 45 min buffer) | – |
 
+**Results so far (Sep 27 evening):**
+- Tie-break signal: none. Row/ID correlation 0.0001, adjacency 0%, and the ID/row tie-break is at chance (0.49–0.51); the stacker already picks the right owner 0.717 of the time.
+- Stacker ensemble v1+v2: 0.98823 (v2 alone 0.98825), no gain.
+- Expected-F DP on v2: 0.98840 (+0.0001, CI includes 0).
+- Per-source thresholds: best is 0.65/0.65, no gain.
+- Repeated-difference bucket: only 0.05 French predictions per S1, and holdout precision there is 0.99+, so it is not the France error.
+- Candidates ready: `stacker_v2_holdout098830.tsv`; `stacker_v2_france085.tsv` (France rows only, threshold 0.85).
+- **Stacker v3 (running):** a train/test mismatch was found in stage 2. Competition features were computed over train folds 5–9 only (≈ half of each record's competing S1), but over all S1 on test. `--context_folds 0,1,5,6,7,8,9` computes them over every out-of-fold train fold.
+- **Final ranking uses the PRIVATE leaderboard**: choose the final file by holdout.
+
 **Not doing any more:** feature-group retrains (LOCO: no group hurts transfer), French word statistics, threshold changes for unseen countries (LOCO: no consistent shift), France LB probes (no submissions to spare).
 
 ## 1. The problem
