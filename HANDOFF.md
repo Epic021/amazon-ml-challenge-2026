@@ -6,7 +6,7 @@
 
 ## 0. TL;DR: do this now
 
-1. **Submit `submissions/stacker_v3_holdout098842.tsv`** (holdout 0.98842, validator PASS). It is the best checked file we have.
+1. **Final zip ready: `FINAL_submission.zip`** (repo root, 712 MB, v3 outputs + code + methodology). **Submit `submissions/stacker_v3_holdout098842.tsv`** (holdout 0.98842, validator PASS). It is the best checked file we have.
 2. **Wait for stacker v4** (on the VM; holdout ≈ 21:40 IST).
    - Check with `ssh -i ~/.ssh/id_ed25519 namja@34.47.199.217 'cat /work/amazon-ml-challenge-2026/logs/b5sb4_summary.txt'`.
    - If its `BEST` holdout is > 0.98842, download `output_b5sb4/matching_results.tsv` and use it as **submission #2**.
@@ -54,7 +54,8 @@
 | 5 | **STACK v1 (`b5sb`)**: stage-2 stacker, B5 + teammate v1 | 0.98792 (0.9866 / 0.9888) | **0.983** | −0.005 |
 | – | STACK v2 (`b5sb2`) | 0.98825 (0.987 / 0.9892) | not submitted | – |
 | – | **STACK v3 (`b5sb3`)** | **0.98842 (0.9872 / 0.9892)** | ⏳ submit | – |
-| – | STACK v4 (`b5sb4`, + XGBoost) | ⏳ ~21:40 IST | – | – |
+| – | STACK v4 (`b5sb4`, + XGBoost) | 0.98841 (0.9873 / 0.9892): tie with v3 | not submitted | – |
+| – | STACK v3 + France pseudo-labels (`b5sb3ps`) | 0.98841 (0.9871 / 0.9892); reshuffles 6% of French borderline decisions | option | – |
 
 - **Implied France** = (LB − 0.468·India − 0.383·US) / 0.15, taking India/US from the holdout:
   - B1 0.88 → B2 0.94 → BLEND 0.94 → **STACK v1 0.950**.
@@ -224,6 +225,15 @@ raw TSV ─ tsv_to_parquet ─ normalize ─┬─ block.py word ─────
 - ✗ pseudo-label word log-odds (word statistics barely matter even on swaps: AUC 0.9998 vs 0.9997);
 - ✗ "repeated difference" collective features (only 0.05 French predictions per S1 in that bucket; holdout precision 0.99+);
 - ✗ consensus / view-consensus (already known to the models).
+
+**Final evening (Sep 27, 21:30–22:40):**
+- **Segment specialists:** the global stacker beats them on every segment.
+  - empty-address: logloss 0.01845 vs 0.01884;
+  - swaps: 0.00794 vs 0.00840;
+  - non-Latin: 0.00053 vs 0.00069.
+- **Per-country holdout thresholds:** +0.00001.
+- **1,512-decoder grid:** best is mean(v3, v4), a=0.8, thr 0.625 → +0.00007 [CI +0.00001, +0.00013]. Not adopted (too small for the added complexity).
+- **XGBoost third model alone:** holdout 0.98249.
 
 **Leakage:** none. Row/ID correlation 0.0001, record adjacency 0%, and the ID/row tie-break is at chance.
 
