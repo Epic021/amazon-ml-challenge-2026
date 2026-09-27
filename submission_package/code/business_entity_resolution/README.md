@@ -32,7 +32,7 @@ bash run_all.sh /path/to/student_resource/dataset C
 | 2c | Union + rank pruning (S1 top-10 or record top-15); mined token equivalences | `union.py`, `mine_equiv.py` | `work/data/cand/{split}.parquet` |
 | 2d | ~95 pair features (house-number relation, word evidence, label-free word roles, sound key, twins, similarities, rank context) | `features.py` | `work/data/feat_b5/` |
 | 2e | Stage-1 LightGBM (train folds 2–4, early stop on fold 5) | `train.py` | `work/data/pred/{train,test}_b5.parquet` |
-| 3 | Stage-2 stacker: both models' probabilities + competition features + stage-1 features (train folds 6–8) | `stage2.py` | `work/data/pred/*_b5sb2.parquet` |
+| 3 | Stage-2 stacker: both models' probabilities + competition features (computed over every out-of-fold train fold, as on test) + stage-1 features (train folds 6–8) | `stage2.py` | `work/data/pred/*_b5sb3.parquet` |
 | 4 | Isotonic calibration (fold 9) → soft one-owner renormalisation → threshold (best on holdout fold 5) | `decode.py` | `output/matching_results.tsv`, `output/candidate_pairs.tsv` |
 
 **Folds:** S1 ids mod 10.
@@ -42,4 +42,4 @@ bash run_all.sh /path/to/student_resource/dataset C
 - 6–8: stage 2.
 - 9: calibration.
 
-**Holdout macro F0.5** (fold 5, 220,810 S1): 0.98825 (India 0.987, US 0.989).
+**Holdout macro F0.5** (fold 5, 220,810 S1): 0.98842 (India 0.9872, US 0.9892).

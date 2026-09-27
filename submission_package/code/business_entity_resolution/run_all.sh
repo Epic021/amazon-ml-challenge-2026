@@ -43,6 +43,6 @@ python train.py --tag b5 --feat_dir "$BER_DATA/feat_b5" --drop numx_
 
 # ---- 3. Stage 2 stacker over both models, decode -> output/ -------------------------------------------
 python stage2.py --tag b5 --feat_dir "$BER_DATA/feat_b5" --friend --friend_dir friend \
-    --train_folds 6,7,8 --all_feats --out_tag b5sb2
-BER_OUT="$HERE/output" python decode.py --tag b5sb2 --calib_folds 9
+    --train_folds 6,7,8 --all_feats --context_folds 0,1,5,6,7,8,9 --out_tag b5sb3
+BER_OUT="$HERE/output" python decode.py --tag b5sb3 --calib_folds 9
 echo "done: $HERE/output/matching_results.tsv, $HERE/output/candidate_pairs.tsv"
