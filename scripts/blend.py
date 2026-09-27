@@ -46,7 +46,11 @@ def main():
     ap.add_argument("--write", action="store_true", help="write the test TSVs")
     ap.add_argument("--out", default="output_blend", help="output dir (relative to repo root)")
     ap.add_argument("--friend_dir", default=f"{DATA}/friend", help="teammate probabilities (train_oof_probs, test_probs)")
+    ap.add_argument("--tune_folds", default="6,7,8,9",
+                    help="calibration + (w, thr) folds; only folds where BOTH models are out-of-sample")
     a = ap.parse_args()
+    TUNE = tuple(int(x) for x in a.tune_folds.split(","))
+    assert HOLD not in TUNE
     truth = pd.read_parquet(f"{DATA}/parquet/train_pairs.parquet")
     s1 = pd.read_parquet(f"{DATA}/parquet/train_s1.parquet", columns=["entity_id", "country"])
     s1["fold"] = s1_fold(s1.entity_id)
@@ -84,7 +88,7 @@ def main():
     best = res.idxmax()
     best_o = res.loc[1.0].idxmax()
     best_t = res.loc[0.0].idxmax()
-    print(f"tuning folds 6-9: best blend w={best[0]} thr={best[1]} ({res[best]:.5f}); "
+    print(f"tuning folds {a.tune_folds}: best blend w={best[0]} thr={best[1]} ({res[best]:.5f}); "
           f"ours alone thr={best_o} ({res[(1.0, best_o)]:.5f}); theirs alone thr={best_t} ({res[(0.0, best_t)]:.5f})")
     print("  by w (best thr):", {w: round(res.loc[w].max(), 5) for w in WS})
 
