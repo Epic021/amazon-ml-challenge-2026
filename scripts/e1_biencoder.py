@@ -70,6 +70,7 @@ def main():
     ap.add_argument("--lr", type=float, default=3e-5)
     ap.add_argument("--threads", type=int, default=64)
     ap.add_argument("--n_control", type=int, default=5000)
+    ap.add_argument("--skip_pretrained", action="store_true", help="skip the pretrained baseline (already measured)")
     a = ap.parse_args()
     torch.set_num_threads(a.threads)
     t0 = time.time()
@@ -93,10 +94,11 @@ def main():
     s1_ids, s1_txt = s1["s1_id"].to_list(), texts(s1)
     model = SentenceTransformer(NAME, device="cpu")
     model.max_seq_length = 64
-    print("PRETRAINED:", flush=True)
-    _, _, e_pre = recall(NAME, s1_txt, s1_ids, texts(missed), missed["s1_id"].to_list(), "missed")
-    recall(NAME, s1_txt, s1_ids, texts(control), control["s1_id"].to_list(), "control", e_s1=e_pre)
-    del e_pre
+    if not a.skip_pretrained:
+      print("PRETRAINED:", flush=True)
+      _, _, e_pre = recall(NAME, s1_txt, s1_ids, texts(missed), missed["s1_id"].to_list(), "missed")
+      recall(NAME, s1_txt, s1_ids, texts(control), control["s1_id"].to_list(), "control", e_s1=e_pre)
+      del e_pre
 
     tr = truth.filter(fold.is_in([2, 3, 4])).sample(a.n_train, seed=2, shuffle=True).join(rec, on="cand_id") \
               .join(s1.select("s1_id", pl.col("business_name").alias("n1"), pl.col("business_address").alias("a1")), on="s1_id")
