@@ -95,8 +95,8 @@ def load(split: str, tag: str, feat_dir: str, friend: bool = False) -> pl.DataFr
     if friend:
         t = pl.read_parquet(f"{DATA}/friend/{'train_oof_probs' if split == 'train' else 'test_probs'}.parquet",
                             columns=KEY + ["p"]).rename({"p": "p_t"})
-        if split == "train":
-            t = t.filter(fold >= HOLD)
+        if split == "train":                             # our S1s only (train features may be sampled)
+            t = t.filter(fold >= HOLD).join(p.select("s1_id").unique(), on="s1_id", how="semi")
         p = p.join(t, on=KEY, how="full", coalesce=True).with_columns(
             pl.col("p").is_null().cast(pl.Int8).alias("o_missing"), pl.col("p_t").is_null().cast(pl.Int8).alias("t_missing"))
         p = p.with_columns(pl.col("p").fill_null(0.0), pl.col("p_t").fill_null(0.0))
