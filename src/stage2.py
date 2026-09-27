@@ -88,7 +88,7 @@ def relational(df: pl.DataFrame, split: str, p: str = "p", pre: str = "") -> pl.
 
 
 def load(split: str, tag: str, feat_dir: str, friend: bool = False, friend_dir: str = "friend",
-         all_feats: bool = False) -> pl.DataFrame:
+         all_feats: bool = False, extra: tuple = ()) -> pl.DataFrame:
     p = pl.read_parquet(f"{PRED}/{split}_{tag}.parquet", columns=KEY + ["p"])
     fold = (pl.col("s1_id").str.slice(3).cast(pl.Int64) % 10).cast(pl.Int8)
     if split == "train":
@@ -113,6 +113,8 @@ def load(split: str, tag: str, feat_dir: str, friend: bool = False, friend_dir: 
     if split == "train":
         tr = pl.read_parquet(f"{DATA}/parquet/train_pairs.parquet").with_columns(pl.lit(1, pl.Int8).alias("y"))
         df = df.join(tr, on=KEY, how="left").with_columns(pl.col("y").fill_null(0), fold.alias("fold"))
+    for name in extra:                                    # extra pair features, e.g. data/extra/{split}_diffsup.parquet
+        df = df.join(pl.read_parquet(f"{DATA}/extra/{split}_{name}.parquet"), on=KEY, how="left")
     df = relational(df, split)
     if friend:
         df = relational(relational(df, split, "p_t", "t_"), split, "p_m", "m_")
@@ -129,11 +131,13 @@ def main():
     ap.add_argument("--train_folds", default="6,7", help="stage-2 training folds (5 = holdout; calibrate on the rest)")
     ap.add_argument("--all_feats", action="store_true", help="carry every stage-1 feature, not just BASE/PAIR")
     ap.add_argument("--out_tag", default=None, help="output tag (default {tag}sb / {tag}s2)")
+    ap.add_argument("--extra", default="", help="comma-separated extra feature sets under data/extra/{split}_<name>.parquet")
     a = ap.parse_args()
     t0 = time.time()
     out_tag = a.out_tag or a.tag + ("sb" if a.friend else "s2")
     train_folds = tuple(int(x) for x in a.train_folds.split(","))
-    kw = dict(friend=a.friend, friend_dir=a.friend_dir, all_feats=a.all_feats)
+    kw = dict(friend=a.friend, friend_dir=a.friend_dir, all_feats=a.all_feats,
+              extra=tuple(x for x in a.extra.split(",") if x))
     tr = load("train", a.tag, a.feat_dir, **kw).to_pandas()
     feats = [c for c in tr.columns if c not in ("s1_id", "cand_id", "fold", "y")]
     print(f"stage 2: {len(feats)} features, {len(tr):,} train pairs ({time.time() - t0:.0f}s)", flush=True)
